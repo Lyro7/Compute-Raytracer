@@ -3,6 +3,7 @@
 .idea/
 .vscode/
 .history/
+.vscode/
 
 # Out-of-source builds
 out/
