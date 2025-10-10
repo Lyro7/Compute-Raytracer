@@ -1,0 +1,37 @@
+# Editor junk
+.vs/
+.idea/
+.vscode/
+.history/
+
+# Out-of-source builds
+out/
+bin/
+build/
+obj/
+
+# Compiler artifacts
+*.o
+*.pch
+*.pdb
+*.ilk
+*.log
+
+# Binaries & Libs
+*.exe
+*.dll
+*.lib
+*.a
+*.so
+*.dylib
+*.dmp
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake-build-*/
+
+# OS files
+*.DS_Store
+Thumbs.db
+
