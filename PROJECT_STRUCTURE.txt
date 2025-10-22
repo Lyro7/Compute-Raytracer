@@ -20,10 +20,13 @@ shaders/                -> GLSL Shader
 │  └─ screen.frag
 │
 external/               -> Third-Party Libraries
-│  ├─ glad/             -> OpenGL Loader
-│  ├─ glfw/             -> Windowing/Input
 │  ├─ glm/              -> Math Library (header-only)
 │  └─ tiny_obj_loader.h -> OBJ Loader Header
+│
+│
+dependencies/
+│  ├─ glad/             -> OpenGL Loader
+│  ├─ glfw/             -> Windowing/Input
 │
 include/                -> Öffentliche Header (Interfaces)
 │  ├─ mesh.h
