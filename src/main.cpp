@@ -1,12 +1,16 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include <glm/vec2.hpp>
 
 static void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
 }
 
 int main() {
+
+	glm::vec2 pos{ 2.0, 4.9 }; // warum geschweifte klammern niklas fragen
+
 	if (!glfwInit()) {
 		std::cerr << "Error while initializing GLFW" << std::endl;
 		return -1;
