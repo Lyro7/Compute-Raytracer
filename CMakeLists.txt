@@ -19,7 +19,7 @@ set(GLFW_DIR "${DEPS_DIR}/glfw")
 set(EXTERNAL_DIR "${CMAKE_SOURCE_DIR}/external")
 
 # Sources
-file(GLOB SOURCES CONFIGURE_DEPENDS "src/*.cpp")
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/*.cpp")
 add_executable(Raytracer ${SOURCES})
 
 # GLM
