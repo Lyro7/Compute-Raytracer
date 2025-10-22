@@ -13,13 +13,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Paths
 set(PROJ_INCL_DIR "${CMAKE_SOURCE_DIR}/include")
-set(DEPS_DIR "${CMAKE_SOURCE_DIR}/dependencies")
-set(GLAD_DIR "${DEPS_DIR}/glad")
-set(GLFW_DIR "${DEPS_DIR}/glfw")
 set(EXTERNAL_DIR "${CMAKE_SOURCE_DIR}/external")
+set(GLAD_DIR "${EXTERNAL_DIR}/glad")
+set(GLFW_DIR "${EXTERNAL_DIR}/glfw")
 
 # Sources
-file(GLOB SOURCES CONFIGURE_DEPENDS "src/*.cpp")
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/*.cpp")
 add_executable(Raytracer ${SOURCES})
 
 # GLM
