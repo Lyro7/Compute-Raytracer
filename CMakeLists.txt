@@ -45,3 +45,10 @@ target_link_libraries(Raytracer PRIVATE glad glfw OpenGL::GL)
 # Include directories
 target_include_directories(Raytracer PRIVATE "${GLAD_DIR}/include" "${PROJ_INCL_DIR}" "${EXTERNAL_DIR}")
 
+# Copy assets to output folder
+add_custom_target(sync_assets
+	COMMAND ${CMAKE_COMMAND} -E copy_directory
+		${CMAKE_SOURCE_DIR}/assets
+		${CMAKE_BINARY_DIR}/assets)
+add_dependencies(Raytracer sync_assets)
+
