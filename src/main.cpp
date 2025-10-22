@@ -1,12 +1,16 @@
+#include "loader.h"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include <glm/vec2.hpp>
+#include <filesystem>
 
 static void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
 }
 
 int main() {
+	std::cout << "CWD: " << std::filesystem::current_path() << std::endl;
 	if (!glfwInit()) {
 		std::cerr << "Error while initializing GLFW" << std::endl;
 		return -1;
@@ -26,6 +30,8 @@ int main() {
 		return -1;
 	}
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+
+	Mesh mesh = Loader::loadMesh("assets/models/sphere.obj");
 
 	while (!glfwWindowShouldClose(window)) {
 		glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
