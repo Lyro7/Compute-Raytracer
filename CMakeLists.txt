@@ -16,10 +16,14 @@ set(PROJ_INCL_DIR "${CMAKE_SOURCE_DIR}/include")
 set(DEPS_DIR "${CMAKE_SOURCE_DIR}/dependencies")
 set(GLAD_DIR "${DEPS_DIR}/glad")
 set(GLFW_DIR "${DEPS_DIR}/glfw")
+set(EXTERNAL_DIR "${CMAKE_SOURCE_DIR}/external")
 
 # Sources
 file(GLOB SOURCES CONFIGURE_DEPENDS "src/*.cpp")
 add_executable(Raytracer ${SOURCES})
+
+# GLM
+add_subdirectory(${EXTERNAL_DIR}/glm)
 
 # OpenGL
 find_package(OpenGL REQUIRED)
@@ -39,5 +43,5 @@ add_subdirectory(${GLFW_DIR})
 target_link_libraries(Raytracer PRIVATE glad glfw OpenGL::GL)
 
 # Include directories
-target_include_directories(Raytracer PRIVATE "${GLAD_DIR}/include" "${PROJ_INCL_DIR}")
+target_include_directories(Raytracer PRIVATE "${GLAD_DIR}/include" "${PROJ_INCL_DIR}" "${EXTERNAL_DIR}")
 
