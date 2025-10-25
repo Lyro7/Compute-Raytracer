@@ -1,4 +1,4 @@
-#include "Window.h"
+#include "window.h"
 #include <iostream>
 
 static void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
@@ -54,6 +54,6 @@ void Window::pollEvents() const {
     glfwPollEvents();
 }
 
-GLFWwindow* Window::get() const {
+const GLFWwindow* Window::get() const {
     return window;
 }
