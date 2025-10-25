@@ -63,9 +63,19 @@ public:
      */
     void pollEvents() const;
 
-    
+
+    /**
+     * @brief Returns a const pointer to the underlying GLFWwindow object.
+     *
+     * This function provides read-only access to the internal GLFW window handle.
+     * The returned pointer must not be used to modify the internal state of
+     * the window object.
+     *
+     * @return A pointer to the internal GLFWwindow structure.
+     */
     const GLFWwindow* get() const;
 
 private:
+    /** @brief Pointer to the internal GLFWwindow instance managed by this class. */    
     GLFWwindow* window;
 };
