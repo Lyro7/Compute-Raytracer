@@ -1,5 +1,5 @@
 #include "loader.h"
-#include "core/Window.h"
+#include "core/window.h"
 #include <iostream>
 
 int main() {
