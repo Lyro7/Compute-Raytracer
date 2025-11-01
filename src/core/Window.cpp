@@ -30,6 +30,7 @@ Window::Window(int width, int height, const char* title) {
         std::exit(-1);
     }
 
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 }
 
 Window::~Window() {
