@@ -10,7 +10,6 @@
  * initializes GLAD for OpenGL function loading, and provides methods to
  * interact with the window such as polling events and swapping buffers.
  */
-
 class Window {
 public:
     /**

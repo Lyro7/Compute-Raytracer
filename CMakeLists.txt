@@ -52,3 +52,10 @@ add_custom_target(sync_assets
 		${CMAKE_BINARY_DIR}/assets)
 add_dependencies(Raytracer sync_assets)
 
+# Copy shaders to output folder
+add_custom_target(sync_shaders
+	COMMAND ${CMAKE_COMMAND} -E copy_directory
+		${CMAKE_SOURCE_DIR}/shaders
+		${CMAKE_BINARY_DIR}/shaders)
+add_dependencies(Raytracer sync_shaders)
+

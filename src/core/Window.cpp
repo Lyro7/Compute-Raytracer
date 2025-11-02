@@ -12,11 +12,8 @@ Window::Window(int width, int height, const char* title) {
     }
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    #ifdef __APPLE__
-        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    #endif
 
     window = glfwCreateWindow(width, height, title, nullptr, nullptr);
     if (!window) {
@@ -32,8 +29,6 @@ Window::Window(int width, int height, const char* title) {
         std::cerr << "Failed to initialize GLAD" << std::endl;
         std::exit(-1);
     }
-
-    std::cout << "Loading with OpenGL version: " << glGetString(GL_VERSION) << std::endl;
 
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 }
