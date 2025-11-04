@@ -3,16 +3,17 @@
 #include <vector>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
 
 /**
  * @brief Represents a single vertex with position, normal, and UV data.
  */
 struct Vertex {
-	/** Vertex position in 3D space. */
-	glm::vec3 pos;
+	/** Vertex position. */
+	glm::vec4 pos;
 
 	/** Surface normal for lighting or shading. */
-	glm::vec3 normal;
+	glm::vec4 normal;
 
 	/** Texture coordinates (UV). */
 	glm::vec2 uv;
@@ -26,7 +27,7 @@ struct Vertex {
 	 * 
 	 * @param[in] uv Texture coordinates.
 	 */
-	Vertex(const glm::vec3& pos, const glm::vec3& normal, const glm::vec2& uv);
+	Vertex(const glm::vec4& pos, const glm::vec4& normal, const glm::vec2& uv);
 };
 
 /**
