@@ -54,6 +54,6 @@ void Window::pollEvents() const {
     glfwPollEvents();
 }
 
-const GLFWwindow* Window::get() const {
+GLFWwindow* Window::get() const {
     return window;
 }
