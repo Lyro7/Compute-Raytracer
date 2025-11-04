@@ -5,8 +5,8 @@
 #include <sstream>
 #include "compute_program.h"
 
-ComputeProgram::ComputeProgram(const GLsizei height, const GLsizei width, Mesh& mesh)
-	: _height(height), _width(width), _mesh(mesh), outTex(0) {
+ComputeProgram::ComputeProgram(const GLsizei height, const GLsizei width, Mesh& mesh, GLuint* outTex)
+    : _height(height), _width(width), _mesh(mesh), outTex(outTex) {
 	initRaytraceResources();
 }
 
@@ -16,13 +16,13 @@ void ComputeProgram::initRaytraceResources() {
     workGroupY = workGroups[1];
 
     if (_mesh.vertices.empty() || _mesh.indices.empty()) {
-        throw new std::runtime_error("Mesh data empty, can not initialize compute program");
+        throw std::runtime_error("Mesh data empty, can not initialize compute program");
     }
     // Texture
-    glGenTextures(1, &outTex);
-    glBindTexture(GL_TEXTURE_2D, outTex);
+    glGenTextures(1, outTex);
+    glBindTexture(GL_TEXTURE_2D, *outTex);
     glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, _width, _height);
-    glBindImageTexture(0, outTex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+    glBindImageTexture(0, *outTex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
     // Mesh data
     glGenBuffers(1, &verticesBuffer);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, verticesBuffer);
@@ -48,7 +48,7 @@ std::string ComputeProgram::readFromShaderFile(const std::string& shaderPath) {
 }
 
 GLuint ComputeProgram::createComputeShader(const std::string& shaderPath) {
-    std::string computeSource = readFromShaderFile("shaders/compute.glsl");
+    std::string computeSource = readFromShaderFile(shaderPath);
     const char* computeShaderSource = computeSource.c_str();
     GLuint computeShader;
     computeShader = glCreateShader(GL_COMPUTE_SHADER);
@@ -86,14 +86,14 @@ void ComputeProgram::startComputeProgram(GLuint& shaderProgram) {
 }
 
 std::array<GLuint, 2> ComputeProgram::calculateWorkGroups() const {
-    const GLuint threadSize = 1;
-    GLuint workGroupX = _width / threadSize;
-    GLuint workGroupY = _height / threadSize;
+    const GLuint threadSize = 16;
+    GLuint workGroupX = (_width + threadSize -1) / threadSize;
+    GLuint workGroupY = (_height + threadSize -1) / threadSize;
     std::array<GLuint, 2> workGroups = { workGroupX, workGroupY };
     return workGroups;
 }
 
 void ComputeProgram::dispatchCompute() const {
     glDispatchCompute(workGroupX, workGroupY, 1);
-    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
 }

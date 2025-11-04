@@ -11,9 +11,6 @@
  * from the GPU to the CPU via buffers and dispatches the work of the compute shader.
  */
 struct ComputeProgram {
-	/** Output texture bound to image unit 0. */
-	GLuint outTex;
-
 	/** Number of work groups along the X axis. */
 	GLuint workGroupX;
 
@@ -32,8 +29,9 @@ struct ComputeProgram {
 	 * @param[in] height The Output height in pixels.
 	 * @param[in] width The Output width in pixels.
 	 * @param[in] mesh The Mesh to upload to the shader.
+	 * @param[in] outTex The output texture on which the shader will work on
 	 */
-	ComputeProgram(const GLsizei height, const GLsizei width, Mesh &mesh);
+	ComputeProgram(const GLsizei height, const GLsizei width, Mesh& mesh, GLuint* outTex);
 
 	/**
 	 * @brief Loads and compiles a compute shader from file.
@@ -66,6 +64,9 @@ struct ComputeProgram {
 	void dispatchCompute() const;
 
 private:
+	/** Output texture bound to image unit 0. */
+	GLuint* outTex;
+
 	/** Output height in pixels. */
 	GLsizei _height;
 
