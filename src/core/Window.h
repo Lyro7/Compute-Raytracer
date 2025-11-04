@@ -73,7 +73,7 @@ public:
      *
      * @return A pointer to the internal GLFWwindow structure.
      */
-    const GLFWwindow* get() const;
+    GLFWwindow* get() const;
 
 private:
     /** @brief Pointer to the internal GLFWwindow instance managed by this class. */    
