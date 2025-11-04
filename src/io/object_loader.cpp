@@ -6,8 +6,8 @@
 #include "object_loader.h"
 #include "mesh.h"
 
-static glm::vec3 getPosition(const tinyobj::attrib_t attribute, tinyobj::index_t index) {
-	glm::vec3 pos{ 0, 0, 0};
+static glm::vec4 getPosition(const tinyobj::attrib_t attribute, tinyobj::index_t index) {
+	glm::vec4 pos{ 0, 0, 0, 1};
 	const auto& pIndex = index.vertex_index;
 	if (pIndex >= 0) {
 		pos.x = attribute.vertices[3 * pIndex + 0];
@@ -17,8 +17,8 @@ static glm::vec3 getPosition(const tinyobj::attrib_t attribute, tinyobj::index_t
 	return pos;
 }
 
-static glm::vec3 getNormal(const tinyobj::attrib_t attribute, tinyobj::index_t index) {
-	glm::vec3 normal{ 0, 0, 1 };
+static glm::vec4 getNormal(const tinyobj::attrib_t attribute, tinyobj::index_t index) {
+	glm::vec4 normal{ 0, 0, 1, 1};
 	const auto& nIndex = index.normal_index;
 	if (nIndex >= 0) {
 		normal.x = attribute.vertices[3 * nIndex + 0];
@@ -70,13 +70,13 @@ Mesh ObjectLoader::loadMesh(const std::string& path) {
 			const tinyobj::index_t index3 = shape.mesh.indices[i + 2];
 
 			// Position
-			glm::vec3 pos1 = getPosition(attribute, index1);
-			glm::vec3 pos2 = getPosition(attribute, index2);
-			glm::vec3 pos3 = getPosition(attribute, index3);
+			glm::vec4 pos1 = getPosition(attribute, index1);
+			glm::vec4 pos2 = getPosition(attribute, index2);
+			glm::vec4 pos3 = getPosition(attribute, index3);
 			// Normale
-			glm::vec3 normal1 = getNormal(attribute, index1);
-			glm::vec3 normal2 = getNormal(attribute, index2);
-			glm::vec3 normal3 = getNormal(attribute, index3);
+			glm::vec4 normal1 = getNormal(attribute, index1);
+			glm::vec4 normal2 = getNormal(attribute, index2);
+			glm::vec4 normal3 = getNormal(attribute, index3);
 			// UV
 			glm::vec2 uv1 = getUv(attribute, index1);
 			glm::vec2 uv2 = getUv(attribute, index2);
