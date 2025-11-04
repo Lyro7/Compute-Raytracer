@@ -39,8 +39,31 @@ set(GLFW_BUILD_DOCS		OFF CACHE BOOL "" FORCE)
 set(GLFW_INSTALL		OFF CACHE BOOL "" FORCE)
 add_subdirectory(${GLFW_DIR})
 
+# ImGui
+set(IMGUI_DIR "${EXTERNAL_DIR}/imgui")
+
+add_library(imgui STATIC
+    "${IMGUI_DIR}/imgui.cpp"
+    "${IMGUI_DIR}/imgui_draw.cpp"
+    "${IMGUI_DIR}/imgui_tables.cpp"
+    "${IMGUI_DIR}/imgui_widgets.cpp"
+    "${IMGUI_DIR}/backends/imgui_impl_glfw.cpp"
+    "${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp"
+)
+
+target_include_directories(imgui PUBLIC
+    "${IMGUI_DIR}"
+    "${IMGUI_DIR}/backends"
+)
+
+# we use GLAD as OpenGL-Loader
+target_compile_definitions(imgui PUBLIC IMGUI_IMPL_OPENGL_LOADER_GLAD)
+
+# ImGui needs GLFW + OpenGL
+target_link_libraries(imgui PUBLIC glfw OpenGL::GL)
+
 # Link executable
-target_link_libraries(Raytracer PRIVATE glad glfw OpenGL::GL)
+target_link_libraries(Raytracer PRIVATE glad glfw OpenGL::GL imgui)
 
 # Include directories
 target_include_directories(Raytracer PRIVATE "${CMAKE_SOURCE_DIR}/src" "${GLAD_DIR}/include" "${PROJ_INCL_DIR}" "${EXTERNAL_DIR}")
