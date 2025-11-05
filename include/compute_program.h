@@ -10,7 +10,8 @@
  * This class handles the creation of the compute shader. It passes needed raytracing data
  * from the GPU to the CPU via buffers and dispatches the work of the compute shader.
  */
-struct ComputeProgram {
+struct ComputeProgram
+{
 	/** Output texture bound to image unit 0. */
 	GLuint outTex;
 
@@ -42,7 +43,7 @@ struct ComputeProgram {
 	 * 
 	 * @return Compiled shader as GLuint.
 	 */
-	GLuint createComputeShader(const std::string& path);
+	GLuint createComputeShader(const std::string &path);
 
 	/**
 	 * @brief Links a compute shader into a program.
@@ -51,14 +52,14 @@ struct ComputeProgram {
 	 * 
 	 * @return Linked program as GLuint.
 	 */
-	GLuint createComputeProgram(GLuint& computeShader);
+	GLuint createComputeProgram(GLuint &computeShader);
 
 	/**
 	 * @brief Activates the given compute shader program.
 	 * 
 	 * @param[in] computeProgram The compute program.
 	 */
-	void startComputeProgram(GLuint& computeProgram);
+	void startComputeProgram(GLuint &computeProgram);
 
 	/**
 	 * @brief Dispatches the compute shader with current work group sizes.
@@ -89,7 +90,7 @@ private:
 	 * 
 	 * @return Shader source as string.
 	 */
-	std::string readFromShaderFile(const std::string& path);
+	std::string readFromShaderFile(const std::string &path);
 
 	/**
 	 * @brief Computes number of work groups for X and Y dimensions.
