@@ -4,28 +4,33 @@ layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 layout(binding = 0, rgba32f) uniform image2D outputImage;
 
-struct Vertex {
+struct Vertex 
+{
 	vec4 pos;
 	vec4 normal;
 	vec2 uv;
 };
 
 // Mesh data
-layout(std430, binding = 1) buffer VertexBuffer {
+layout(std430, binding = 1) buffer VertexBuffer 
+{
 	Vertex vertices[];
 };
 
-layout(std430, binding = 2) buffer IndexBuffer {
+layout(std430, binding = 2) buffer IndexBuffer 
+{
 	uint indices[];
 };
 
 // Camera data...
 
-void main() {
+void main() 
+{
 	ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
 	ivec2 size = imageSize(outputImage);
 
-	if (pixel.x < 0 || pixel.y < 0 || pixel.x >= size.x || pixel.y >= size.y) {
+	if (pixel.x < 0 || pixel.y < 0 || pixel.x >= size.x || pixel.y >= size.y)
+	{
 		return;
 	}
 

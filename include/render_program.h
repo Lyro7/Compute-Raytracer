@@ -8,7 +8,8 @@
  * This class compiles vertex and fragment shaders, binds the compute shader output texture,
  * and renders geometric objects to the screen.
  */
-struct RenderProgram {
+struct RenderProgram
+{
 	/**
 	 * @brief Constructor for RenderProgram.
 	 *
@@ -27,7 +28,7 @@ struct RenderProgram {
 	 * 
 	 * @return Compiled vertex shader ID.
 	 */
-	GLuint createVertexShader(const std::string& path);
+	GLuint createVertexShader(const std::string &path);
 
 	/**
 	 * @brief Creates and compiles a fragment shader.
@@ -36,7 +37,7 @@ struct RenderProgram {
 	 * 
 	 * @return Compiled fragment shader ID.
 	 */
-	GLuint createFragmentShader(const std::string& path);
+	GLuint createFragmentShader(const std::string &path);
 
 	/**
 	 * @brief Creates and links a shader program.
@@ -46,21 +47,21 @@ struct RenderProgram {
 	 * 
 	 * @return Linked shader program ID.
 	 */
-	GLuint createRenderProgram(GLuint& vertexShader, GLuint& fragmentShader);
+	GLuint createRenderProgram(GLuint &vertexShader, GLuint &fragmentShader);
 
 	/**
 	* @brief Initializes rendering resources (VAO, texture binding).
 	* 
 	* @param[in] shaderProgram The shader program to use for rendering.
 	*/
-	void initRenderResources(GLuint& shaderProgram);
+	void initRenderResources(GLuint &shaderProgram);
 
 	/**
 	 * @brief Activates the shader program for rendering.
 	 * 
 	 * @param[in] shaderProgram The shader program to activate.
 	 */
-	void startRenderProgram(GLuint& shaderProgram);
+	void startRenderProgram(GLuint &shaderProgram);
 
 	/**
 	 * @brief Renders the scene using the current graphics program.
@@ -87,5 +88,5 @@ private:
 	 *
 	 * @return Shader source as string.
 	 */
-	std::string readFromShaderFile(const std::string& path);
+	std::string readFromShaderFile(const std::string &path);
 };

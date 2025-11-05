@@ -8,7 +8,8 @@
 /**
  * @brief Represents a single vertex with position, normal, and UV data.
  */
-struct Vertex {
+struct Vertex
+{
 	/** Vertex position. */
 	glm::vec4 pos;
 
@@ -27,13 +28,14 @@ struct Vertex {
 	 * 
 	 * @param[in] uv Texture coordinates.
 	 */
-	Vertex(const glm::vec4& pos, const glm::vec4& normal, const glm::vec2& uv);
+	Vertex(const glm::vec4 &pos, const glm::vec4 &normal, const glm::vec2 &uv);
 };
 
 /**
  * @brief Represents a mesh consisting of vertices and indices.
  */
-struct Mesh {
+struct Mesh
+{
 	/** All vertices of the mesh. */
 	std::vector<Vertex> vertices;
 

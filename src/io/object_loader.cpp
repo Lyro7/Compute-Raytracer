@@ -6,10 +6,12 @@
 #include "object_loader.h"
 #include "mesh.h"
 
-static glm::vec4 getPosition(const tinyobj::attrib_t attribute, tinyobj::index_t index) {
-	glm::vec4 pos{ 0, 0, 0, 1};
-	const auto& pIndex = index.vertex_index;
-	if (pIndex >= 0) {
+static glm::vec4 getPosition(const tinyobj::attrib_t attribute, tinyobj::index_t index)
+{
+	glm::vec4 pos{ 0, 0, 0, 1 };
+	const auto &pIndex = index.vertex_index;
+	if (pIndex >= 0)
+	{
 		pos.x = attribute.vertices[3 * pIndex + 0];
 		pos.y = attribute.vertices[3 * pIndex + 1];
 		pos.z = attribute.vertices[3 * pIndex + 2];
@@ -17,10 +19,12 @@ static glm::vec4 getPosition(const tinyobj::attrib_t attribute, tinyobj::index_t
 	return pos;
 }
 
-static glm::vec4 getNormal(const tinyobj::attrib_t attribute, tinyobj::index_t index) {
-	glm::vec4 normal{ 0, 0, 1, 1};
-	const auto& nIndex = index.normal_index;
-	if (nIndex >= 0) {
+static glm::vec4 getNormal(const tinyobj::attrib_t attribute, tinyobj::index_t index)
+{
+	glm::vec4 normal{ 0, 0, 1, 1 };
+	const auto &nIndex = index.normal_index;
+	if (nIndex >= 0)
+	{
 		normal.x = attribute.vertices[3 * nIndex + 0];
 		normal.y = attribute.vertices[3 * nIndex + 1];
 		normal.z = attribute.vertices[3 * nIndex + 2];
@@ -28,43 +32,50 @@ static glm::vec4 getNormal(const tinyobj::attrib_t attribute, tinyobj::index_t i
 	return normal;
 }
 
-static glm::vec2 getUv(const tinyobj::attrib_t attribute, tinyobj::index_t index) {
+static glm::vec2 getUv(const tinyobj::attrib_t attribute, tinyobj::index_t index)
+{
 	glm::vec2 uv{ 1, 0 };
-	const auto& uIndex = index.texcoord_index;
-	if (uIndex >= 0) {
+	const auto &uIndex = index.texcoord_index;
+	if (uIndex >= 0)
+	{
 		uv.x = attribute.texcoords[2 * uIndex + 0];
 		uv.y = attribute.texcoords[2 * uIndex + 1];
 	}
 	return uv;
 }
- 
-Mesh ObjectLoader::loadMesh(const std::string& path) {
+
+Mesh ObjectLoader::loadMesh(const std::string &path)
+{
 	Mesh mesh;
 	tinyobj::ObjReader reader;
 	tinyobj::ObjReaderConfig cfg;
 
 	cfg.triangulate = true;
-	if (!reader.ParseFromFile(path, cfg)) {
+	if (!reader.ParseFromFile(path, cfg))
+	{
 		std::cerr << "Error while parsing file" << reader.Error() << std::endl;
 		return {};
 	}
 
-	const std::vector<tinyobj::shape_t>& shapes = reader.GetShapes();
-	const tinyobj::attrib_t& attribute = reader.GetAttrib();
+	const std::vector<tinyobj::shape_t> &shapes = reader.GetShapes();
+	const tinyobj::attrib_t &attribute = reader.GetAttrib();
 
 	// Allocate memory
-	std::vector<Vertex>& vertices = mesh.vertices;
+	std::vector<Vertex> &vertices = mesh.vertices;
 	std::size_t amount = 0;
-	for (const tinyobj::shape_t& shape : shapes) {
+	for (const tinyobj::shape_t &shape : shapes)
+	{
 		amount += shape.mesh.indices.size();
 	}
 	vertices.reserve(amount);
 
-	std::vector<unsigned int>& indices = mesh.indices;
+	std::vector<unsigned int> &indices = mesh.indices;
 	indices.reserve(amount);
 
-	for (const tinyobj::shape_t& shape : shapes) {
-		for (size_t i = 0; i < shape.mesh.indices.size(); i += 3) {
+	for (const tinyobj::shape_t &shape : shapes)
+	{
+		for (size_t i = 0; i < shape.mesh.indices.size(); i += 3)
+		{
 			const tinyobj::index_t index1 = shape.mesh.indices[i];
 			const tinyobj::index_t index2 = shape.mesh.indices[i + 1];
 			const tinyobj::index_t index3 = shape.mesh.indices[i + 2];
