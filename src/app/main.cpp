@@ -1,8 +1,8 @@
-#include <glad/glad.h>
-#include "object_loader.h"
 #include "compute_program.h"
 #include "render_program.h"
 #include "core/window.h"
+#include "object_loader.h"
+#include <glad/glad.h>
 #include <iostream>
 
 int main()

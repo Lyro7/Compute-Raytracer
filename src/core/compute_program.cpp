@@ -1,9 +1,9 @@
+#include "compute_program.h"
+#include "object_loader.h"
+#include <fstream>
 #include <glad/glad.h>
 #include <iostream>
-#include <fstream>
-#include "object_loader.h"
 #include <sstream>
-#include "compute_program.h"
 
 ComputeProgram::ComputeProgram(const GLsizei height, const GLsizei width, Mesh &mesh, GLuint *outTex)
     : _height(height)
@@ -24,6 +24,7 @@ void ComputeProgram::initRaytraceResources()
 	{
 		throw std::runtime_error("Mesh data empty, can not initialize compute program");
 	}
+
 	// Texture
 	glGenTextures(1, outTex);
 	glBindTexture(GL_TEXTURE_2D, *outTex);
@@ -46,12 +47,15 @@ void ComputeProgram::initRaytraceResources()
 std::string ComputeProgram::readFromShaderFile(const std::string &shaderPath)
 {
 	std::ifstream shaderFile(shaderPath);
+	std::stringstream buffer;
+
 	if (!shaderFile.is_open())
 	{
 		throw std::runtime_error("Could not load shader from path: " + shaderPath);
 	}
-	std::stringstream buffer;
+
 	buffer << shaderFile.rdbuf();
+
 	return buffer.str();
 }
 
@@ -59,37 +63,47 @@ GLuint ComputeProgram::createComputeShader(const std::string &shaderPath)
 {
 	std::string computeSource = readFromShaderFile(shaderPath);
 	const char *computeShaderSource = computeSource.c_str();
+
 	GLuint computeShader;
 	computeShader = glCreateShader(GL_COMPUTE_SHADER);
 	glShaderSource(computeShader, 1, &computeShaderSource, nullptr);
 	glCompileShader(computeShader);
+
 	GLint shaderSuccess;
 	glGetShaderiv(computeShader, GL_COMPILE_STATUS, &shaderSuccess);
+
 	if (!shaderSuccess)
 	{
 		char infoLog[512];
 		glGetShaderInfoLog(computeShader, 512, nullptr, infoLog);
 		std::cerr << infoLog << std::endl;
+
 		return -1;
 	}
+
 	return computeShader;
 }
 
 GLuint ComputeProgram::createComputeProgram(GLuint &computeShader)
 {
-	int programSuccess;
 	GLuint computeProgram = glCreateProgram();
 	glAttachShader(computeProgram, computeShader);
 	glLinkProgram(computeProgram);
+
+	int programSuccess;
 	glGetProgramiv(computeProgram, GL_LINK_STATUS, &programSuccess);
+
 	if (!programSuccess)
 	{
 		char infoLog[512];
 		glGetProgramInfoLog(computeProgram, 512, nullptr, infoLog);
 		std::cerr << infoLog << std::endl;
+
 		return -1;
 	}
+
 	glDeleteShader(computeShader);
+
 	return computeProgram;
 }
 
@@ -104,6 +118,7 @@ std::array<GLuint, 2> ComputeProgram::calculateWorkGroups() const
 	GLuint workGroupX = (_width + threadSize - 1) / threadSize;
 	GLuint workGroupY = (_height + threadSize - 1) / threadSize;
 	std::array<GLuint, 2> workGroups = { workGroupX, workGroupY };
+
 	return workGroups;
 }
 

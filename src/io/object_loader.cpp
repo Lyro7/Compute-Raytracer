@@ -1,21 +1,23 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 
-#include <iostream>
-#include <vector>
-#include "tiny_obj_loader.h"
 #include "object_loader.h"
 #include "mesh.h"
+#include "tiny_obj_loader.h"
+#include <iostream>
+#include <vector>
 
 static glm::vec4 getPosition(const tinyobj::attrib_t attribute, tinyobj::index_t index)
 {
 	glm::vec4 pos{ 0, 0, 0, 1 };
 	const auto &pIndex = index.vertex_index;
+
 	if (pIndex >= 0)
 	{
 		pos.x = attribute.vertices[3 * pIndex + 0];
 		pos.y = attribute.vertices[3 * pIndex + 1];
 		pos.z = attribute.vertices[3 * pIndex + 2];
 	}
+
 	return pos;
 }
 
@@ -23,12 +25,14 @@ static glm::vec4 getNormal(const tinyobj::attrib_t attribute, tinyobj::index_t i
 {
 	glm::vec4 normal{ 0, 0, 1, 1 };
 	const auto &nIndex = index.normal_index;
+
 	if (nIndex >= 0)
 	{
 		normal.x = attribute.vertices[3 * nIndex + 0];
 		normal.y = attribute.vertices[3 * nIndex + 1];
 		normal.z = attribute.vertices[3 * nIndex + 2];
 	}
+
 	return normal;
 }
 
@@ -36,11 +40,13 @@ static glm::vec2 getUv(const tinyobj::attrib_t attribute, tinyobj::index_t index
 {
 	glm::vec2 uv{ 1, 0 };
 	const auto &uIndex = index.texcoord_index;
+
 	if (uIndex >= 0)
 	{
 		uv.x = attribute.texcoords[2 * uIndex + 0];
 		uv.y = attribute.texcoords[2 * uIndex + 1];
 	}
+
 	return uv;
 }
 
@@ -49,11 +55,11 @@ Mesh ObjectLoader::loadMesh(const std::string &path)
 	Mesh mesh;
 	tinyobj::ObjReader reader;
 	tinyobj::ObjReaderConfig cfg;
-
 	cfg.triangulate = true;
 	if (!reader.ParseFromFile(path, cfg))
 	{
 		std::cerr << "Error while parsing file" << reader.Error() << std::endl;
+
 		return {};
 	}
 
@@ -67,6 +73,7 @@ Mesh ObjectLoader::loadMesh(const std::string &path)
 	{
 		amount += shape.mesh.indices.size();
 	}
+
 	vertices.reserve(amount);
 
 	std::vector<unsigned int> &indices = mesh.indices;
@@ -102,5 +109,6 @@ Mesh ObjectLoader::loadMesh(const std::string &path)
 			mesh.indices.push_back(index3.vertex_index);
 		}
 	}
+
 	return mesh;
 }

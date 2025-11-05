@@ -19,6 +19,7 @@ Window::Window(int width, int height, const char *title)
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	window = glfwCreateWindow(width, height, title, nullptr, nullptr);
+
 	if (!window)
 	{
 		std::cerr << "Failed to create window" << std::endl;
