@@ -29,8 +29,14 @@ struct Camera {
      * @param[in] nearPlane    The distance to the near clipping plane (default 0.1).
      * @param[in] farPlane     The distance to the far clipping plane (default 1000.0).
      */
-    Camera(const glm::vec4& lookFrom, const glm::vec4& lookAt, const glm::vec4& up,
-        double verticalFOV, double aspectRatio, double nearPlane = 0.1, double farPlane = 1000.0);
+    Camera(const glm::vec3& lookFrom, const glm::vec3& lookAt, const glm::vec3& up,
+        float verticalFOV, float aspectRatio, float nearPlane = 0.1f, float farPlane = 1000.0f);
+
+    const glm::vec4& getOrigin() const { return origin; }
+    const glm::vec4& getLowerLeftCorner() const { return lowerLeftCornerViewPlane; }
+    const glm::vec4& getHorizontal() const { return horizontalViewPlane; }
+    const glm::vec4& getVertical() const { return verticalViewPlane; }
+
 
     /**
      * @brief Returns a const reference to the camera's view matrix.
@@ -69,16 +75,20 @@ private:
     glm::vec4 u, v, w;
 
     /** @brief Aspect ratio of the camera (width / height). */
-    double aspectRatio;
+    float aspectRatio;
 
     /** @brief Vertical field of view of the camera in degrees. */
-    double fov;
+    float fov;
+
+    /** @brief Determines at what proximity and distance a pixel is displayed */
+    float nearPlane;
+    float farPlane;
 
     /** @brief 4x4 matrix representing the camera's view transformation. */
-    glm::mat4& viewMatrix;
+    glm::mat4 viewMatrix;
 
     /** @brief 4x4 matrix representing the camera's perspective projection. */
-    glm::mat4& projectionMatrix;
+    glm::mat4 projectionMatrix;
 
     /**
      * @brief Recomputes the camera's view matrix based on its position and orientation.
