@@ -6,9 +6,9 @@
 #include <iostream>
 #include <vector>
 
-static glm::vec3 getPosition(const tinyobj::attrib_t attribute, tinyobj::index_t index)
+static glm::vec4 getPosition(const tinyobj::attrib_t attribute, tinyobj::index_t index)
 {
-	glm::vec3 pos{ 0, 0, 0 };
+	glm::vec4 pos{ 0, 0, 0, 1 };
 	const auto &pIndex = index.vertex_index;
 
 	if (pIndex >= 0)
@@ -21,9 +21,9 @@ static glm::vec3 getPosition(const tinyobj::attrib_t attribute, tinyobj::index_t
 	return pos;
 }
 
-static glm::vec3 getNormal(const tinyobj::attrib_t attribute, tinyobj::index_t index)
+static glm::vec4 getNormal(const tinyobj::attrib_t attribute, tinyobj::index_t index)
 {
-	glm::vec3 normal{ 0, 0, 1 };
+	glm::vec4 normal{ 0, 0, 1, 1 };
 	const auto &nIndex = index.normal_index;
 
 	if (nIndex >= 0)
@@ -56,7 +56,6 @@ Mesh ObjectLoader::loadMesh(const std::string &path)
 	tinyobj::ObjReader reader;
 	tinyobj::ObjReaderConfig cfg;
 	cfg.triangulate = true;
-
 	if (!reader.ParseFromFile(path, cfg))
 	{
 		std::cerr << "Error while parsing file" << reader.Error() << std::endl;
@@ -69,15 +68,15 @@ Mesh ObjectLoader::loadMesh(const std::string &path)
 
 	// Allocate memory
 	std::vector<Vertex> &vertices = mesh.vertices;
-	std::vector<unsigned int> &indices = mesh.indices;
 	std::size_t amount = 0;
-
 	for (const tinyobj::shape_t &shape : shapes)
 	{
 		amount += shape.mesh.indices.size();
 	}
 
 	vertices.reserve(amount);
+
+	std::vector<unsigned int> &indices = mesh.indices;
 	indices.reserve(amount);
 
 	for (const tinyobj::shape_t &shape : shapes)
@@ -89,13 +88,13 @@ Mesh ObjectLoader::loadMesh(const std::string &path)
 			const tinyobj::index_t index3 = shape.mesh.indices[i + 2];
 
 			// Position
-			glm::vec3 pos1 = getPosition(attribute, index1);
-			glm::vec3 pos2 = getPosition(attribute, index2);
-			glm::vec3 pos3 = getPosition(attribute, index3);
+			glm::vec4 pos1 = getPosition(attribute, index1);
+			glm::vec4 pos2 = getPosition(attribute, index2);
+			glm::vec4 pos3 = getPosition(attribute, index3);
 			// Normale
-			glm::vec3 normal1 = getNormal(attribute, index1);
-			glm::vec3 normal2 = getNormal(attribute, index2);
-			glm::vec3 normal3 = getNormal(attribute, index3);
+			glm::vec4 normal1 = getNormal(attribute, index1);
+			glm::vec4 normal2 = getNormal(attribute, index2);
+			glm::vec4 normal3 = getNormal(attribute, index3);
 			// UV
 			glm::vec2 uv1 = getUv(attribute, index1);
 			glm::vec2 uv2 = getUv(attribute, index2);
