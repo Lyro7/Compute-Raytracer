@@ -25,6 +25,7 @@ int main()
 	GLuint vertexShader = renderProgram.createVertexShader("shaders/vertex.glsl");
 	GLuint fragmentShader = renderProgram.createFragmentShader("shaders/fragment.glsl");
 	GLuint rProgram = renderProgram.createRenderProgram(vertexShader, fragmentShader);
+
 	renderProgram.initRenderResources(rProgram);
 
 	while (!window.shouldClose())
