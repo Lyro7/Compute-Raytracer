@@ -52,23 +52,22 @@ int main()
 
 	while (!window.shouldClose())
 	{
-		glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
-
-		window.swapBuffers();
-
 		// IMPORTANT: Poll events first
 		// ImGui needs to know the events (mouse clicks, keyboard)
 		// BEFORE the new frame is drawn.
 		window.pollEvents();
 
-		// Start the ImGui frame
+        // Start the ImGui frame
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
+		glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+
 		computeProgram.startComputeProgram(cProgram);
 		computeProgram.dispatchCompute();
+
 		renderProgram.startRenderProgram(rProgram);
 		renderProgram.render();
 
@@ -87,7 +86,9 @@ int main()
 		// Prepares the draw data and renders it.
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+        window.swapBuffers();
 	}
-    
+
 	return 0;
 }
