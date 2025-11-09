@@ -56,6 +56,7 @@ Mesh ObjectLoader::loadMesh(const std::string &path)
 	tinyobj::ObjReader reader;
 	tinyobj::ObjReaderConfig cfg;
 	cfg.triangulate = true;
+
 	if (!reader.ParseFromFile(path, cfg))
 	{
 		std::cerr << "Error while parsing file" << reader.Error() << std::endl;
@@ -69,6 +70,7 @@ Mesh ObjectLoader::loadMesh(const std::string &path)
 	// Allocate memory
 	std::vector<Vertex> &vertices = mesh.vertices;
 	std::size_t amount = 0;
+
 	for (const tinyobj::shape_t &shape : shapes)
 	{
 		amount += shape.mesh.indices.size();
