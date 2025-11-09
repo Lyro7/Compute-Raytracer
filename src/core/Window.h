@@ -1,5 +1,6 @@
 #pragma once
-#include <glad/glad.h>     
+
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 /**
@@ -10,10 +11,10 @@
  * initializes GLAD for OpenGL function loading, and provides methods to
  * interact with the window such as polling events and swapping buffers.
  */
-
-class Window {
+class Window
+{
 public:
-    /**
+	/**
      * @brief Constructs a new Window object and initializes GLFW and GLAD.
      *
      * This constructor creates a window with the specified width, height,
@@ -24,18 +25,17 @@ public:
      * @param[in] height The height of the window in pixels.
      * @param[in] title  The title text displayed in the window's title bar.
     */
-    Window(int width, int height, const char* title);
+	Window(int width, int height, const char *title);
 
-    /**
+	/**
      * @brief Destroys the Window object and terminates GLFW.
      *
      * This destructor ensures that all GLFW resources are properly released
      * when the window object goes out of scope.
      */
-    ~Window();
+	~Window();
 
-
-     /**
+	/**
      * @brief Checks if the window should close.
      *
      * This function queries the GLFW internal flag that is set when the user
@@ -43,26 +43,34 @@ public:
      *
      * @return `true` if the window should close, otherwise `false`.
      */
-    bool shouldClose() const;
+	bool shouldClose() const;
 
-
-    /**
+	/**
      * @brief Swaps the front and back buffers of the window.
      *
      * This should be called at the end of each render loop iteration to display
      * the rendered image on the screen.
      */
-    void swapBuffers() const;
+	void swapBuffers() const;
 
-
-    /**
+	/**
      * @brief Polls for and processes pending window events.
      *
      * This method should be called once per frame to process user input and
      * window events (like resizing or keyboard/mouse interactions).
      */
-    void pollEvents() const;
+	void pollEvents() const;
 
+	/**
+     * @brief Returns a pointer to the underlying GLFWwindow object.
+     *
+     * This function provides read-only access to the internal GLFW window handle.
+     * The returned pointer must not be used to modify the internal state of
+     * the window object.
+     *
+     * @return A pointer to the internal GLFWwindow structure.
+     */
+    GLFWwindow* get();
 
     /**
      * @brief Returns a const pointer to the underlying GLFWwindow object.
@@ -71,11 +79,11 @@ public:
      * The returned pointer must not be used to modify the internal state of
      * the window object.
      *
-     * @return A pointer to the internal GLFWwindow structure.
+     * @return A const pointer to the internal GLFWwindow structure.
      */
-    GLFWwindow* get() const;
+    const GLFWwindow* get() const;
 
 private:
-    /** @brief Pointer to the internal GLFWwindow instance managed by this class. */    
-    GLFWwindow* window;
+	/** @brief Pointer to the internal GLFWwindow instance managed by this class. */
+	GLFWwindow *window;
 };

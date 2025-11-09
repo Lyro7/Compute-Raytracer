@@ -73,6 +73,25 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release"
             }
+        },
+        {
+            "name": "windows-nmake-base",
+            "displayName": "Windows (NMake)",
+            "generator": "NMake Makefiles",
+            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+           }
+        },
+        {
+            "name": "nmake-debug",
+            "displayName": "NMake Debug",
+            "inherits": "windows-nmake-base"
         }
     ]
 }

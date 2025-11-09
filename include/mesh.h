@@ -2,17 +2,42 @@
 
 #include <vector>
 #include <glm/vec2.hpp>
-#include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
 
-struct Vertex {
-	glm::vec3 pos;
-	glm::vec3 normal;
+/**
+ * @brief Represents a single vertex with position, normal, and UV data.
+ */
+struct Vertex
+{
+	/** Vertex position. */
+	glm::vec4 pos;
+
+	/** Surface normal for lighting or shading. */
+	glm::vec4 normal;
+
+	/** Texture coordinates (UV). */
 	glm::vec2 uv;
 
-	Vertex(const glm::vec3& _pos, const glm::vec3& _normal, const glm::vec2& _uv);
+	/**
+	 * @brief Constructs a vertex with position, normal, and UV.
+	 * 
+	 * @param[in] pos Position vector.
+	 * 
+	 * @param[in] normal Normal vector.
+	 * 
+	 * @param[in] uv Texture coordinates.
+	 */
+	Vertex(const glm::vec4 &pos, const glm::vec4 &normal, const glm::vec2 &uv);
 };
 
-struct Mesh {
+/**
+ * @brief Represents a mesh consisting of vertices and indices.
+ */
+struct Mesh
+{
+	/** All vertices of the mesh. */
 	std::vector<Vertex> vertices;
+
+	/** Index buffer defining the vertex order for triangles. */
 	std::vector<unsigned int> indices;
 };
