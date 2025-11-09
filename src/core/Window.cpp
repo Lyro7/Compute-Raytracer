@@ -63,6 +63,11 @@ void Window::pollEvents() const
 	glfwPollEvents();
 }
 
+GLFWwindow *Window::get()
+{
+	return window;
+}
+
 const GLFWwindow *Window::get() const
 {
 	return window;
