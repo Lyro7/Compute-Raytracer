@@ -1,5 +1,6 @@
 #include "window.h"
 #include <iostream>
+#include <GLFW/glfw3.h>
 
 static void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 {
@@ -45,6 +46,11 @@ Window::Window(int width, int height, const char *title)
 
 Window::~Window()
 {
+	if (window) 
+	{
+        glfwDestroyWindow(window);
+        window = nullptr;
+    }
 	glfwTerminate();
 }
 
@@ -72,3 +78,9 @@ const GLFWwindow *Window::get() const
 {
 	return window;
 }
+
+void Window::requestClose() 
+{
+glfwSetWindowShouldClose(window, GLFW_TRUE);
+}
+
