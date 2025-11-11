@@ -5,7 +5,8 @@
 #include "imgui_impl_opengl3.h"
 #include <glad/glad.h>
 
-void RaytracerUI::init(Window& window) {
+void RaytracerUI::init(Window& window) 
+{
     m_window = &window;
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -14,43 +15,54 @@ void RaytracerUI::init(Window& window) {
     ImGui_ImplOpenGL3_Init("#version 330");
 }
 
-void RaytracerUI::beginFrame() {
+void RaytracerUI::beginFrame() 
+{
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 }
 
-void RaytracerUI::draw(ComputeProgram& compute, RenderProgram& render,
-                       GLuint cProgram, GLuint rProgram) {
-    glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
+void RaytracerUI::draw(
+    ComputeProgram& compute,
+    RenderProgram& render,
+    GLuint cProgram, 
+    GLuint rProgram
+    ) 
+    {
+        glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
 
-    compute.startComputeProgram(cProgram);
-    compute.dispatchCompute();
+        compute.startComputeProgram(cProgram);
+        compute.dispatchCompute();
 
-    render.startRenderProgram(rProgram);
-    render.render();
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+        
+        render.startRenderProgram(rProgram);
+        render.render();
 
-    drawView();
-    drawTool();
-    drawSettings();
-    drawBar();
-}
+        drawView(); 
+        drawTool();
+        drawSettings();
+        drawBar();
+    }
 
-void RaytracerUI::endFrame() {
+void RaytracerUI::endFrame() 
+{
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     m_window->swapBuffers();
 }
 
-void RaytracerUI::shutdown() {
+void RaytracerUI::shutdown() 
+{
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 }
 
 
-void RaytracerUI::drawView() {
+void RaytracerUI::drawView() 
+{
     ImVec2 screen = ImGui::GetIO().DisplaySize;
     float width  = screen.x * 0.75f;
     float height = screen.y * 0.8f;
@@ -59,7 +71,8 @@ void RaytracerUI::drawView() {
     ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
 
     ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize;
-    if (ImGui::Begin("View", &opened, flags)) {
+    if (ImGui::Begin("View", &opened_view, flags)) 
+    {
         ImGui::Text("SSP: 256");
         ImGui::Text("Render Time: 3.41 s");
         ImGui::Text("FPS: 58.3");
@@ -71,13 +84,17 @@ void RaytracerUI::drawView() {
         float buttonY = (windowSize.y - buttonSize.y) * 0.5f;
         ImGui::SetCursorPos(ImVec2(buttonX, buttonY));
         ImGui::SetWindowFontScale(1.8f);
-        if (ImGui::Button("Start Camera", buttonSize)) { /* TODO */ }
+        if (ImGui::Button("Start Camera", buttonSize)) 
+        { 
+            /* TODO */ 
+        }
         ImGui::SetWindowFontScale(1.0f);
     }
     ImGui::End();
 }
 
-void RaytracerUI::drawTool() {
+void RaytracerUI::drawTool() 
+{
     ImVec2 screen = ImGui::GetIO().DisplaySize;
     
     float width  = screen.x * 0.25f;
@@ -87,16 +104,24 @@ void RaytracerUI::drawTool() {
     ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
 
     ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_MenuBar;
-    if (ImGui::Begin("File-Manager", &raytracer_active, flags)) {
-        if (ImGui::BeginMenuBar()) {
-            if (ImGui::BeginMenu("File")) {
-                if (ImGui::MenuItem("Save Screenshot", "Ctrl+S")) {
+    if (ImGui::Begin("File-Manager", &opened_fm, flags)) 
+    {
+        if (ImGui::BeginMenuBar()) 
+        {
+            if (ImGui::BeginMenu("File")) 
+            {
+                if (ImGui::MenuItem("Save Screenshot", "Ctrl+S")) 
+                {
                     //TODO: Screenshot von View machen und speichern
                 }
-                if (ImGui::MenuItem("Reset environment", "Ctrl+R")) {
+                if (ImGui::MenuItem("Reset environment", "Ctrl+R")) 
+                {
                     //TODO: Reset environment and variables
                 }
-                if (ImGui::MenuItem("Quit",  "Ctrl+Q")) { raytracer_active = false; }
+                if (ImGui::MenuItem("Quit",  "Ctrl+Q")) 
+                { 
+                    m_window->requestClose();
+                }
                 ImGui::EndMenu();
             }
             ImGui::EndMenuBar();
@@ -105,17 +130,19 @@ void RaytracerUI::drawTool() {
     ImGui::End();
 }
 
-void RaytracerUI::drawSettings() {
+void RaytracerUI::drawSettings() 
+{
     ImVec2 screen = ImGui::GetIO().DisplaySize;
 
     float width  = screen.x * 0.25f;
-    float height = screen.y * 0.7f;
+    float height = screen.y * 0.65f;
 
     ImGui::SetNextWindowPos(ImVec2(0, screen.y * 0.35f), ImGuiCond_Always);
     ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
 
     ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize;
-    if (ImGui::Begin("Settings", &opened, flags)) {
+    if (ImGui::Begin("Settings", &opened_settings, flags)) 
+    {
         ImGui::SeparatorText("Scene");
         ImGui::Combo("Scene", &selection_scene, scenes, IM_ARRAYSIZE(scenes));
         ImGui::SeparatorText("Color and illumination");
@@ -125,24 +152,24 @@ void RaytracerUI::drawSettings() {
         ImGui::SliderFloat("Light", &light_procentage, 0.0f, 100.0f);
         material.drawUI();
 
-
-
     }
     ImGui::End();
 }
 
-void RaytracerUI::drawBar() {
+void RaytracerUI::drawBar() 
+{
     ImVec2 screen = ImGui::GetIO().DisplaySize;
 
     float width  = screen.x * 0.75f;
-    float height = screen.y * 0.21f;
+    float height = screen.y * 0.2f;
 
     ImGui::SetNextWindowPos(ImVec2(screen.x * 0.25f, screen.y * 0.8f), ImGuiCond_Always);
     ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
 
     ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize;
 
-    if (ImGui::Begin("Camera and perspective", &opened, flags)) {
+    if (ImGui::Begin("Camera and perspective", &opened_camera, flags)) 
+    {
         ImGui::SeparatorText("Camera");
         ImGui::Combo("Camera", &selection_camera, cameras, IM_ARRAYSIZE(cameras));
         ImGui::SeparatorText("Perspective");

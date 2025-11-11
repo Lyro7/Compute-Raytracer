@@ -1,6 +1,7 @@
 #pragma once
 #include "core/window.h"
 #include "imgui.h"
+#include <glad/glad.h>
 
 
 /**
@@ -29,7 +30,8 @@ class RenderProgram;
  *  - Render all panels (viewport, tools, settings, status bar)
  *  - Pass relevant user-controlled parameters to render/compute programs
  */
-class RaytracerUI {
+class RaytracerUI 
+{
 public:
     /** @brief Constructs a new RaytracerUI object. */
     RaytracerUI() = default;
@@ -85,8 +87,11 @@ private:
     Window* m_window = nullptr;
 
 
-    /** @brief Indicates whether the main view window is open. */
-    bool opened = true;
+    /** @brief Indicates whether the view windows are open. */
+    bool opened_view = true;
+    bool opened_settings = true;
+    bool opened_fm = true;
+    bool opened_camera = true;
 
     /** @brief Indicates whether the Raytracer application is active. */
     bool raytracer_active = true;
@@ -130,7 +135,8 @@ private:
      * Contains parameters for physically based rendering (PBR) material control.
      * These values can be directly passed as uniforms to the raytracing shader.
      */
-    struct MaterialSettings {
+    struct MaterialSettings 
+    {
         /** @brief Material type options for UI selection. */
         const char* types[4] = {"Diffuse", "Metal", "Glass", "Emissive"};
 
