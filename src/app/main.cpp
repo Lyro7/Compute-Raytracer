@@ -38,7 +38,8 @@ int main()
     RaytracerUI ui;
     ui.init(window);
 
-    while (!window.shouldClose()) {
+    while (!window.shouldClose()) 
+	{
         window.pollEvents();
         ui.beginFrame();
         ui.draw(computeProgram, renderProgram, cProgram, rProgram);
