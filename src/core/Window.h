@@ -83,6 +83,13 @@ public:
      */
     const GLFWwindow* get() const;
 
+     /**
+     * @brief Close Window when the user press Quit.
+     *
+     * This method should be called if the user want to close the window by using the quit button.
+     */
+    void requestClose();
+
 private:
 	/** @brief Pointer to the internal GLFWwindow instance managed by this class. */
 	GLFWwindow *window;
