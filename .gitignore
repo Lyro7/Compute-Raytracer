@@ -10,6 +10,10 @@ out/
 bin/
 build/
 obj/
+externa
+
+# ImGui config
+imgui.ini
 
 # Compiler artifacts
 *.o
