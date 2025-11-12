@@ -34,8 +34,6 @@ void RaytracerUI::draw(
 
         compute.startComputeProgram(cProgram);
         compute.dispatchCompute();
-
-        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
         
         render.startRenderProgram(rProgram);
         render.render();
