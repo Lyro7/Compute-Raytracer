@@ -5,6 +5,11 @@
 #include "imgui_impl_opengl3.h"
 #include <glad/glad.h>
 
+RaytracerUI::RaytracerUI(RaytracerEngine &engine, Scene &scene)
+    : engine(engine)
+    , scene(scene)
+{}
+
 void RaytracerUI::init(Window& window) 
 {
     m_window = &window;
@@ -22,27 +27,19 @@ void RaytracerUI::beginFrame()
     ImGui::NewFrame();
 }
 
-void RaytracerUI::draw(
-    ComputeProgram& compute,
-    RenderProgram& render,
-    GLuint cProgram, 
-    GLuint rProgram
-    ) 
-    {
-        glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+void RaytracerUI::draw() 
+{
+    glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
 
-        compute.startComputeProgram(cProgram);
-        compute.dispatchCompute();
-        
-        render.startRenderProgram(rProgram);
-        render.render();
+    engine.renderFrame(raytraceRequested);
+	raytraceRequested = false;
 
-        drawView(); 
-        drawTool();
-        drawSettings();
-        drawBar();
-    }
+    drawView(); 
+    drawTool();
+    drawSettings();
+    drawBar();
+}
 
 void RaytracerUI::endFrame() 
 {
@@ -57,7 +54,6 @@ void RaytracerUI::shutdown()
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 }
-
 
 void RaytracerUI::drawView() 
 {
@@ -76,15 +72,20 @@ void RaytracerUI::drawView()
         ImGui::Text("FPS: 58.3");
         ImGui::Text("Resolution: 1920x1080");
         ImGui::Text("Seed: 42");
+
+
+
         ImVec2 windowSize = ImGui::GetWindowSize();
         ImVec2 buttonSize = ImVec2(300, 200);
         float buttonX = (windowSize.x - buttonSize.x) * 0.5f;
         float buttonY = (windowSize.y - buttonSize.y) * 0.5f;
         ImGui::SetCursorPos(ImVec2(buttonX, buttonY));
         ImGui::SetWindowFontScale(1.8f);
-        if (ImGui::Button("Start Camera", buttonSize)) 
+        if (ImGui::Button("Start Raytracing", buttonSize)) 
         { 
-            /* TODO */ 
+            /* Raytrace! */ 
+            raytraceRequested = true;
+            
         }
         ImGui::SetWindowFontScale(1.0f);
     }
@@ -179,7 +180,6 @@ void RaytracerUI::drawBar()
     ImGui::End();
 
 }
-
 
 // Material
 void RaytracerUI::MaterialSettings::drawUI()
