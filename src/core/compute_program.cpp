@@ -5,11 +5,13 @@
 #include <iostream>
 #include <sstream>
 
-ComputeProgram::ComputeProgram(const GLsizei height, const GLsizei width, Mesh &mesh, GLuint *outTex)
+ComputeProgram::ComputeProgram(const GLsizei height, const GLsizei width, Mesh &mesh, GpuSceneParams &gpuParams, GLuint &tex)
     : _height(height)
     , _width(width)
     , _mesh(mesh)
-    , outTex(outTex)
+    , _gpuParams(gpuParams) 
+    , tex(tex)
+    , ID(0)
 {
 	initRaytraceResources();
 }
@@ -20,28 +22,30 @@ void ComputeProgram::initRaytraceResources()
 	workGroupX = workGroups[0];
 	workGroupY = workGroups[1];
 
-	if (_mesh.vertices.empty() || _mesh.indices.empty())
-	{
-		throw std::runtime_error("Mesh data empty, can not initialize compute program");
-	}
-
-	// Texture
-	glGenTextures(1, outTex);
-	glBindTexture(GL_TEXTURE_2D, *outTex);
+	// Output texture
+	glGenTextures(1, &tex);
+	glBindTexture(GL_TEXTURE_2D, tex);
 	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, _width, _height);
-	glBindImageTexture(0, *outTex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-	// Mesh data
+	glBindImageTexture(0, tex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+
+	// Mesh data as SSBO
 	glGenBuffers(1, &verticesBuffer);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, verticesBuffer);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, _mesh.vertices.size() * sizeof(Vertex), _mesh.vertices.data(),
-	             GL_DYNAMIC_DRAW);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, _mesh.vertices.size() * sizeof(Vertex), 
+		_mesh.vertices.data(), GL_DYNAMIC_DRAW);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, verticesBuffer);
+
 	glGenBuffers(1, &indicesBuffer);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, indicesBuffer);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, _mesh.indices.size() * sizeof(unsigned int), _mesh.indices.data(),
-	             GL_DYNAMIC_DRAW);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, _mesh.indices.size() * sizeof(unsigned int),
+		_mesh.indices.data(), GL_DYNAMIC_DRAW);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, indicesBuffer);
-	// Camera data...
+
+	glGenBuffers(1, &materialsBuffer);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, materialsBuffer);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, _mesh.materials.size() * sizeof(Material),
+		_mesh.materials.data(), GL_DYNAMIC_DRAW);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, materialsBuffer);
 }
 
 std::string ComputeProgram::readFromShaderFile(const std::string &shaderPath)
@@ -84,32 +88,32 @@ GLuint ComputeProgram::createComputeShader(const std::string &shaderPath)
 	return computeShader;
 }
 
-GLuint ComputeProgram::createComputeProgram(GLuint &computeShader)
+bool ComputeProgram::createComputeProgram(GLuint &computeShader)
 {
-	GLuint computeProgram = glCreateProgram();
-	glAttachShader(computeProgram, computeShader);
-	glLinkProgram(computeProgram);
+	ID = glCreateProgram();
+	glAttachShader(ID, computeShader);
+	glLinkProgram(ID);
 
 	int programSuccess;
-	glGetProgramiv(computeProgram, GL_LINK_STATUS, &programSuccess);
+	glGetProgramiv(ID, GL_LINK_STATUS, &programSuccess);
 
 	if (!programSuccess)
 	{
 		char infoLog[512];
-		glGetProgramInfoLog(computeProgram, 512, nullptr, infoLog);
+		glGetProgramInfoLog(ID, 512, nullptr, infoLog);
 		std::cerr << infoLog << std::endl;
 
-		return -1;
+		return false;
 	}
 
 	glDeleteShader(computeShader);
 
-	return computeProgram;
+	return true;
 }
 
-void ComputeProgram::startComputeProgram(GLuint &shaderProgram)
+void ComputeProgram::startComputeProgram() const
 {
-	glUseProgram(shaderProgram);
+	glUseProgram(ID);
 }
 
 std::array<GLuint, 2> ComputeProgram::calculateWorkGroups() const
