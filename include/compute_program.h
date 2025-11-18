@@ -1,7 +1,10 @@
+#pragma once
+
 #include <glad/glad.h>
 #include <string>
 #include <array>
-#include "mesh.h"
+#include "scene.h"
+#include "gpu_scene_params.h"
 
 /**
  * @class ComputeProgram
@@ -12,17 +15,29 @@
  */
 struct ComputeProgram
 {
+	/** ID of the shader program . */
+	GLuint ID;
+
+	/** Output texture. */
+	GLuint &tex;
+
 	/** Number of work groups along the X axis. */
 	GLuint workGroupX;
 
 	/** Number of work groups along the Y axis. */
 	GLuint workGroupY;
 
-	/** SSBO storing vertex data (binding = 1). */
+	/** SSBO storing vertex data of mesh (binding = 1). */
 	GLuint verticesBuffer;
 
-	/** SSBO storing index data (binding = 2). */
+	/** SSBO storing index data of mesh (binding = 2). */
 	GLuint indicesBuffer;
+
+	/** SSBO storing material data of mesh (binding = 3). */
+	GLuint materialsBuffer;
+
+	/** SSBO storing material ids of mesh for every triangle (binding = 4) */
+	GLuint materialIdsBuffer;
 
 	/**
 	 * @brief Initializes compute shader resources (textures, SSBOs, work groups).
@@ -30,9 +45,10 @@ struct ComputeProgram
 	 * @param[in] height The Output height in pixels.
 	 * @param[in] width The Output width in pixels.
 	 * @param[in] mesh The Mesh to upload to the shader.
-	 * @param[in] outTex The output texture on which the shader will work on
+	 * @param[in] gpuParams the GpuParams which are defined by the user, containing a fixed camera and light position.
+	 * @param[in] tex The output texture on which the shader will work on
 	 */
-	ComputeProgram(const GLsizei height, const GLsizei width, Mesh &mesh, GLuint *outTex);
+	ComputeProgram(const GLsizei height, const GLsizei width, Mesh &mesh, GpuSceneParams &gpuParams, GLuint &tex);
 
 	/**
 	 * @brief Loads and compiles a compute shader from file.
@@ -48,16 +64,16 @@ struct ComputeProgram
 	 * 
 	 * @param[in] computeShader The compute shader.
 	 * 
-	 * @return Linked program as GLuint.
+	 * @return Linked program result. False if error occured, true if not.
 	 */
-	GLuint createComputeProgram(GLuint &computeShader);
+	bool createComputeProgram(GLuint &computeShader);
 
 	/**
 	 * @brief Activates the given compute shader program.
 	 * 
 	 * @param[in] computeProgram The compute program.
 	 */
-	void startComputeProgram(GLuint &computeProgram);
+	void startComputeProgram() const;
 
 	/**
 	 * @brief Dispatches the compute shader with current work group sizes.
@@ -65,8 +81,6 @@ struct ComputeProgram
 	void dispatchCompute() const;
 
 private:
-	/** Output texture bound to image unit 0. */
-	GLuint *outTex;
 
 	/** Output height in pixels. */
 	GLsizei _height;
@@ -74,8 +88,14 @@ private:
 	/** Output width in pixels. */
 	GLsizei _width;
 
-	/** Mesh containing vertex and index data. */
+	/** gpuParams containing user specifications for light and camera. */
+	GpuSceneParams _gpuParams;
+
+	/* Mesh containing geometry and material data */
 	Mesh _mesh;
+
+	/* UBO containing light and camera informations for the shader */
+	GLuint _sceneUbo;
 
 	/**
 	 * @brief Creates textures, SSBOs, and calculates work group counts.

@@ -1,24 +1,8 @@
 #pragma once
 #include "core/window.h"
 #include "imgui.h"
+#include "raytracer_engine.h"
 #include <glad/glad.h>
-
-
-/**
- * @class ComputeProgram
- * @brief Represents the compute shader logic of the raytracer (dispatch, accumulation, etc.).
- *
- * Forward declaration only. The full definition is implemented elsewhere.
- */
-class ComputeProgram;
-
-/**
- * @class RenderProgram
- * @brief Represents the render shader used for displaying the raytraced result.
- *
- * Forward declaration only. The full definition is implemented elsewhere.
- */
-class RenderProgram;
 
 /**
  * @class RaytracerUI
@@ -28,7 +12,7 @@ class RenderProgram;
  *  - Initialize and shut down ImGui (GLFW/OpenGL backends)
  *  - Manage per-frame lifecycle (beginFrame / draw / endFrame)
  *  - Render all panels (viewport, tools, settings, status bar)
- *  - Pass relevant user-controlled parameters to render/compute programs
+ *  - Pass relevant user-controlled parameters to the engine
  */
 class RaytracerUI 
 {
@@ -38,6 +22,11 @@ public:
 
     /** @brief Destroys the RaytracerUI object. */
     ~RaytracerUI() = default;
+
+    /** @brief raytraceRequested */
+	bool raytraceRequested = false;
+
+    RaytracerUI(RaytracerEngine &engine, Scene &scene);
 
     /**
      * @brief Initializes ImGui (context + style) and connects it to the active GLFW/OpenGL window.
@@ -55,17 +44,11 @@ public:
     void beginFrame();
 
     /**
-     * @brief Draws all UI panels and triggers the raytracing/rendering logic.
-     * @param compute Reference to the compute program (raytracing logic).
-     * @param render  Reference to the render program (fullscreen output).
-     * @param cProgram OpenGL program ID for the compute shader.
-     * @param rProgram OpenGL program ID for the render shader.
+     * @brief Draws all UI panels.
      *
-     * Handles per-frame logic such as clearing, dispatching, rendering, and
-     * drawing the ImGui panels (viewport, tools, and settings).
+     * Drawing the ImGui panels (viewport, tools, and settings).
      */
-    void draw(ComputeProgram& compute, RenderProgram& render,
-              GLuint cProgram, GLuint rProgram);
+    void draw();
 
     /**
      * @brief Finalizes the ImGui frame and renders all draw data.
@@ -86,6 +69,11 @@ private:
     /** @brief Pointer to the active window. Ownership remains external. */
     Window* m_window = nullptr;
 
+    /** @brief Raytracer engine used for managing the 3D preview and raytracing lifecycle. */
+    RaytracerEngine &engine;
+
+    /** @brief Reference to the shared scene. */
+    Scene &scene;
 
     /** @brief Indicates whether the view windows are open. */
     bool opened_view = true;
@@ -96,7 +84,6 @@ private:
     /** @brief Indicates whether the Raytracer application is active. */
     bool raytracer_active = true;
 
- 
     /** @brief Index of the currently selected scene. */
     int selection_scene  = 0;
 
