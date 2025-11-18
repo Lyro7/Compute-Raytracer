@@ -3,29 +3,23 @@
 #include <fstream>
 #include <iostream>
 
-RenderProgram::RenderProgram(const GLsizei height, const GLsizei width, GLuint &outTex)
+RenderProgram::RenderProgram(const GLsizei height, const GLsizei width, Mesh &mesh, GpuSceneParams &gpuParams, GLuint &tex)
     : _height(height)
     , _width(width)
-    , _outTex(outTex)
+    , _mesh(mesh) 
+	, _gpuParams(gpuParams)
+	, tex(tex)
+    , ID(0)
     , _vao(0)
+    , _vbo(0)
+    , _ebo(0)
 {
 	// Basic member initialization
 }
 
-void RenderProgram::initRenderResources(GLuint &shaderProgram)
+void RenderProgram::initRenderResources()
 {
-	glGenVertexArrays(1, &_vao);
-	glBindVertexArray(_vao);
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, _outTex);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-	GLint uniform = glGetUniformLocation(shaderProgram, "tex");
-	glUniform1i(uniform, 0);
+	// TODO: Init VAO, VBO, EBO
 }
 
 std::string RenderProgram::readFromShaderFile(const std::string &shaderPath)
@@ -93,37 +87,36 @@ GLuint RenderProgram::createFragmentShader(const std::string &shaderPath)
 	return fragmentShader;
 }
 
-GLuint RenderProgram::createRenderProgram(GLuint &vertexShader, GLuint &fragmentShader)
+bool RenderProgram::createRenderProgram(GLuint &vertexShader, GLuint &fragmentShader)
 {
-	GLuint renderProgram = glCreateProgram();
-	glAttachShader(renderProgram, vertexShader);
-	glAttachShader(renderProgram, fragmentShader);
-	glLinkProgram(renderProgram);
+	ID = glCreateProgram();
+	glAttachShader(ID, vertexShader);
+	glAttachShader(ID, fragmentShader);
+	glLinkProgram(ID);
 
 	int programSuccess;
-	glGetProgramiv(renderProgram, GL_LINK_STATUS, &programSuccess);
+	glGetProgramiv(ID, GL_LINK_STATUS, &programSuccess);
 
 	if (!programSuccess)
 	{
 		char infoLog[512];
-		glGetProgramInfoLog(renderProgram, 512, nullptr, infoLog);
+		glGetProgramInfoLog(ID, 512, nullptr, infoLog);
 		std::cerr << infoLog << std::endl;
 
-		return -1;
+		return false;
 	}
 
-	return renderProgram;
+	return true;
 }
 
-void RenderProgram::startRenderProgram(GLuint &shaderProgram)
+void RenderProgram::startRenderProgram()
 {
-	glUseProgram(shaderProgram);
+	glUseProgram(ID);
 }
 
 void RenderProgram::render() const
 {
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, _outTex);
+	glUseProgram(ID);
 	glBindVertexArray(_vao);
-	glDrawArrays(GL_TRIANGLES, 0, 3);
+	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(_mesh.indices.size()), GL_UNSIGNED_INT, nullptr);
 }
