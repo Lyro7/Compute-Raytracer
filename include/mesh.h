@@ -4,6 +4,24 @@
 #include <glm/vec2.hpp>
 #include <glm/vec4.hpp>
 
+struct Material
+{
+	/** Base color (RGBA) of the material. */
+	glm::vec4 albedo;
+
+	/** Surface roughness factor (0 = smooth, 1 = very rough). */
+	float roughness;
+
+	/** Metallic factor (0 = dielectric, 1 = fully metallic). */
+	float metallic;
+
+	/** Intensity of emitted light. */
+	float emissionStrength;
+
+	/** Emission color (RGBA) of the material. */
+	glm::vec4 emissionColor;
+};
+
 /**
  * @brief Represents a single vertex with position, normal, and UV data.
  */
@@ -40,4 +58,10 @@ struct Mesh
 
 	/** Index buffer defining the vertex order for triangles. */
 	std::vector<unsigned int> indices;
+
+	/** List of all materials used by this mesh. */
+	std::vector<Material> materials;
+
+	/** Material index for each triangle, referencing the materials array. */
+	std::vector<unsigned int> triangleMaterialIds;
 };
