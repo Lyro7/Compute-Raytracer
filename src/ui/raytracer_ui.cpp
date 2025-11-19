@@ -36,6 +36,7 @@ void RaytracerUI::draw()
     drawTool();
     drawSettings();
     drawBar();
+	drawRaytraceWindow();
 }
 
 void RaytracerUI::endFrame() 
@@ -64,6 +65,12 @@ void RaytracerUI::drawView()
     ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize;
     if (ImGui::Begin("View", &opened_view, flags)) 
     {
+		if (ImGui::Button("Raytrace"))
+		{
+			raytraceRequested = true;
+			opened_raytrace_window = true;
+		}
+
 		ImGui::Text("Preview");
 		ImGui::Separator();
 		
@@ -138,6 +145,28 @@ void RaytracerUI::drawSettings()
     }
     ImGui::End();
 }
+
+void RaytracerUI::drawRaytraceWindow()
+{
+	if (!opened_raytrace_window)
+	{
+		return;
+	}
+
+	ImVec2 screen = ImGui::GetIO().DisplaySize;
+
+	ImGui::SetNextWindowSize(ImVec2(screen.x * 0.5f, screen.y * 0.6f), ImGuiCond_Once);
+	ImGui::SetNextWindowPos(ImVec2(screen.x * 0.3f, screen.y * 0.15f), ImGuiCond_Once);
+
+	if (ImGui::Begin("Raytraced Result", &opened_raytrace_window))
+	{
+		ImVec2 avail = ImGui::GetContentRegionAvail();
+
+		ImGui::Image((ImTextureID)(intptr_t)engine.raytraceTex, avail, ImVec2(0, 1), ImVec2(1, 0));
+	}
+	ImGui::End();
+}
+
 
 void RaytracerUI::drawBar() 
 {
