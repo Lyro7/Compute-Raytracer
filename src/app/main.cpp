@@ -14,7 +14,7 @@ int main()
 	Window window(1280, 720, "Raytracer");
 
     Scene scene;
-
+	scene.mesh = ObjectLoader::loadMesh("assets/models/sphere.obj");
     // Base raytrace resolution
 	const GLsizei width = 1280;
 	const GLsizei height = 720;
