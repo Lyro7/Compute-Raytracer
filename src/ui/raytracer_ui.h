@@ -75,6 +75,9 @@ private:
     /** @brief Reference to the shared scene. */
     Scene &scene;
 
+     /* @brief Indicates whether the raytracing window is active. **/
+	bool opened_raytrace_window = false;
+
     /** @brief Indicates whether the view windows are open. */
     bool opened_view = true;
     bool opened_settings = true;
@@ -182,4 +185,11 @@ private:
      * Used for short runtime messages such as “Saving Screenshot…” or “Render Reset”.
      */
     void drawBar();
+
+    /**
+    * @brief Draws the new window which is used to show the raytracing texture.
+    *
+    * Uses the raytracing texture provided by the engine and renders it on the screen.
+    */
+	void drawRaytraceWindow();
 };
