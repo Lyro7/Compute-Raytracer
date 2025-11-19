@@ -29,9 +29,6 @@ void RaytracerUI::beginFrame()
 
 void RaytracerUI::draw() 
 {
-    glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-
     engine.renderFrame(raytraceRequested);
 	raytraceRequested = false;
 
@@ -67,28 +64,15 @@ void RaytracerUI::drawView()
     ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize;
     if (ImGui::Begin("View", &opened_view, flags)) 
     {
-        ImGui::Text("SSP: 256");
-        ImGui::Text("Render Time: 3.41 s");
-        ImGui::Text("FPS: 58.3");
-        ImGui::Text("Resolution: 1920x1080");
-        ImGui::Text("Seed: 42");
-
-
-
-        ImVec2 windowSize = ImGui::GetWindowSize();
-        ImVec2 buttonSize = ImVec2(300, 200);
-        float buttonX = (windowSize.x - buttonSize.x) * 0.5f;
-        float buttonY = (windowSize.y - buttonSize.y) * 0.5f;
-        ImGui::SetCursorPos(ImVec2(buttonX, buttonY));
-        ImGui::SetWindowFontScale(1.8f);
-        if (ImGui::Button("Start Raytracing", buttonSize)) 
-        { 
-            /* Raytrace! */ 
-            raytraceRequested = true;
-            
-        }
-        ImGui::SetWindowFontScale(1.0f);
-    }
+		ImGui::Text("Preview");
+		ImGui::Separator();
+		
+		ImVec2 avail = ImGui::GetContentRegionAvail();
+		
+		ImGui::Image((ImTextureID)(intptr_t)engine.previewTex, avail, ImVec2(0, 1),
+		             ImVec2(1, 0)
+		);
+	}
     ImGui::End();
 }
 
