@@ -33,19 +33,19 @@ void ComputeProgram::initRaytraceResources()
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, verticesBuffer);
 	glBufferData(GL_SHADER_STORAGE_BUFFER, _mesh.vertices.size() * sizeof(Vertex), 
 		_mesh.vertices.data(), GL_DYNAMIC_DRAW);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, verticesBuffer);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, verticesBuffer);
 
 	glGenBuffers(1, &indicesBuffer);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, indicesBuffer);
 	glBufferData(GL_SHADER_STORAGE_BUFFER, _mesh.indices.size() * sizeof(unsigned int),
 		_mesh.indices.data(), GL_DYNAMIC_DRAW);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, indicesBuffer);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, indicesBuffer);
 
 	glGenBuffers(1, &materialsBuffer);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, materialsBuffer);
 	glBufferData(GL_SHADER_STORAGE_BUFFER, _mesh.materials.size() * sizeof(Material),
 		_mesh.materials.data(), GL_DYNAMIC_DRAW);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, materialsBuffer);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, materialsBuffer);
 }
 
 std::string ComputeProgram::readFromShaderFile(const std::string &shaderPath)
