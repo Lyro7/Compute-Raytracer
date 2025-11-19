@@ -9,17 +9,53 @@ RenderProgram::RenderProgram(const GLsizei height, const GLsizei width, Mesh &me
     , _mesh(mesh) 
 	, _gpuParams(gpuParams)
 	, tex(tex)
-    , ID(0)
-    , _vao(0)
-    , _vbo(0)
-    , _ebo(0)
 {
-	// Basic member initialization
+	initRenderResources();
 }
 
 void RenderProgram::initRenderResources()
-{
-	// TODO: Init VAO, VBO, EBO
+{ 
+	glGenVertexArrays(1, &_vao); 
+	glGenBuffers(1, &_vbo);
+	glGenBuffers(1, &_ebo);
+
+	glBindVertexArray(_vao);
+
+	glBindBuffer(GL_ARRAY_BUFFER, _vbo);
+	glBufferData(GL_ARRAY_BUFFER, _mesh.vertices.size() * sizeof(Vertex), 
+		_mesh.vertices.data(), GL_STATIC_DRAW);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _ebo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, _mesh.indices.size() * sizeof(unsigned int), 
+		_mesh.indices.data(),  GL_STATIC_DRAW);
+
+	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex),  (void*)offsetof(Vertex, pos));
+	glEnableVertexAttribArray(0);
+
+	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+	glEnableVertexAttribArray(1);
+
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, uv));
+	glEnableVertexAttribArray(2);
+
+	glBindVertexArray(0);
+
+	glGenTextures(1, &tex);
+	glBindTexture(GL_TEXTURE_2D, tex);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, _width, _height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	glGenFramebuffers(1, &_fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, _fbo);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0);
+
+	GLenum drawBuf = GL_COLOR_ATTACHMENT0;
+	glDrawBuffers(1, &drawBuf);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 std::string RenderProgram::readFromShaderFile(const std::string &shaderPath)
@@ -109,14 +145,22 @@ bool RenderProgram::createRenderProgram(GLuint &vertexShader, GLuint &fragmentSh
 	return true;
 }
 
-void RenderProgram::startRenderProgram()
+void RenderProgram::startRenderProgram() const
 {
 	glUseProgram(ID);
 }
 
 void RenderProgram::render() const
 {
-	glUseProgram(ID);
+	glBindFramebuffer(GL_FRAMEBUFFER, _fbo);
+	glViewport(0, 0, _width, _height);
+
+	glClearColor(0.1f, 0.1f, 0.1f, 1.0f); 
+	glClear(GL_COLOR_BUFFER_BIT);
+
 	glBindVertexArray(_vao);
 	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(_mesh.indices.size()), GL_UNSIGNED_INT, nullptr);
+
+	glBindVertexArray(0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
