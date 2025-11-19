@@ -1,17 +1,36 @@
 #version 430
 
-// Fulscreen triangle
-const vec2 verts[3] = vec2[3](
-	vec2(-1.0, -1.0),
-	vec2( 3.0, -1.0),
-	vec2(-1.0,  3.0)
-);
+layout(location = 0) in vec4 aPos;
+layout(location = 1) in vec4 aNormal;
+layout(location = 2) in vec2 aUv;
 
-out vec2 coords;
+struct CameraParams {
+    mat4 viewProj;
+    vec4 origin;
+    vec4 lowerLeft;
+    vec4 horizontal;
+    vec4 vertical;
+};
+
+struct LightParams {
+    vec4 position;
+    vec4 color;
+};
+
+layout(std140, binding = 0) uniform SceneBlock 
+{
+    CameraParams camera;
+    LightParams light;
+};
+
+out vec4 vWorldPos;
+out vec4 vNormal;
+out vec2 vUv;
 
 void main() 
 {
-	vec2 pos = verts[gl_VertexID];
-	gl_Position = vec4(pos, 0.0, 1.0);
-	coords = 0.5 * pos + 0.5;
+    vWorldPos = aPos;
+	vNormal   = aNormal;
+    vUv       = aUv;
+    gl_Position = camera.viewProj * aPos;
 }
