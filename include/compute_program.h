@@ -16,7 +16,7 @@
 struct ComputeProgram
 {
 	/** ID of the shader program . */
-	GLuint ID;
+	GLuint ID = 0;
 
 	/** Output texture. */
 	GLuint &tex;
@@ -45,8 +45,8 @@ struct ComputeProgram
 	 * @param[in] height The Output height in pixels.
 	 * @param[in] width The Output width in pixels.
 	 * @param[in] mesh The Mesh to upload to the shader.
-	 * @param[in] gpuParams the GpuParams which are defined by the user, containing a fixed camera and light position.
-	 * @param[in] tex The output texture on which the shader will work on
+	 * @param[in] gpuParams the GpuParams which are defined by the user, containing a fixed camera and light.
+	 * @param[in] tex The output texture on which the shader will work on.
 	 */
 	ComputeProgram(const GLsizei height, const GLsizei width, Mesh &mesh, GpuSceneParams &gpuParams, GLuint &tex);
 
@@ -93,9 +93,6 @@ private:
 
 	/* Mesh containing geometry and material data */
 	Mesh _mesh;
-
-	/* UBO containing light and camera informations for the shader */
-	GLuint _sceneUbo;
 
 	/**
 	 * @brief Creates textures, SSBOs, and calculates work group counts.

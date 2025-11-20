@@ -13,11 +13,11 @@
  */
 struct RenderProgram
 {
-	/** ID of the shader program . */
-	GLuint ID;
+	/** @brief ID of the shader program . */
+	GLuint ID = 0;
 
-	/** Output texture. */
-	GLuint tex;
+	/** @brief Output texture. */
+	GLuint &tex;
 
 	/**
 	 * @brief Constructor for RenderProgram.
@@ -72,7 +72,7 @@ struct RenderProgram
 	 * 
 	 * @param[in] shaderProgram The shader program to activate.
 	 */
-	void startRenderProgram();
+	void startRenderProgram() const;
 
 	/**
 	 * @brief Renders the scene using the current graphics program.
@@ -86,16 +86,23 @@ private:
 	/** @brief The width of the output texture. */
 	GLsizei _width;
 
+	/*  @brief The mesh containing geometry and material data */
 	Mesh &_mesh;
 
+	/** @brief The gpuParams containing user specifications for light and camera. */
 	GpuSceneParams _gpuParams;
 
-	/** @brief The Vertex Array Object (VAO) used for rendering. */
-	GLuint _vao;
+	/** @brief The fbo used for offscreen rendering of the preview */
+	GLuint _fbo = 0;
 
-	GLuint _vbo;
+	/** @brief The vertex array object (VAO) used to specify vbo & vao layouts. */
+	GLuint _vao = 0;
 
-	GLuint _ebo;
+	/** @brief The vertex buffer object (VBO) containing vertices for the vertex shader. */
+	GLuint _vbo = 0;
+
+	/** @brief The element buffer object (EBO) containing indices for the vertex shader. */
+	GLuint _ebo = 0;
 
 	/**
 	 * @brief Reads shader source code from a file.

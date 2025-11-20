@@ -1,3 +1,5 @@
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/string_cast.hpp>Y
 #include "raytracer_engine.h"
 #include <iostream>
 
@@ -13,7 +15,7 @@ RaytracerEngine::RaytracerEngine(const GLsizei width, const GLsizei height, Scen
 
 	if (!computeSucess)
 	{
-		std::runtime_error("Error while trying to init compute.");
+		throw std::runtime_error("Error while trying to init compute.");
 	}
 
 	// Init preview
@@ -23,9 +25,10 @@ RaytracerEngine::RaytracerEngine(const GLsizei width, const GLsizei height, Scen
 
 	if (!previewSucess)
 	{
-		std::runtime_error("Error while trying to init preview.");
+		throw std::runtime_error("Error while trying to init preview.");
 	}
 
+	initSceneUbo();
 }
 	
 void RaytracerEngine::renderFrame(bool raytraceRequested)

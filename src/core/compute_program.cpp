@@ -11,7 +11,6 @@ ComputeProgram::ComputeProgram(const GLsizei height, const GLsizei width, Mesh &
     , _mesh(mesh)
     , _gpuParams(gpuParams) 
     , tex(tex)
-    , ID(0)
 {
 	initRaytraceResources();
 }
@@ -46,6 +45,12 @@ void ComputeProgram::initRaytraceResources()
 	glBufferData(GL_SHADER_STORAGE_BUFFER, _mesh.materials.size() * sizeof(Material),
 		_mesh.materials.data(), GL_DYNAMIC_DRAW);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, materialsBuffer);
+
+	glGenBuffers(1, &materialIdsBuffer);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, materialIdsBuffer);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, _mesh.triangleMaterialIds.size() * sizeof(unsigned int),
+	    _mesh.triangleMaterialIds.data(), GL_DYNAMIC_DRAW);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, materialIdsBuffer);
 }
 
 std::string ComputeProgram::readFromShaderFile(const std::string &shaderPath)
