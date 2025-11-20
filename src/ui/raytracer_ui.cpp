@@ -4,6 +4,9 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include <glad/glad.h>
+#include <filesystem>
+#include <iostream>
+#include "object_loader.h"
 
 RaytracerUI::RaytracerUI(RaytracerEngine &engine, Scene &scene)
     : engine(engine)
@@ -76,6 +79,58 @@ void RaytracerUI::drawView()
     ImGui::End();
 }
 
+void RaytracerUI::drawFileBrowser()
+{
+    ImGui::Text("Current Path: %s", m_currentDir.string().c_str());
+    ImGui::Separator();
+
+    if (m_currentDir.has_parent_path())
+    {
+        if (ImGui::Button(".."))
+        {
+            m_currentDir = m_currentDir.parent_path();
+        }
+    }
+    if (ImGui::BeginChild("BrowserContent", ImVec2(0, 300), true))
+    {
+        try {
+            for (const auto& entry : std::filesystem::directory_iterator(m_currentDir)) 
+            {
+                std::string entryName = entry.path().filename().string();
+
+                if (entryName.empty() || entryName[0] == '.') continue;
+                if (entry.is_directory())
+                {
+                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.2f, 0.7f, 1.0f, 1.0f));
+                    if (ImGui::Selectable((entryName + "/").c_str()))
+                    {
+                        m_currentDir /= entry.path().filename();
+                    }
+                    ImGui::PopStyleColor();
+                }
+                else if (entry.is_regular_file())
+                {
+                    if (ImGui::Selectable(entryName.c_str()))
+                    {
+                        if (entry.path().extension() == ".obj") {
+                            std::string fullPath = entry.path().string();
+                            scene.mesh = ObjectLoader::loadMesh(fullPath);
+                            raytraceRequested = true;
+                            std::cout << "SUCCESS: Loaded mesh from: " << fullPath << std::endl;
+                        } else {
+                            ImGui::TextDisabled(" (Not .obj)");
+                        }
+                    }
+                }
+            }
+        } catch (const std::filesystem::filesystem_error& e) {
+            ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "ERROR: Cannot access path.");
+            m_currentDir = "assets"; 
+        }
+    }
+    ImGui::EndChild();
+}
+
 void RaytracerUI::drawTool() 
 {
     ImVec2 screen = ImGui::GetIO().DisplaySize;
@@ -109,6 +164,7 @@ void RaytracerUI::drawTool()
             }
             ImGui::EndMenuBar();
         }
+        drawFileBrowser();
     }
     ImGui::End();
 }
