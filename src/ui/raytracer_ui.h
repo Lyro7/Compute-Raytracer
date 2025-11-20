@@ -3,6 +3,7 @@
 #include "imgui.h"
 #include "raytracer_engine.h"
 #include <glad/glad.h>
+#include <filesystem>
 
 /**
  * @class RaytracerUI
@@ -74,6 +75,9 @@ private:
 
     /** @brief Reference to the shared scene. */
     Scene &scene;
+
+    /** @brief Keeps the path of the folder currently displayed in the browsers. */
+    std::filesystem::path m_currentDir = "assets";
 
     /** @brief Indicates whether the view windows are open. */
     bool opened_view = true;
@@ -182,4 +186,11 @@ private:
      * Used for short runtime messages such as “Saving Screenshot…” or “Render Reset”.
      */
     void drawBar();
+
+    /**
+     * @brief Draws the folder structure in the Files panel.
+     *
+     * With this method, you can select the .obj files from the assets folder.
+     */
+    void drawFileBrowser();
 };
