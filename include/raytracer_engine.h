@@ -26,11 +26,11 @@ struct RaytracerEngine
      *
      * Initializes compute and render programs and allocates required GPU resources.
      *
-     * @param[in] width  The output texture width in pixels.
      * @param[in] height The output texture height in pixels.
+     * @param[in] width  The output texture width in pixels.
      * @param[in] sc     The scene containing mesh, camera and light.
      */
-	RaytracerEngine(const GLsizei width, const GLsizei height, Scene &sc);
+	RaytracerEngine(const GLsizei height, const GLsizei width, Scene &sc);
 
 	/**
      * @brief Loads a mesh from file and updates the scene.

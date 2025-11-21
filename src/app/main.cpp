@@ -16,10 +16,10 @@ int main()
     Scene scene;
 	scene.mesh = ObjectLoader::loadMesh("assets/models/sphere.obj");
     // Base raytrace resolution
-	const GLsizei width = 1280;
-	const GLsizei height = 720;
+	const GLsizei width = 1920;
+	const GLsizei height = 1080;
 
-    RaytracerEngine engine(width, height, scene);
+    RaytracerEngine engine(height, width, scene);
 
 	// UI
     RaytracerUI ui(engine, scene);

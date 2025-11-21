@@ -7,6 +7,7 @@ struct Vertex
     vec4 pos;
     vec4 normal;
     vec2 uv;
+    vec2 padding;
 };
 
 struct Material
@@ -50,15 +51,55 @@ layout(std430, binding = 1) buffer IndexBuffer
     uint indices[];
 };
 
-layout(std430, binding = 2) buffer MaterialsBuffer 
+layout(std430, binding = 2) buffer MaterialBuffer 
 {
     Material materials[];
 };
+
+layout(std430, binding = 3) buffer MaterialIndexBuffer 
+{
+    uint materialIndices[];
+};
+
 // Camera data UBO
 layout(std140, binding = 0) uniform SceneParams
 {
     GpuSceneParams gpuSceneParams;
 };
+
+bool intersectTriangle(vec3 orig, vec3 dir, vec3 v0, vec3 v1, vec3 v2, out float tHit)
+{
+    const float EPSILON = 1e-3;
+
+    vec3 e1 = v1 - v0;
+    vec3 e2 = v2 - v0;
+
+    vec3 p = cross(dir, e2);
+    float det = dot(e1, p);
+
+    if (abs(det) < EPSILON)
+        return false;
+
+    float invDet = 1.0 / det;
+    vec3 t = orig - v0;
+
+    float u = dot(t, p) * invDet;
+    if (u < 0.0 || u > 1.0)
+        return false;
+
+    vec3 q = cross(t, e1);
+    float v = dot(dir, q) * invDet;
+    if (v < 0.0 || u + v > 1.0)
+        return false;
+
+    float tTemp = dot(e2, q) * invDet;
+    if (tTemp > EPSILON) {
+        tHit = tTemp;
+        return true;
+    }
+
+    return false;
+}
 
 void main() 
 {
@@ -70,8 +111,52 @@ void main()
         return;
     }
 
+    // Normalized uv in [0,1]
     vec2 uv = (vec2(pixel) + 0.5) / vec2(size);
-    vec3 col = vec3(uv.x, uv.y, 0.5);
 
-    imageStore(outputImage, pixel, vec4(col, 1.0));
+    vec3 origin = gpuSceneParams.camera.origin.xyz;
+    vec3 lowerLeft = gpuSceneParams.camera.lowerLeft.xyz;
+    vec3 horizontal = gpuSceneParams.camera.horizontal.xyz;
+    vec3 vertical = gpuSceneParams.camera.vertical.xyz;
+
+    vec3 target = lowerLeft + uv.x * horizontal + uv.y * vertical;
+    vec3 dir = normalize(target - origin);
+
+    bool hit = false;
+
+    // Corresponds to "t" from the term: intersection = origin + t * direction
+    // Big initial value to guarantee that the first intersection is closer than the inital value
+    float distanceToClosestIntersection = 1e30;
+
+    uint indexCount = indices.length();
+
+    // Iterate over triangles
+    for (uint i = 0; i < indexCount; i += 3)
+    {
+        uint i0 = indices[i + 0];
+        uint i1 = indices[i + 1];
+        uint i2 = indices[i + 2];
+
+        //Corners of the triangle
+        vec3 v0 = vertices[i0].pos.xyz;
+        vec3 v1 = vertices[i1].pos.xyz;
+        vec3 v2 = vertices[i2].pos.xyz;
+
+        //Saves the distance "t" (intersection = origin + t * direction) to the intersection calculated by intersectTriangle()
+        float distanceToIntersection;
+
+        if (intersectTriangle(origin, dir, v0, v1, v2, distanceToIntersection))
+        {
+            if (distanceToIntersection < distanceToClosestIntersection) 
+            {
+                distanceToClosestIntersection = distanceToIntersection;
+                hit = true;
+            }
+        }
+    }
+
+    if (hit)
+        imageStore(outputImage, pixel, vec4(1.0, 1.0, 1.0, 1.0));
+    else
+        imageStore(outputImage, pixel, vec4(0.0, 0.0, 0.0, 1.0));
 }

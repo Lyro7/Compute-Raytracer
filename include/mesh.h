@@ -36,6 +36,9 @@ struct Vertex
 	/** Texture coordinates (UV). */
 	glm::vec2 uv;
 
+	/** Padding to match 48 byte allignment. */
+	glm::vec2 padding;
+
 	/**
 	 * @brief Constructs a vertex with position, normal, and UV.
 	 * 
