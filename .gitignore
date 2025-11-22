@@ -40,3 +40,6 @@ cmake-build-*/
 *.DS_Store
 Thumbs.db
 
+# Local stuff
+.cache/
+compile_commands.json
