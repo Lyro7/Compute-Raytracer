@@ -12,304 +12,295 @@
 RaytracerUI::RaytracerUI(RaytracerEngine &engine, Scene &scene)
     : engine(engine)
     , scene(scene)
-{}
-
-void RaytracerUI::init(Window& window) 
 {
-    m_window = &window;
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGui::StyleColorsDark();
-    ImGui_ImplGlfw_InitForOpenGL(m_window->get(), true);
-    ImGui_ImplOpenGL3_Init("#version 330");
 }
 
-void RaytracerUI::beginFrame() 
+void RaytracerUI::init(Window &window)
 {
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
+	m_window = &window;
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGui::StyleColorsDark();
+	ImGui_ImplGlfw_InitForOpenGL(m_window->get(), true);
+	ImGui_ImplOpenGL3_Init("#version 330");
 }
 
-void RaytracerUI::draw() 
+void RaytracerUI::beginFrame()
 {
-    engine.renderFrame(raytraceRequested);
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
+}
+
+void RaytracerUI::draw()
+{
+	engine.renderFrame(raytraceRequested);
 	raytraceRequested = false;
 
-    drawView(); 
-    drawTool();
-    drawSettings();
-    drawBar();
+	drawView();
+	drawTool();
+	drawSettings();
+	drawBar();
 }
 
-void RaytracerUI::endFrame() 
+void RaytracerUI::endFrame()
 {
-    ImGui::Render();
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-    m_window->swapBuffers();
+	ImGui::Render();
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+	m_window->swapBuffers();
 }
 
-void RaytracerUI::shutdown() 
+void RaytracerUI::shutdown()
 {
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
 }
 
-void RaytracerUI::drawView() 
+void RaytracerUI::drawView()
 {
 	ImVec2 screen = ImGui::GetIO().DisplaySize;
 
 	float barHeight = screen.y * 0.07f;
 	float width = screen.x * 0.75f;
 	float height = screen.y - barHeight;
-	  ImGuiWindowFlags flags =
-          ImGuiWindowFlags_NoResize
-        | ImGuiWindowFlags_NoTitleBar
-        | ImGuiWindowFlags_NoCollapse
-        | ImGuiWindowFlags_NoMove;
+	ImGuiWindowFlags flags =
+	    ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove;
 
 	ImGui::SetNextWindowPos(ImVec2(screen.x * 0.25f, 0), ImGuiCond_Always);
 	ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
 
 	if (ImGui::Begin("View", &opened_view, flags))
 	{
-		 ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 0.9f));
-        ImGui::SetCursorPosX(width * 0.5f - 40.0f);  
-        ImGui::Text("Preview");
-        ImGui::PopStyleColor();
-        ImGui::Spacing();
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 0.9f));
+		ImGui::SetCursorPosX(width * 0.5f - 40.0f);
+		ImGui::Text("Preview");
+		ImGui::PopStyleColor();
+		ImGui::Spacing();
 
 		ImVec2 avail = ImGui::GetContentRegionAvail();
-		
-        GLuint texToShow = showRaytraced ? engine.raytraceTex : engine.previewTex;
 
-        ImGui::Image(
-        (ImTextureID)(intptr_t)texToShow,
-        avail,
-        ImVec2(0, 1),
-        ImVec2(1, 0));
+		GLuint texToShow = showRaytraced ? engine.raytraceTex : engine.previewTex;
+
+		ImGui::Image((ImTextureID)(intptr_t)texToShow, avail, ImVec2(0, 1), ImVec2(1, 0));
 	}
-    ImGui::End();
+	ImGui::End();
 }
 
 void RaytracerUI::drawFileBrowser()
 {
-    ImGui::Text("Current Path: %s", m_currentDir.string().c_str());
-    ImGui::Separator();
+	ImGui::Text("Current Path: %s", m_currentDir.string().c_str());
+	ImGui::Separator();
 
-    if (m_currentDir.has_parent_path())
-    {
-        if (ImGui::Button(".."))
-        {
-            m_currentDir = m_currentDir.parent_path();
-        }
-    }
-    if (ImGui::BeginChild("BrowserContent", ImVec2(0, 300), true))
-    {
-        try {
-            for (const auto& entry : std::filesystem::directory_iterator(m_currentDir)) 
-            {
-                std::string entryName = entry.path().filename().string();
+	if (m_currentDir.has_parent_path())
+	{
+		if (ImGui::Button(".."))
+		{
+			m_currentDir = m_currentDir.parent_path();
+		}
+	}
+	if (ImGui::BeginChild("BrowserContent", ImVec2(0, 300), true))
+	{
+		try
+		{
+			for (const auto &entry : std::filesystem::directory_iterator(m_currentDir))
+			{
+				std::string entryName = entry.path().filename().string();
 
-                if (entryName.empty() || entryName[0] == '.') continue;
-                if (entry.is_directory())
-                {
-                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.2f, 0.7f, 1.0f, 1.0f));
-                    if (ImGui::Selectable((entryName + "/").c_str()))
-                    {
-                        m_currentDir /= entry.path().filename();
-                    }
-                    ImGui::PopStyleColor();
-                }
-                else if (entry.is_regular_file())
-                {
-                    if (ImGui::Selectable(entryName.c_str()))
-                    {
-                        if (entry.path().extension() == ".obj") {
-                            std::string fullPath = entry.path().string();
-                            scene.mesh = ObjectLoader::loadMesh(fullPath);
-                            raytraceRequested = true;
-                            std::cout << "SUCCESS: Loaded mesh from: " << fullPath << std::endl;
-                        } else {
-                            ImGui::TextDisabled(" (Not .obj)");
-                        }
-                    }
-                }
-            }
-        } catch (const std::filesystem::filesystem_error& e) {
-            ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "ERROR: Cannot access path.");
-            m_currentDir = "assets"; 
-        }
-    }
-    ImGui::EndChild();
+				if (entryName.empty() || entryName[0] == '.')
+					continue;
+				if (entry.is_directory())
+				{
+					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.2f, 0.7f, 1.0f, 1.0f));
+					if (ImGui::Selectable((entryName + "/").c_str()))
+					{
+						m_currentDir /= entry.path().filename();
+					}
+					ImGui::PopStyleColor();
+				}
+				else if (entry.is_regular_file())
+				{
+					if (ImGui::Selectable(entryName.c_str()))
+					{
+						if (entry.path().extension() == ".obj")
+						{
+							std::string fullPath = entry.path().string();
+							scene.mesh = ObjectLoader::loadMesh(fullPath);
+							raytraceRequested = true;
+							std::cout << "SUCCESS: Loaded mesh from: " << fullPath << std::endl;
+						}
+						else
+						{
+							ImGui::TextDisabled(" (Not .obj)");
+						}
+					}
+				}
+			}
+		}
+		catch (const std::filesystem::filesystem_error &e)
+		{
+			ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "ERROR: Cannot access path.");
+			m_currentDir = "assets";
+		}
+	}
+	ImGui::EndChild();
 }
 
 void RaytracerUI::drawTool()
 {
-    ImVec2 screen = ImGui::GetIO().DisplaySize;
+	ImVec2 screen = ImGui::GetIO().DisplaySize;
 
-    float width  = screen.x * 0.25f;
-    float height = screen.y * 0.35f;
+	float width = screen.x * 0.25f;
+	float height = screen.y * 0.35f;
 
-    ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
-    ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
+	ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
+	ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
 
-    ImGuiWindowFlags flags =
-          ImGuiWindowFlags_NoResize
-        | ImGuiWindowFlags_NoCollapse
-        | ImGuiWindowFlags_NoMove
-        | ImGuiWindowFlags_MenuBar;  
+	ImGuiWindowFlags flags =
+	    ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_MenuBar;
 
-    if (ImGui::Begin("File", &opened_fm, flags))
-    {
-        if (ImGui::BeginMenuBar())
-        {
-            if (ImGui::BeginMenu("Settings"))
-            {
-                if (ImGui::MenuItem("Reset Environment"))
-                {
-                    // TODO: reset to default
-                }
+	if (ImGui::Begin("File", &opened_fm, flags))
+	{
+		if (ImGui::BeginMenuBar())
+		{
+			if (ImGui::BeginMenu("Settings"))
+			{
+				if (ImGui::MenuItem("Reset Environment"))
+				{
+					// TODO: reset to default
+				}
 
-                if (ImGui::MenuItem("Exit"))
-                {
-                    m_window->requestClose();
-                }
+				if (ImGui::MenuItem("Exit"))
+				{
+					m_window->requestClose();
+				}
 
-                ImGui::EndMenu();
-            }
+				ImGui::EndMenu();
+			}
 
-            if (ImGui::BeginMenu("Import"))
-            {
-                if (ImGui::MenuItem("Open Scene"))
-                {
-                    // TODO: open scene
-                }
+			if (ImGui::BeginMenu("Import"))
+			{
+				if (ImGui::MenuItem("Open Scene"))
+				{
+					// TODO: open scene
+				}
 
-                if (ImGui::MenuItem("Open Model"))
-                {
-                    m_showModelBrowser = !m_showModelBrowser;
-                }
+				if (ImGui::MenuItem("Open Model"))
+				{
+					m_showModelBrowser = !m_showModelBrowser;
+				}
 
-                ImGui::EndMenu();
-            }
+				ImGui::EndMenu();
+			}
 
-            if (ImGui::BeginMenu("Export"))
-            {
-                if (ImGui::MenuItem("Save Scene"))
-                {
-                    // TODO:save scene
-                }
+			if (ImGui::BeginMenu("Export"))
+			{
+				if (ImGui::MenuItem("Save Scene"))
+				{
+					// TODO:save scene
+				}
 
-                ImGui::EndMenu();
-            }
+				ImGui::EndMenu();
+			}
 
-            ImGui::EndMenuBar();
-        }
+			ImGui::EndMenuBar();
+		}
 
-        ImGui::Separator();
-        ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
 
-        if (m_showModelBrowser)
-        {
-            ImGui::SeparatorText("Model Browser");
-            drawFileBrowser();
-        }
-    }
-    ImGui::End();
+		if (m_showModelBrowser)
+		{
+			ImGui::SeparatorText("Model Browser");
+			drawFileBrowser();
+		}
+	}
+	ImGui::End();
 }
 
 void RaytracerUI::drawSettings()
 {
-    ImVec2 screen = ImGui::GetIO().DisplaySize;
+	ImVec2 screen = ImGui::GetIO().DisplaySize;
 
-    float width  = screen.x * 0.25f;
-    float height = screen.y * 0.65f;
+	float width = screen.x * 0.25f;
+	float height = screen.y * 0.65f;
 
-    ImGui::SetNextWindowPos(ImVec2(0, screen.y * 0.35f), ImGuiCond_Always);
-    ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
+	ImGui::SetNextWindowPos(ImVec2(0, screen.y * 0.35f), ImGuiCond_Always);
+	ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
 
-    ImGuiWindowFlags flags =
-          ImGuiWindowFlags_NoResize
-        | ImGuiWindowFlags_NoCollapse
-        | ImGuiWindowFlags_NoMove;
+	ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove;
 
-    if (ImGui::Begin("Attributes", &opened_settings, flags))
-    {
-        ImGui::SeparatorText("Light");
+	if (ImGui::Begin("Attributes", &opened_settings, flags))
+	{
+		ImGui::SeparatorText("Light");
 
-        ImGui::InputFloat3("Position", lightPosition);
+		ImGui::InputFloat3("Position", lightPosition);
 
-        ImGui::ColorEdit3("Color", lightColor);
-        ImGui::SliderFloat("Intensity", &lightIntensity, 0.0f, 1.0f);
+		ImGui::ColorEdit3("Color", lightColor);
+		ImGui::SliderFloat("Intensity", &lightIntensity, 0.0f, 1.0f);
 
-        ImGui::Spacing();
+		ImGui::Spacing();
 
-        ImGui::SeparatorText("Camera");
+		ImGui::SeparatorText("Camera");
 
-        ImGui::InputFloat3("Position##Cam", cameraPosition);
-        ImGui::SliderFloat("FOV", &cameraFov, 1.0f, 179.0f);
-        ImGui::SliderFloat("Aspect Ratio", &cameraAspect, 0.1f, 4.0f);
+		ImGui::InputFloat3("Position##Cam", cameraPosition);
+		ImGui::SliderFloat("FOV", &cameraFov, 1.0f, 179.0f);
+		ImGui::SliderFloat("Aspect Ratio", &cameraAspect, 0.1f, 4.0f);
 
-        ImGui::Spacing();
+		ImGui::Spacing();
 
-        ImGui::SeparatorText("Render");
+		ImGui::SeparatorText("Render");
 
-        ImGui::SliderInt("SPP", &samplesPerPixel, 64, 1000);
+		ImGui::SliderInt("SPP", &samplesPerPixel, 64, 1000);
 
-        const char* resolutions[] = {
-        "1280 x 720",
-        "1920 x 1080",
-        "2560 x 1440",
-        "3840 x 2160",
-        "Custom"
-        };
+		const char *resolutions[] = { "1280 x 720", "1920 x 1080", "2560 x 1440", "3840 x 2160", "Custom" };
 
-        if (ImGui::Combo("Resolution Preset", &currentPreset, resolutions, IM_ARRAYSIZE(resolutions)))
-        {
-            switch (currentPreset)
-            {
-                case 0: 
-                    renderResolution[0] = 1280;
-                    renderResolution[1] = 720;
-                break;
-                case 1: 
-                    renderResolution[0] = 1920;
-                    renderResolution[1] = 1080;
-                break;
-                case 2: 
-                    renderResolution[0] = 2560;
-                    renderResolution[1] = 1440;
-                break;
-                case 3: 
-                    renderResolution[0] = 3840;
-                    renderResolution[1] = 2160;
-                break;
-                case 4:
-                break;
-            }
-        }
+		if (ImGui::Combo("Resolution Preset", &currentPreset, resolutions, IM_ARRAYSIZE(resolutions)))
+		{
+			switch (currentPreset)
+			{
+			case 0:
+				renderResolution[0] = 1280;
+				renderResolution[1] = 720;
+				break;
+			case 1:
+				renderResolution[0] = 1920;
+				renderResolution[1] = 1080;
+				break;
+			case 2:
+				renderResolution[0] = 2560;
+				renderResolution[1] = 1440;
+				break;
+			case 3:
+				renderResolution[0] = 3840;
+				renderResolution[1] = 2160;
+				break;
+			case 4:
+				break;
+			}
+		}
 
-        if (currentPreset == 4)
-        {
-            ImGui::InputInt2("Custom Resolution", renderResolution);
+		if (currentPreset == 4)
+		{
+			ImGui::InputInt2("Custom Resolution", renderResolution);
 
-            if (renderResolution[0] < 1)   renderResolution[0] = 1;
-            if (renderResolution[1] < 1)   renderResolution[1] = 1;
-        }
-    }
-    ImGui::End();
+			if (renderResolution[0] < 1)
+				renderResolution[0] = 1;
+			if (renderResolution[1] < 1)
+				renderResolution[1] = 1;
+		}
+	}
+	ImGui::End();
 }
 
-void RaytracerUI::drawBar() 
+void RaytracerUI::drawBar()
 {
-    ImVec2 screen = ImGui::GetIO().DisplaySize;
+	ImVec2 screen = ImGui::GetIO().DisplaySize;
 
 	float width = screen.x * 0.75f;
 	float height = screen.y * 0.07f;
 
-	float posY= screen.y - height;
+	float posY = screen.y - height;
 
 	ImGui::SetNextWindowPos(ImVec2(screen.x * 0.25f, posY), ImGuiCond_Always);
 	ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
@@ -320,33 +311,31 @@ void RaytracerUI::drawBar()
 	{
 		ImVec2 avail = ImGui::GetContentRegionAvail();
 
-        ImGui::PushStyleColor(ImGuiCol_Button,        ImVec4(0.20f, 0.20f, 0.20f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.30f, 0.30f, 0.30f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(0.35f, 0.35f, 0.35f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.20f, 0.20f, 0.20f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.30f, 0.30f, 0.30f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.35f, 0.35f, 0.35f, 1.0f));
 
-        const char* label = showRaytraced ? "Back to Preview" : "Raytrace";
-	
- 		 if (ImGui::Button(label, avail))
-        {
-            if (!showRaytraced)
-            {
-                raytraceRequested = true;   
-                showRaytraced     = true;   
-            }
-            else
-            {
-                showRaytraced = false;      
-            }
-        }
+		const char *label = showRaytraced ? "Back to Preview" : "Raytrace";
 
-        if (ImGui::IsItemHovered())
-        {
-            ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
-        }
-        
-        ImGui::PopStyleColor(3);
+		if (ImGui::Button(label, avail))
+		{
+			if (!showRaytraced)
+			{
+				raytraceRequested = true;
+				showRaytraced = true;
+			}
+			else
+			{
+				showRaytraced = false;
+			}
+		}
+
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+		}
+
+		ImGui::PopStyleColor(3);
 	}
-    ImGui::End();
+	ImGui::End();
 }
-
-
