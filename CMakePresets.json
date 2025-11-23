@@ -1,4 +1,4 @@
-﻿{
+{
     "version": 3,
     "configurePresets": [
         {
@@ -28,12 +28,11 @@
                 "CMAKE_CXX_COMPILER": "clang++"
             },
             "condition": {
-            "type": "equals",
-            "lhs": "${hostSystemName}",
-            "rhs": "Darwin"
-        }
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Darwin"
+            }
         },
-
         {
             "name": "x64-debug",
             "displayName": "x64 Debug",
@@ -86,12 +85,20 @@
                 "type": "equals",
                 "lhs": "${hostSystemName}",
                 "rhs": "Windows"
-           }
+            }
         },
         {
             "name": "nmake-debug",
             "displayName": "NMake Debug",
             "inherits": "windows-nmake-base"
+        },
+       {
+            "name": "windows-msvc-debug",
+            "displayName": "Windows MSVC (Debug)",
+            "generator": "Visual Studio 18 2026",
+            "architecture": { "value": "x64" },
+            "binaryDir": "out/build/windows-msvc-debug",
+            "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
         }
     ]
 }
