@@ -79,6 +79,9 @@ private:
 	/* @brief Indicates whether the raytracing window is active. **/
 	bool opened_raytrace_window = false;
 
+	/** @brief Keeps the path of the folder currently displayed in the browsers. */
+	std::filesystem::path m_currentDir = "assets";
+
 	/** @brief Indicates whether the view windows are open. */
 	bool opened_view = true;
 	bool opened_settings = true;
@@ -86,74 +89,52 @@ private:
 	bool opened_camera = true;
 
 	/** @brief Indicates whether the Raytracer application is active. */
-	bool raytracer_active = true;
+	bool raytracer_active = false;
 
-	/** @brief Index of the currently selected scene. */
-	int selection_scene = 0;
+	/** @brief Indicates whether the raytraced image should be shown instead of preview. */
+	bool showRaytraced = false;
 
-	/** @brief Index of the currently selected camera. */
-	int selection_camera = 0;
+	/** * @brief Light position in world coordinates.
+    * @details Format: { x, y, z } */
+	float lightPosition[3] = { 0.0f, 1.0f, 0.0f };
 
-	/** @brief List of available scenes (UI labels). */
-	const char *scenes[3] = { "Scene 1", "Scene 2", "Scene 3" };
+	/** * @brief Light color in linear RGB (0–1).*/
+	float lightColor[3] = { 1.0f, 1.0f, 1.0f };
 
-	/** @brief List of available cameras (UI labels). */
-	const char *cameras[3] = { "Camera 1", "Camera 2", "Camera 3" };
+	/** * @brief Light intensity (0.0–1.0).*/
+	float lightIntensity = 1.0f; // 0..1
 
-	/** @brief RGB color components (0–255) for quick testing. */
-	float red = 255.0f;
-	float green = 255.0f;
-	float blue = 255.0f;
+	/**  * @brief Camera position in world space.*/
+	float cameraPosition[3] = { 0.0f, 0.0f, 5.0f };
 
-	/** @brief Light intensity in percentage (0–100). */
-	float light_procentage = 50.0f;
+	/** * @brief Camera field of view in degrees.*/
+	float cameraFov = 45.0f;
 
-	/** @brief Camera zoom offset. */
-	float zoom = 0.0f;
+	/** * @brief Aspect ratio of the camera (width/height).*/
+	float cameraAspect = 16.0f / 9.0f;
 
-	/** @brief Camera movement along the X-axis. */
-	float x_axis = 0.0f;
+	/** * @brief Samples per pixel for the raytracing image.*/
+	int samplesPerPixel = 16;
 
-	/** @brief Camera movement along the Y-axis. */
-	float y_axis = 0.0f;
+	/** * @brief Render resolution (width, height).*/
+	int renderResolution[2] = { 1920, 1080 };
 
-	/**
-     * @struct MaterialSettings
-     * @brief UI container for adjusting material properties.
-     *
-     * Contains parameters for physically based rendering (PBR) material control.
-     * These values can be directly passed as uniforms to the raytracing shader.
-     */
-	struct MaterialSettings
+	/** * @brief File tab categories in the tool window.*/
+	enum class FileTab
 	{
-		/** @brief Material type options for UI selection. */
-		const char *types[4] = { "Diffuse", "Metal", "Glass", "Emissive" };
+		Settings = 0,
+		Import = 1,
+		Export = 2
+	};
 
-		/** @brief Selected material type (index in types). */
-		int type = 0;
+	/** * @brief Currently selected tab in the file window.*/
+	FileTab m_currentFileTab = FileTab::Settings;
 
-		/** @brief Base color in linear RGB (0–1). */
-		float baseColor[3] = { 1.0f, 0.8f, 0.6f };
+	/** * @brief Shows the model browser in the Import tab.*/
+	bool m_showModelBrowser = false;
 
-		/** @brief Surface roughness (0 = mirror-like, 1 = fully rough). */
-		float roughness = 0.2f;
-
-		/** @brief Metalness factor (0 = dielectric, 1 = metal). */
-		float metallic = 0.0f;
-
-		/** @brief Index of refraction (only relevant for glass materials). */
-		float ior = 1.5f;
-
-		/** @brief Emission strength (only relevant for emissive materials). */
-		float emission = 0.0f;
-
-		/**
-         * @brief Renders the material parameter controls in ImGui.
-         *
-         * @note Must be called within a valid ImGui::Begin()/End() block.
-         */
-		void drawUI();
-	} material;
+	/** @brief Index of currently selected resolution preset (0–4). */
+	int currentPreset = 1;
 
 	/**
      * @brief Draws the main viewport window.
@@ -179,22 +160,13 @@ private:
 
 	/**
      * @brief Draws the bottom bar (status or message area).
-     *
-     * Used for short runtime messages such as “Saving Screenshot…” or “Render Reset”.
      */
-    void drawBar();
+	void drawBar();
 
-    /**
+	/**
      * @brief Draws the folder structure in the Files panel.
      *
      * With this method, you can select the .obj files from the assets folder.
      */
-    void drawFileBrowser();
-
-	/**
-    * @brief Draws the new window which is used to show the raytracing texture.
-    *
-    * Uses the raytracing texture provided by the engine and renders it on the screen.
-    */
-	void drawRaytraceWindow();
+	void drawFileBrowser();
 };

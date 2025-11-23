@@ -1,5 +1,6 @@
 #include "raytracer_ui.h"
 #include "compute_program.h"
+#include "imgui.h"
 #include "render_program.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -40,7 +41,6 @@ void RaytracerUI::draw()
 	drawTool();
 	drawSettings();
 	drawBar();
-	drawRaytraceWindow();
 }
 
 void RaytracerUI::endFrame()
@@ -60,29 +60,90 @@ void RaytracerUI::shutdown()
 void RaytracerUI::drawView()
 {
 	ImVec2 screen = ImGui::GetIO().DisplaySize;
+
+	float barHeight = screen.y * 0.07f;
 	float width = screen.x * 0.75f;
-	float height = screen.y * 0.8f;
+	float height = screen.y - barHeight;
+	ImGuiWindowFlags flags =
+	    ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove;
 
 	ImGui::SetNextWindowPos(ImVec2(screen.x * 0.25f, 0), ImGuiCond_Always);
 	ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
 
-	ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize;
 	if (ImGui::Begin("View", &opened_view, flags))
 	{
-		if (ImGui::Button("Raytrace"))
-		{
-			raytraceRequested = true;
-			opened_raytrace_window = true;
-		}
-
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 0.9f));
+		ImGui::SetCursorPosX(width * 0.5f - 40.0f);
 		ImGui::Text("Preview");
-		ImGui::Separator();
+		ImGui::PopStyleColor();
+		ImGui::Spacing();
 
 		ImVec2 avail = ImGui::GetContentRegionAvail();
 
-		ImGui::Image((ImTextureID)(intptr_t)engine.previewTex, avail, ImVec2(0, 1), ImVec2(1, 0));
+		GLuint texToShow = showRaytraced ? engine.raytraceTex : engine.previewTex;
+
+		ImGui::Image((ImTextureID)(intptr_t)texToShow, avail, ImVec2(0, 1), ImVec2(1, 0));
 	}
 	ImGui::End();
+}
+
+void RaytracerUI::drawFileBrowser()
+{
+	ImGui::Text("Current Path: %s", m_currentDir.string().c_str());
+	ImGui::Separator();
+
+	if (m_currentDir.has_parent_path())
+	{
+		if (ImGui::Button(".."))
+		{
+			m_currentDir = m_currentDir.parent_path();
+		}
+	}
+	if (ImGui::BeginChild("BrowserContent", ImVec2(0, 300), true))
+	{
+		try
+		{
+			for (const auto &entry : std::filesystem::directory_iterator(m_currentDir))
+			{
+				std::string entryName = entry.path().filename().string();
+
+				if (entryName.empty() || entryName[0] == '.')
+					continue;
+				if (entry.is_directory())
+				{
+					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.2f, 0.7f, 1.0f, 1.0f));
+					if (ImGui::Selectable((entryName + "/").c_str()))
+					{
+						m_currentDir /= entry.path().filename();
+					}
+					ImGui::PopStyleColor();
+				}
+				else if (entry.is_regular_file())
+				{
+					if (ImGui::Selectable(entryName.c_str()))
+					{
+						if (entry.path().extension() == ".obj")
+						{
+							std::string fullPath = entry.path().string();
+							scene.mesh = ObjectLoader::loadMesh(fullPath);
+							raytraceRequested = true;
+							std::cout << "SUCCESS: Loaded mesh from: " << fullPath << std::endl;
+						}
+						else
+						{
+							ImGui::TextDisabled(" (Not .obj)");
+						}
+					}
+				}
+			}
+		}
+		catch (const std::filesystem::filesystem_error &e)
+		{
+			ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "ERROR: Cannot access path.");
+			m_currentDir = "assets";
+		}
+	}
+	ImGui::EndChild();
 }
 
 void RaytracerUI::drawTool()
@@ -95,28 +156,63 @@ void RaytracerUI::drawTool()
 	ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
 	ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
 
-	ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_MenuBar;
-	if (ImGui::Begin("File-Manager", &opened_fm, flags))
+	ImGuiWindowFlags flags =
+	    ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_MenuBar;
+
+	if (ImGui::Begin("File", &opened_fm, flags))
 	{
 		if (ImGui::BeginMenuBar())
 		{
-			if (ImGui::BeginMenu("File"))
+			if (ImGui::BeginMenu("Settings"))
 			{
-				if (ImGui::MenuItem("Save Screenshot", "Ctrl+S"))
+				if (ImGui::MenuItem("Reset Environment"))
 				{
-					//TODO: Screenshot von View machen und speichern
+					// TODO: reset to default
 				}
-				if (ImGui::MenuItem("Reset environment", "Ctrl+R"))
-				{
-					//TODO: Reset environment and variables
-				}
-				if (ImGui::MenuItem("Quit", "Ctrl+Q"))
+
+				if (ImGui::MenuItem("Exit"))
 				{
 					m_window->requestClose();
 				}
+
 				ImGui::EndMenu();
 			}
+
+			if (ImGui::BeginMenu("Import"))
+			{
+				if (ImGui::MenuItem("Open Scene"))
+				{
+					// TODO: open scene
+				}
+
+				if (ImGui::MenuItem("Open Model"))
+				{
+					m_showModelBrowser = !m_showModelBrowser;
+				}
+
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::BeginMenu("Export"))
+			{
+				if (ImGui::MenuItem("Save Scene"))
+				{
+					// TODO:save scene
+				}
+
+				ImGui::EndMenu();
+			}
+
 			ImGui::EndMenuBar();
+		}
+
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		if (m_showModelBrowser)
+		{
+			ImGui::SeparatorText("Model Browser");
+			drawFileBrowser();
 		}
 	}
 	ImGui::End();
@@ -132,38 +228,67 @@ void RaytracerUI::drawSettings()
 	ImGui::SetNextWindowPos(ImVec2(0, screen.y * 0.35f), ImGuiCond_Always);
 	ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
 
-	ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize;
-	if (ImGui::Begin("Settings", &opened_settings, flags))
+	ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove;
+
+	if (ImGui::Begin("Attributes", &opened_settings, flags))
 	{
-		ImGui::SeparatorText("Scene");
-		ImGui::Combo("Scene", &selection_scene, scenes, IM_ARRAYSIZE(scenes));
-		ImGui::SeparatorText("Color and illumination");
-		ImGui::SliderFloat("Red", &red, 0.0f, 255.0f);
-		ImGui::SliderFloat("Green", &green, 0.0f, 255.0f);
-		ImGui::SliderFloat("Blue", &blue, 0.0f, 255.0f);
-		ImGui::SliderFloat("Light", &light_procentage, 0.0f, 100.0f);
-		material.drawUI();
-	}
-	ImGui::End();
-}
+		ImGui::SeparatorText("Light");
 
-void RaytracerUI::drawRaytraceWindow()
-{
-	if (!opened_raytrace_window)
-	{
-		return;
-	}
+		ImGui::InputFloat3("Position", lightPosition);
 
-	ImVec2 screen = ImGui::GetIO().DisplaySize;
+		ImGui::ColorEdit3("Color", lightColor);
+		ImGui::SliderFloat("Intensity", &lightIntensity, 0.0f, 1.0f);
 
-	ImGui::SetNextWindowSize(ImVec2(screen.x * 0.5f, screen.y * 0.6f), ImGuiCond_Once);
-	ImGui::SetNextWindowPos(ImVec2(screen.x * 0.3f, screen.y * 0.15f), ImGuiCond_Once);
+		ImGui::Spacing();
 
-	if (ImGui::Begin("Raytraced Result", &opened_raytrace_window))
-	{
-		ImVec2 avail = ImGui::GetContentRegionAvail();
+		ImGui::SeparatorText("Camera");
 
-		ImGui::Image((ImTextureID)(intptr_t)engine.raytraceTex, avail, ImVec2(0, 1), ImVec2(1, 0));
+		ImGui::InputFloat3("Position##Cam", cameraPosition);
+		ImGui::SliderFloat("FOV", &cameraFov, 1.0f, 179.0f);
+		ImGui::SliderFloat("Aspect Ratio", &cameraAspect, 0.1f, 4.0f);
+
+		ImGui::Spacing();
+
+		ImGui::SeparatorText("Render");
+
+		ImGui::SliderInt("SPP", &samplesPerPixel, 64, 1000);
+
+		const char *resolutions[] = { "1280 x 720", "1920 x 1080", "2560 x 1440", "3840 x 2160", "Custom" };
+
+		if (ImGui::Combo("Resolution Preset", &currentPreset, resolutions, IM_ARRAYSIZE(resolutions)))
+		{
+			switch (currentPreset)
+			{
+			case 0:
+				renderResolution[0] = 1280;
+				renderResolution[1] = 720;
+				break;
+			case 1:
+				renderResolution[0] = 1920;
+				renderResolution[1] = 1080;
+				break;
+			case 2:
+				renderResolution[0] = 2560;
+				renderResolution[1] = 1440;
+				break;
+			case 3:
+				renderResolution[0] = 3840;
+				renderResolution[1] = 2160;
+				break;
+			case 4:
+				break;
+			}
+		}
+
+		if (currentPreset == 4)
+		{
+			ImGui::InputInt2("Custom Resolution", renderResolution);
+
+			if (renderResolution[0] < 1)
+				renderResolution[0] = 1;
+			if (renderResolution[1] < 1)
+				renderResolution[1] = 1;
+		}
 	}
 	ImGui::End();
 }
@@ -173,40 +298,44 @@ void RaytracerUI::drawBar()
 	ImVec2 screen = ImGui::GetIO().DisplaySize;
 
 	float width = screen.x * 0.75f;
-	float height = screen.y * 0.2f;
+	float height = screen.y * 0.07f;
 
-	ImGui::SetNextWindowPos(ImVec2(screen.x * 0.25f, screen.y * 0.8f), ImGuiCond_Always);
+	float posY = screen.y - height;
+
+	ImGui::SetNextWindowPos(ImVec2(screen.x * 0.25f, posY), ImGuiCond_Always);
 	ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
 
-	ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize;
+	ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar;
 
-	if (ImGui::Begin("Camera and perspective", &opened_camera, flags))
+	if (ImGui::Begin("Raytracer", &raytracer_active, flags))
 	{
-		ImGui::SeparatorText("Camera");
-		ImGui::Combo("Camera", &selection_camera, cameras, IM_ARRAYSIZE(cameras));
-		ImGui::SeparatorText("Perspective");
-		ImGui::SliderFloat("Zoom", &zoom, 0.0f, 100.0f);
-		ImGui::SeparatorText("Angle");
-		ImGui::SliderFloat("X-Axis", &x_axis, 0.0f, 360.0f);
-		ImGui::SliderFloat("Y-Axis", &y_axis, 0.0f, 360.0f);
+		ImVec2 avail = ImGui::GetContentRegionAvail();
+
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.20f, 0.20f, 0.20f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.30f, 0.30f, 0.30f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.35f, 0.35f, 0.35f, 1.0f));
+
+		const char *label = showRaytraced ? "Back to Preview" : "Raytrace";
+
+		if (ImGui::Button(label, avail))
+		{
+			if (!showRaytraced)
+			{
+				raytraceRequested = true;
+				showRaytraced = true;
+			}
+			else
+			{
+				showRaytraced = false;
+			}
+		}
+
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+		}
+
+		ImGui::PopStyleColor(3);
 	}
 	ImGui::End();
-}
-
-// Material
-void RaytracerUI::MaterialSettings::drawUI()
-{
-	ImGui::SeparatorText("Material");
-
-	ImGui::Combo("Type", &type, types, IM_ARRAYSIZE(types));
-
-	ImGui::ColorEdit3("Base Color", baseColor);
-	ImGui::SliderFloat("Roughness", &roughness, 0.0f, 1.0f);
-	ImGui::SliderFloat("Metallic", &metallic, 0.0f, 1.0f);
-
-	if (type == 2) // Glass
-		ImGui::SliderFloat("IOR", &ior, 1.0f, 2.5f);
-
-	if (type == 3) // Emissive
-		ImGui::SliderFloat("Emission", &emission, 0.0f, 10.0f);
 }
