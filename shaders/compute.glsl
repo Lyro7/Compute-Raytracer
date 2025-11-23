@@ -67,7 +67,9 @@ layout(std140, binding = 0) uniform SceneParams
     GpuSceneParams gpuSceneParams;
 };
 
-bool intersectTriangle(vec3 orig, vec3 dir, vec3 v0, vec3 v1, vec3 v2, out float tHit)
+//Reimplementation of the algorithm of Möller and Trumbore
+//Möller, T., & Trumbore, B. (1997). Fast, minimum storage ray-triangle intersection. Journal of Graphics Tools, 2(1), 21-28.
+bool intersectTriangle(vec3 orig, vec3 dir, vec3 v0, vec3 v1, vec3 v2, out float tHit, out vec2 hit)
 {
     const float EPSILON = 1e-3;
 
@@ -93,12 +95,13 @@ bool intersectTriangle(vec3 orig, vec3 dir, vec3 v0, vec3 v1, vec3 v2, out float
         return false;
 
     float tTemp = dot(e2, q) * invDet;
-    if (tTemp > EPSILON) {
-        tHit = tTemp;
-        return true;
+    if (tTemp < EPSILON) {
+        return false;
     }
 
-    return false;
+    hit = vec2(u, v);
+    tHit = tTemp;
+    return true;
 }
 
 void main() 
@@ -122,7 +125,7 @@ void main()
     vec3 target = lowerLeft + uv.x * horizontal + uv.y * vertical;
     vec3 dir = normalize(target - origin);
 
-    bool hit = false;
+    bool isHit = false;
 
     // Corresponds to "t" from the term: intersection = origin + t * direction
     // Big initial value to guarantee that the first intersection is closer than the inital value
@@ -145,17 +148,20 @@ void main()
         //Saves the distance "t" (intersection = origin + t * direction) to the intersection calculated by intersectTriangle()
         float distanceToIntersection;
 
-        if (intersectTriangle(origin, dir, v0, v1, v2, distanceToIntersection))
+        //UV coordinates inside the triangle of the hitpoint 
+        vec2 hitPoint;
+
+        if (intersectTriangle(origin, dir, v0, v1, v2, distanceToIntersection, hitPoint))
         {
             if (distanceToIntersection < distanceToClosestIntersection) 
             {
                 distanceToClosestIntersection = distanceToIntersection;
-                hit = true;
+                isHit = true;
             }
         }
     }
 
-    if (hit)
+    if (isHit)
         imageStore(outputImage, pixel, vec4(1.0, 1.0, 1.0, 1.0));
     else
         imageStore(outputImage, pixel, vec4(0.0, 0.0, 0.0, 1.0));
