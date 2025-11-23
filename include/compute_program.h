@@ -13,8 +13,10 @@
  * This class handles the creation of the compute shader. It passes needed raytracing data
  * from the GPU to the CPU via buffers and dispatches the work of the compute shader.
  */
-struct ComputeProgram
+class ComputeProgram
 {
+public:
+
 	/** ID of the shader program . */
 	GLuint ID = 0;
 
@@ -46,7 +48,7 @@ struct ComputeProgram
 	 * @param[in] width The Output width in pixels.
 	 * @param[in] mesh The Mesh to upload to the shader.
 	 * @param[in] gpuParams the GpuParams which are defined by the user, containing a fixed camera and light.
-	 * @param[in] tex The output texture on which the shader will work on.
+	 * @param[out] tex The output texture on which the shader will work on.
 	 */
 	ComputeProgram(const GLsizei height, const GLsizei width, Mesh &mesh, GpuSceneParams &gpuParams, GLuint &tex);
 

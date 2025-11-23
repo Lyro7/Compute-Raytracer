@@ -7,6 +7,7 @@ Vertex::Vertex(const glm::vec4 &pos, const glm::vec4 &normal, const glm::vec2 &u
     : pos(pos)
     , normal(normal)
     , uv(uv)
+    , padding()
 {
     // Basic member initialization
 }

@@ -3,11 +3,11 @@
 #include "raytracer_engine.h"
 #include <iostream>
 
-RaytracerEngine::RaytracerEngine(const GLsizei width, const GLsizei height, Scene &sc)
+RaytracerEngine::RaytracerEngine(const GLsizei height, const GLsizei width, Scene &sc)
     : _scene(sc)
     , _gpuParams()
-	, _compute(width, height, sc.mesh, _gpuParams, raytraceTex)
-    , _preview(width, height, sc.mesh, _gpuParams, previewTex) 
+    , _compute(height, width, sc.mesh, _gpuParams, raytraceTex)
+    , _preview(height, width, sc.mesh, _gpuParams, previewTex)
 {
 	// Init raytracing
 	GLuint computeShader = _compute.createComputeShader("shaders/compute.glsl");
