@@ -67,8 +67,8 @@ layout(std140, binding = 0) uniform SceneParams
     GpuSceneParams gpuSceneParams;
 };
 
-//Reimplementation of the algorithm of Möller and Trumbore
-//Möller, T., & Trumbore, B. (1997). Fast, minimum storage ray-triangle intersection. Journal of Graphics Tools, 2(1), 21-28.
+//Reimplementation of the algorithm of Mï¿½ller and Trumbore
+//Mï¿½ller, T., & Trumbore, B. (1997). Fast, minimum storage ray-triangle intersection. Journal of Graphics Tools, 2(1), 21-28.
 bool intersectTriangle(vec3 orig, vec3 dir, vec3 v0, vec3 v1, vec3 v2, out float tHit, out vec2 hit)
 {
     const float EPSILON = 1e-3;
@@ -162,7 +162,15 @@ void main()
     }
 
     if (isHit)
-        imageStore(outputImage, pixel, vec4(1.0, 1.0, 1.0, 1.0));
+    {
+        vec3 uiColor = gpuSceneParams.light.color.rgb;
+
+        imageStore(outputImage, pixel, vec4(uiColor, 1.0));
+    }
+    
     else
+    {
         imageStore(outputImage, pixel, vec4(0.0, 0.0, 0.0, 1.0));
+    }
+    
 }
