@@ -8,6 +8,7 @@
 #include <filesystem>
 #include <iostream>
 #include "object_loader.h"
+#include "../include/scene.h"
 
 RaytracerUI::RaytracerUI(RaytracerEngine &engine, Scene &scene)
     : engine(engine)
@@ -234,18 +235,46 @@ void RaytracerUI::drawSettings()
 	{
 		ImGui::SeparatorText("Light");
 
-		ImGui::InputFloat3("Position", lightPosition);
+		bool somethingChanged = false;
 
-		ImGui::ColorEdit3("Color", lightColor);
-		ImGui::SliderFloat("Intensity", &lightIntensity, 0.0f, 1.0f);
+		if (ImGui::DragFloat3("Position##Light", &scene.light.position.x, 0.1f)) 
+		{
+            somethingChanged = true;
+        }
+
+		if (ImGui::ColorEdit3("Color", &scene.light.color.x)) 
+		{
+            somethingChanged = true;
+        }
+
+		if (ImGui::SliderFloat("Intensity", &scene.light.intensity, 0.0f, 5.0f)) 
+		{
+            somethingChanged = true;
+        }
 
 		ImGui::Spacing();
 
 		ImGui::SeparatorText("Camera");
 
-		ImGui::InputFloat3("Position##Cam", cameraPosition);
-		ImGui::SliderFloat("FOV", &cameraFov, 1.0f, 179.0f);
-		ImGui::SliderFloat("Aspect Ratio", &cameraAspect, 0.1f, 4.0f);
+		glm::vec3 tempCamPos = glm::vec3(scene.camera.getOrigin());
+        float tempFov = scene.camera.getFov();
+
+		if (ImGui::DragFloat3("Position##Cam", &tempCamPos.x, 0.1f)) 
+        {
+            scene.camera.setOrigin(tempCamPos);
+            somethingChanged = true;
+        }
+
+		if (ImGui::SliderFloat("FOV", &tempFov, 1.0f, 179.0f)) 
+        {
+            scene.camera.setFov(tempFov);
+            somethingChanged = true;
+        }
+
+		if (somethingChanged) 
+		{
+            raytraceRequested = true;
+        }
 
 		ImGui::Spacing();
 
