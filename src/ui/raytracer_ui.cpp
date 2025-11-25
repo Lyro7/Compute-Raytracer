@@ -42,6 +42,12 @@ void RaytracerUI::draw()
 	drawTool();
 	drawSettings();
 	drawBar();
+
+    if (m_showModelBrowser)
+    {
+        drawFileExplorerPopup();
+    }
+    
 }
 
 void RaytracerUI::endFrame()
@@ -88,64 +94,6 @@ void RaytracerUI::drawView()
 	ImGui::End();
 }
 
-void RaytracerUI::drawFileBrowser()
-{
-	ImGui::Text("Current Path: %s", m_currentDir.string().c_str());
-	ImGui::Separator();
-
-	if (m_currentDir.has_parent_path())
-	{
-		if (ImGui::Button(".."))
-		{
-			m_currentDir = m_currentDir.parent_path();
-		}
-	}
-	if (ImGui::BeginChild("BrowserContent", ImVec2(0, 300), true))
-	{
-		try
-		{
-			for (const auto &entry : std::filesystem::directory_iterator(m_currentDir))
-			{
-				std::string entryName = entry.path().filename().string();
-
-				if (entryName.empty() || entryName[0] == '.')
-					continue;
-				if (entry.is_directory())
-				{
-					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.2f, 0.7f, 1.0f, 1.0f));
-					if (ImGui::Selectable((entryName + "/").c_str()))
-					{
-						m_currentDir /= entry.path().filename();
-					}
-					ImGui::PopStyleColor();
-				}
-				else if (entry.is_regular_file())
-				{
-					if (ImGui::Selectable(entryName.c_str()))
-					{
-						if (entry.path().extension() == ".obj")
-						{
-							std::string fullPath = entry.path().string();
-							scene.mesh = ObjectLoader::loadMesh(fullPath);
-							raytraceRequested = true;
-							std::cout << "SUCCESS: Loaded mesh from: " << fullPath << std::endl;
-						}
-						else
-						{
-							ImGui::TextDisabled(" (Not .obj)");
-						}
-					}
-				}
-			}
-		}
-		catch (const std::filesystem::filesystem_error &e)
-		{
-			ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "ERROR: Cannot access path.");
-			m_currentDir = "assets";
-		}
-	}
-	ImGui::EndChild();
-}
 
 void RaytracerUI::drawTool()
 {
@@ -188,7 +136,7 @@ void RaytracerUI::drawTool()
 
 				if (ImGui::MenuItem("Open Model"))
 				{
-					m_showModelBrowser = !m_showModelBrowser;
+					m_showModelBrowser = true;
 				}
 
 				ImGui::EndMenu();
@@ -209,14 +157,90 @@ void RaytracerUI::drawTool()
 
 		ImGui::Separator();
 		ImGui::Spacing();
-
-		if (m_showModelBrowser)
-		{
-			ImGui::SeparatorText("Model Browser");
-			drawFileBrowser();
-		}
-	}
+    }
 	ImGui::End();
+}
+
+void RaytracerUI::drawFileExplorerPopup()
+{
+
+    ImVec2 screen = ImGui::GetIO().DisplaySize;
+
+	float width = screen.x * 0.25f;
+	float height = screen.y * 0.55f;
+
+	ImGui::SetNextWindowPos(ImVec2(screen.x * 0.25f, 0), ImGuiCond_Always);
+	ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Once);
+
+	ImGuiWindowFlags flags =
+	    ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar;
+    
+    if (ImGui::Begin("Open Model", &m_showModelBrowser, flags)) 
+    {
+         ImGui::Text("Current Path: %s", m_currentDir.string().c_str());
+        ImGui::Separator();
+
+        if (m_currentDir.has_parent_path())
+        {
+            if (ImGui::Button(".."))
+            {
+                m_currentDir = m_currentDir.parent_path();
+            }
+        }
+        if (ImGui::BeginChild("BrowserContent", ImVec2(0, 250), true))
+        {
+            try
+            {
+                for (const auto &entry : std::filesystem::directory_iterator(m_currentDir))
+                {
+                    std::string entryName = entry.path().filename().string();
+
+                    if (entryName.empty() || entryName[0] == '.')
+                        continue;
+
+                    if (entry.is_directory())
+                    {
+                        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.2f, 0.7f, 1.0f, 1.0f));
+                        if (ImGui::Selectable((entryName + "/").c_str()))
+                        {
+                            m_currentDir /= entry.path().filename();
+                        }
+                        ImGui::PopStyleColor();
+                    }
+                    else if (entry.is_regular_file())
+                    {
+                        if (ImGui::Selectable(entryName.c_str()))
+                        {
+                            if (entry.path().extension() == ".obj")
+                            {
+                                std::string fullPath = entry.path().string();
+                                scene.mesh = ObjectLoader::loadMesh(fullPath);
+                                raytraceRequested = true;
+                                std::cout << "SUCCESS: Loaded mesh from: " << fullPath << std::endl;
+                                m_showModelBrowser = false; 
+                            }
+                            else
+                            {
+                                std::cout << "WARNING: File is not Allowed! " << std::endl;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (const std::filesystem::filesystem_error &)
+            {
+                ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "ERROR: Cannot access path.");
+                m_currentDir = "C:\\";
+            }
+            ImGui::EndChild();
+        }
+            
+        if (ImGui::Button("Close")) {
+            m_showModelBrowser = false;
+        }
+
+    }
+    ImGui::End();
 }
 
 void RaytracerUI::drawSettings()
@@ -233,7 +257,27 @@ void RaytracerUI::drawSettings()
 
 	if (ImGui::Begin("Attributes", &opened_settings, flags))
 	{
+        ImGui::SeparatorText("Object");
+
+        // Hardcoded Test-Daten, damit man im UI etwas sieht
+static float testObjectPos[3] = { 1.0f, 2.0f, 3.0f };
+static float testObjectRot[3] = { 0.0f, 45.0f, 0.0f };
+
+// Position
+ImGui::Text("ID 1");
+ImGui::DragFloat3("##ObjectPos", testObjectPos, 0.1f, -100.0f, 100.0f, "%.2f");
+ImGui::SameLine();
+ImGui::Text("Position");
+
+// Rotation als Slider
+
+ImGui::SliderFloat3("##ObjectRotSlider", testObjectRot, -360.0f, 360.0f, "%.1f°");
+ImGui::SameLine();
+ImGui::Text("Rotation");
+
+
 		ImGui::SeparatorText("Light");
+        ImGui::Text("ID 1");
 
 		bool somethingChanged = false;
 
