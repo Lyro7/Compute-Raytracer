@@ -14,7 +14,7 @@ int main()
 	Window window(1280, 720, "Raytracer");
 
     Scene scene;
-	scene.mesh = ObjectLoader::loadMesh("assets/models/sphere.obj");
+	scene.mesh = ObjectLoader::loadMesh("assets/models/NormalCar2.obj");
     // Base raytrace resolution
 	const GLsizei width = 1920;
 	const GLsizei height = 1080;
