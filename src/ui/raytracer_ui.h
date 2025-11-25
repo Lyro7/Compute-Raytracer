@@ -24,9 +24,6 @@ public:
 	/** @brief Destroys the RaytracerUI object. */
 	~RaytracerUI() = default;
 
-	/** @brief raytraceRequested */
-	bool raytraceRequested = false;
-
 	RaytracerUI(RaytracerEngine &engine, Scene &scene);
 
 	/**
@@ -76,11 +73,11 @@ private:
 	/** @brief Reference to the shared scene. */
 	Scene &scene;
 
-	/* @brief Indicates whether the raytracing window is active. **/
-	bool opened_raytrace_window = false;
+	/** @brief raytraceRequested */
+	bool raytraceRequested = false;
 
-	/** @brief Keeps the path of the folder currently displayed in the browsers. */
-	std::filesystem::path m_currentDir = "assets";
+	/** @brief Flag to show/hide the separate asset browser popup. */
+    bool m_showFileExplorer = false;
 
 	/** @brief Indicates whether the view windows are open. */
 	bool opened_view = true;
@@ -88,11 +85,20 @@ private:
 	bool opened_fm = true;
 	bool opened_camera = true;
 
+	/* @brief Indicates whether the raytracing window is active. **/
+	bool opened_raytrace_window = false;
+
 	/** @brief Indicates whether the Raytracer application is active. */
 	bool raytracer_active = false;
 
 	/** @brief Indicates whether the raytraced image should be shown instead of preview. */
 	bool showRaytraced = false;
+
+	/** @brief Keeps the path of the folder currently displayed in the browsers. */
+	std::filesystem::path m_currentDir = "C:\\";
+
+	/** * @brief Shows the model browser in the Import tab.*/
+	bool m_showModelBrowser = false;
 
 	/** * @brief Light position in world coordinates.
     * @details Format: { x, y, z } */
@@ -119,6 +125,9 @@ private:
 	/** * @brief Render resolution (width, height).*/
 	int renderResolution[2] = { 1920, 1080 };
 
+	/** @brief Index of currently selected resolution preset (0–4). */
+	int currentPreset = 1;
+
 	/** * @brief File tab categories in the tool window.*/
 	enum class FileTab
 	{
@@ -129,12 +138,6 @@ private:
 
 	/** * @brief Currently selected tab in the file window.*/
 	FileTab m_currentFileTab = FileTab::Settings;
-
-	/** * @brief Shows the model browser in the Import tab.*/
-	bool m_showModelBrowser = false;
-
-	/** @brief Index of currently selected resolution preset (0–4). */
-	int currentPreset = 1;
 
 	/**
      * @brief Draws the main viewport window.
@@ -162,11 +165,9 @@ private:
      * @brief Draws the bottom bar (status or message area).
      */
 	void drawBar();
-
-	/**
-     * @brief Draws the folder structure in the Files panel.
-     *
-     * With this method, you can select the .obj files from the assets folder.
+    
+    /**
+     * @brief Draws the separate, modal file explorer popup window.
      */
-	void drawFileBrowser();
+    void drawFileExplorerPopup();
 };
