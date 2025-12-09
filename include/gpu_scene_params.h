@@ -41,6 +41,9 @@ struct GpuLightParams
 
 	/** Light color (and optional intensity factor). */
 	glm::vec4 color;
+
+	/** Light intensity. */
+	float intensity;
 };
 
 /**
