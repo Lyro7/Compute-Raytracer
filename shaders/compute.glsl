@@ -30,6 +30,7 @@ struct GpuCameraParams{
 struct GpuLightParams{
 	vec4 position;
 	vec4 color;
+    float intensity;
 };
 
 struct GpuSceneParams
@@ -71,7 +72,7 @@ layout(std140, binding = 0) uniform SceneParams
 //M�ller, T., & Trumbore, B. (1997). Fast, minimum storage ray-triangle intersection. Journal of Graphics Tools, 2(1), 21-28.
 bool intersectTriangle(vec3 orig, vec3 dir, vec3 v0, vec3 v1, vec3 v2, out float tHit, out vec2 hit)
 {
-    const float EPSILON = 1e-3;
+    const float EPSILON = 1e-6;
 
     vec3 e1 = v1 - v0;
     vec3 e2 = v2 - v0;
@@ -104,6 +105,40 @@ bool intersectTriangle(vec3 orig, vec3 dir, vec3 v0, vec3 v1, vec3 v2, out float
     return true;
 }
 
+bool isInShadow(vec3 hitPos, vec3 lightPos, uint ignoreTri)
+{
+    vec3 shadowDir = normalize(lightPos - hitPos);
+    float maxDist = length(lightPos - hitPos);
+
+    uint indexCount = indices.length();
+
+    for (uint i = 0; i < indexCount; i += 3)
+    {
+        if (i == ignoreTri) continue;
+    
+        uint i0 = indices[i + 0];
+        uint i1 = indices[i + 1];
+        uint i2 = indices[i + 2];
+
+        vec3 v0 = vertices[i0].pos.xyz;
+        vec3 v1 = vertices[i1].pos.xyz;
+        vec3 v2 = vertices[i2].pos.xyz;
+
+        float tHitShadow;
+        vec2 dummy;
+
+        //Send a ray from hitpoint to light source. Origin of the ray is moved a bit in the direction of the light source to prevent self-intersection.
+        if (intersectTriangle(hitPos + shadowDir * 1e-6, shadowDir, v0, v1, v2, tHitShadow, dummy))
+        {
+            if (tHitShadow > 0.0 && tHitShadow < maxDist)
+            {
+                return true; //in shadow
+            }
+        }
+    }
+    return false; // not in shadow
+}
+
 void main() 
 {
     ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
@@ -130,6 +165,7 @@ void main()
     // Corresponds to "t" from the term: intersection = origin + t * direction
     // Big initial value to guarantee that the first intersection is closer than the inital value
     float distanceToClosestIntersection = 1e30;
+    uint hitTri = uint(-1);
 
     uint indexCount = indices.length();
 
@@ -156,21 +192,28 @@ void main()
             if (distanceToIntersection < distanceToClosestIntersection) 
             {
                 distanceToClosestIntersection = distanceToIntersection;
+                hitTri = i;
                 isHit = true;
             }
         }
     }
 
+    vec3 color = vec3(0.0, 0.0, 0.0); 
+
     if (isHit)
     {
-        vec3 uiColor = gpuSceneParams.light.color.rgb;
+        vec3 hitPos = origin + dir * distanceToClosestIntersection;
+        vec3 lightPos = gpuSceneParams.light.position.xyz;
 
-        imageStore(outputImage, pixel, vec4(uiColor, 1.0));
+        if (!isInShadow(hitPos, lightPos, hitTri))
+        {
+            float distanceToLight = length(lightPos - hitPos);
+            float attenuation = 1.0 / (distanceToLight * distanceToLight);
+            float intensity = gpuSceneParams.light.intensity;
+
+            color = gpuSceneParams.light.color.rgb * intensity * attenuation;
+        }
     }
-    
-    else
-    {
-        imageStore(outputImage, pixel, vec4(0.0, 0.0, 0.0, 1.0));
-    }
-    
+
+    imageStore(outputImage, pixel, vec4(color, 1.0));
 }

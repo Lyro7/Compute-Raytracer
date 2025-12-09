@@ -8,5 +8,6 @@ void GpuSceneParams::updateGpuSceneParams(Scene &scene)
 	camera.horizontal = scene.camera.getHorizontal();
 	camera.lowerLeft = scene.camera.getLowerLeftCorner();
 	light.position = scene.light.position;
-	light.color = scene.light.color * scene.light.intensity;
+	light.color = scene.light.color;
+	light.intensity = scene.light.intensity;
 }
