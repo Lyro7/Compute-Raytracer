@@ -145,7 +145,9 @@ void main()
     ivec2 size  = imageSize(outputImage);
 
     if (pixel.x < 0 || pixel.y < 0 || pixel.x >= size.x || pixel.y >= size.y)
+    {
         return;
+    }
 
     // Normalized uv in [0,1]
     vec2 uv = (vec2(pixel) + 0.5) / vec2(size);
@@ -231,7 +233,7 @@ void main()
     uint matId = materialIndices[triId];
     Material mat = materials[matId];
 
-    vec3 ambient = mat.albedo.rgb * 0.08;      // Umgebung
+    vec3 ambient = mat.albedo.rgb * 0.08;     
     vec3 diffuse = mat.albedo.rgb * radiance * NdotL;
 
     vec3 V = normalize(origin - hitPos);
