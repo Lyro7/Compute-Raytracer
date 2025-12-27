@@ -41,5 +41,7 @@ struct Scene
 
 	/** Default constructor initializing the scene with sensible defaults. */
 	Scene();
+
+	void fitCameraToMesh(float aspectRatio);
 };
 
