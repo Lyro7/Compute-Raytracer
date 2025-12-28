@@ -281,17 +281,17 @@ ImGui::Text("Rotation");
 
 		bool somethingChanged = false;
 
-		if (ImGui::DragFloat3("Position##Light", &scene.light.position.x, 0.1f)) 
+		if (ImGui::DragFloat3("Position##Light", &scene.light.position.x, 0.1f, -20.0f, 20.0f))
 		{
-            somethingChanged = true;
-        }
+		    somethingChanged = true;
+		}
 
 		if (ImGui::ColorEdit3("Color", &scene.light.color.x)) 
 		{
             somethingChanged = true;
         }
 
-		if (ImGui::SliderFloat("Intensity", &scene.light.intensity, 0.0f, 5.0f)) 
+		if (ImGui::SliderFloat("Intensity", &scene.light.intensity, 0.0f, 100.0f)) 
 		{
             somethingChanged = true;
         }
