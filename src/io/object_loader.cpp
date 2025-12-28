@@ -9,7 +9,7 @@
 
 static glm::vec4 getPosition(const tinyobj::attrib_t& attribute, tinyobj::index_t index)
 {
-	glm::vec4 pos{ 0, 0, 0, 1 };
+	glm::vec4 pos{ 0.0f, 0.0f, 0.0f, 1.0f };
 	const auto &pIndex = index.vertex_index;
 
 	if (pIndex >= 0)
