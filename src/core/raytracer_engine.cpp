@@ -6,7 +6,7 @@
 RaytracerEngine::RaytracerEngine(const GLsizei height, const GLsizei width, Scene &sc)
     : _scene(sc)
     , _gpuParams()
-    , _compute(height, width, sc.mesh, _gpuParams, raytraceTex)
+    , _compute(height, width, sc.mesh, raytraceTex)
     , _preview(height, width, sc.mesh, _gpuParams, previewTex)
 {
 	// Init raytracing
