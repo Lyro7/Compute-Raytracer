@@ -4,7 +4,6 @@
 #include <string>
 #include <array>
 #include "scene.h"
-#include "gpu_scene_params.h"
 
 /**
  * @class ComputeProgram
@@ -47,10 +46,9 @@ public:
 	 * @param[in] height The Output height in pixels.
 	 * @param[in] width The Output width in pixels.
 	 * @param[in] mesh The Mesh to upload to the shader.
-	 * @param[in] gpuParams the GpuParams which are defined by the user, containing a fixed camera and light.
 	 * @param[out] tex The output texture on which the shader will work on.
 	 */
-	ComputeProgram(const GLsizei height, const GLsizei width, Mesh &mesh, GpuSceneParams &gpuParams, GLuint &tex);
+	ComputeProgram(const GLsizei height, const GLsizei width, Mesh &mesh, GLuint &tex);
 
 	/**
 	 * @brief Loads and compiles a compute shader from file.
@@ -89,9 +87,6 @@ private:
 
 	/** Output width in pixels. */
 	GLsizei _width;
-
-	/** gpuParams containing user specifications for light and camera. */
-	GpuSceneParams _gpuParams;
 
 	/* Mesh containing geometry and material data */
 	Mesh _mesh;

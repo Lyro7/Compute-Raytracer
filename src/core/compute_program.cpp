@@ -1,15 +1,13 @@
 #include "compute_program.h"
-#include "object_loader.h"
 #include <fstream>
 #include <glad/glad.h>
 #include <iostream>
 #include <sstream>
 
-ComputeProgram::ComputeProgram(const GLsizei height, const GLsizei width, Mesh &mesh, GpuSceneParams &gpuParams, GLuint &tex)
+ComputeProgram::ComputeProgram(const GLsizei height, const GLsizei width, Mesh &mesh, GLuint &tex)
     : _height(height)
     , _width(width)
     , _mesh(mesh)
-    , _gpuParams(gpuParams) 
     , tex(tex)
 {
 	initRaytraceResources();
