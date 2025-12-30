@@ -42,10 +42,6 @@ int main()
                     zip,
                     "assets/scenes/example.scene.json"
                 );
-
-                // ⚠️ Nächster Schritt:
-                // engine.applyScene(scene);
-                // ui.applyScene(scene);
             }
         }
 
