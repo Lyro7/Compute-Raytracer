@@ -1,11 +1,11 @@
 #pragma once
 
 #include "scene.h"
+#include "zip_reader.h"
 #include <string>
 #include <vector>
 #include <map>
 #include <variant>
-#include <iostream>
 
 struct JsonValue;
 
@@ -83,7 +83,7 @@ public:
 	 */
 	JsonValue parse();
 };
-
+class ZipReader;
 /**
  * @class SceneLoader
  * @brief Responsible for converting raw JSON data into C++ Scene objects.
@@ -100,8 +100,19 @@ public:
 	 */
 	Scene loadScene(const std::string &jsonString);
 
+	void setZip(ZipReader *zip)
+	{
+		m_zip = zip;
+	}
+
+	void setSceneRoot(const std::string& root) { m_sceneRoot = root; }
+
+
 private:
 	// --- Extraction / Mapping Methods ---
+	ZipReader *m_zip = nullptr;
+
+	std::string m_sceneRoot;
 
 	/** @brief Extracts light properties (position, color, intensity). */
 	Light extractLight(const JsonValue &json);

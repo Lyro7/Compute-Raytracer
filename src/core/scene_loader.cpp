@@ -1,11 +1,13 @@
 #include "scene_loader.h"
-#include "object_loader.h" // Dein Header für den Mesh Loader
+#include "object_loader.h"
 #include <stdexcept>
 #include <cmath>
 #include <cctype>
 #include <iostream>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <filesystem>
+#include "zip_reader.h"
 
 // =============================================================================
 // JSON CORE IMPLEMENTIERUNG
@@ -255,7 +257,7 @@ Camera SceneLoader::extractCamera(const JsonValue &json)
 	if (json.has("up"))
 		up = parseVec3(json.asObj()->at("up"));
 
-	// Resolution lesen (für Aspect Ratio)
+	// Resolution lesen (fï¿½r Aspect Ratio)
 	if (json.has("resolution"))
 	{
 		float w = 1920.0f, h = 1080.0f;
@@ -278,7 +280,7 @@ Camera SceneLoader::extractCamera(const JsonValue &json)
 			aspectRatio = w / h;
 	}
 
-	// Pane lesen (für FOV Berechnung - Notwendige Konvertierung für Constructor Interface)
+	// Pane lesen (fï¿½r FOV Berechnung - Notwendige Konvertierung fï¿½r Constructor Interface)
 	float dist = getFloatRobust(json, "pane_distance", "paneDistance");
 	float width = getFloatRobust(json, "pane_width", "paneWidth");
 
@@ -292,39 +294,50 @@ Camera SceneLoader::extractCamera(const JsonValue &json)
 	return Camera(lookFrom, lookAt, up, fovDeg, aspectRatio, nearPlane, farPlane);
 }
 
-Mesh SceneLoader::extractMesh(const JsonValue &json)
+Mesh SceneLoader::extractMesh(const JsonValue& json)
 {
-	// 1. Pfad einlesen
-	std::string path = "";
-	if (json.has("path"))
-	{
-		path = json.asObj()->at("path").asString();
-	}
+    std::string path;
+    if (json.has("path"))
+        path = json.asObj()->at("path").asString();
 
-	// 2. Mesh Laden (Delegation an ObjectLoader)
-	Mesh mesh = ObjectLoader::loadMesh(path);
+    std::cout << "Loading OBJ: " << path << "\n";
 
-	// 3. Weitere Werte nur "einlesen" (in lokale Variablen, wie gewünscht)
-	// Die Logik zur Anwendung (Backing/Matrix) wurde entfernt.
+    // zipPath = das, was wirklich im ZIP liegt
+    std::string zipPath = path;
+    if (!m_sceneRoot.empty())
+    {
+        // nur wenn nicht absolut und nicht schon mit root beginnt
+        if (zipPath.rfind(m_sceneRoot, 0) != 0 &&
+            zipPath.find(':') == std::string::npos &&
+            !zipPath.empty() && zipPath[0] != '/')
+        {
+            zipPath = m_sceneRoot + zipPath; // z.B. "scene1/obj/cube_bare.obj"
+        }
+    }
 
-	std::string name = "unknown";
-	if (json.has("name"))
-		name = json.asObj()->at("name").asString();
+    std::cout << "ZIP lookup: " << zipPath << "\n";
 
-	glm::vec3 translation(0.0f);
-	if (json.has("translation"))
-		translation = parseVec3(json.asObj()->at("translation"));
+    Mesh mesh;
 
-	glm::vec3 rotation(0.0f);
-	if (json.has("rotation"))
-		rotation = parseVec3(json.asObj()->at("rotation"));
+    // âœ… HIER: mit zipPath checken + lesen
+    if (m_zip && m_zip->has(zipPath))
+    {
+        std::cout << "  source: ZIP\n";
+        auto bytes = m_zip->readBytes(zipPath);
+        mesh = ObjectLoader::loadMeshFromMemory(bytes, path);
+    }
+    else
+    {
+        std::cout << "  source: DISK\n";
+        std::cout << "  CWD: " << std::filesystem::current_path() << "\n";
+        std::cout << "  exists: " << std::filesystem::exists(path) << "\n";
+        mesh = ObjectLoader::loadMesh(path);
+    }
 
-	glm::vec3 scale(1.0f);
-	if (json.has("scale"))
-		scale = parseVec3(json.asObj()->at("scale"), true);
-
-	return mesh;
+    std::cout << "mesh verts=" << mesh.vertices.size() << " idx=" << mesh.indices.size() << "\n";
+    return mesh;
 }
+
 
 // -----------------------------------------------------------------------------
 // PRINT & LOAD METHODS
