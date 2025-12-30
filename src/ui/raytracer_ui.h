@@ -63,6 +63,16 @@ public:
      */
 	void shutdown();
 
+	bool consumeZipLoadRequest(std::string &outPath)
+	{
+		if (!m_requestLoadZip)
+			return false;
+		outPath = m_requestedZipPath;
+		m_requestedZipPath.clear();
+		m_requestLoadZip = false;
+		return !outPath.empty();
+	}
+
 private:
 	/** @brief Pointer to the active window. Ownership remains external. */
 	Window *m_window = nullptr;
@@ -77,7 +87,7 @@ private:
 	bool raytraceRequested = false;
 
 	/** @brief Flag to show/hide the separate asset browser popup. */
-    bool m_showFileExplorer = false;
+	bool m_showFileExplorer = false;
 
 	/** @brief Indicates whether the view windows are open. */
 	bool opened_view = true;
@@ -128,6 +138,21 @@ private:
 	/** @brief Index of currently selected resolution preset (0–4). */
 	int currentPreset = 1;
 
+	std::string m_requestedZipPath;
+
+	bool m_requestLoadZip = false;
+
+	/** @brief Determines what the file explorer should load (models or scene zip). */
+	enum class BrowserMode
+	{
+		None,
+		Model,
+		SceneZip
+	};
+
+	/** @brief Current mode of the file explorer popup. */
+	BrowserMode m_browserMode = BrowserMode::None;
+
 	/** * @brief File tab categories in the tool window.*/
 	enum class FileTab
 	{
@@ -165,9 +190,9 @@ private:
      * @brief Draws the bottom bar (status or message area).
      */
 	void drawBar();
-    
-    /**
+
+	/**
      * @brief Draws the separate, modal file explorer popup window.
      */
-    void drawFileExplorerPopup();
+	void drawFileExplorerPopup();
 };

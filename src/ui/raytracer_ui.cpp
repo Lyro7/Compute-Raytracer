@@ -9,6 +9,7 @@
 #include <iostream>
 #include "object_loader.h"
 #include "../include/scene.h"
+#include "../utils/file_dialog.h"
 
 RaytracerUI::RaytracerUI(RaytracerEngine &engine, Scene &scene)
     : engine(engine)
@@ -43,11 +44,10 @@ void RaytracerUI::draw()
 	drawSettings();
 	drawBar();
 
-    if (m_showModelBrowser)
-    {
-        drawFileExplorerPopup();
-    }
-    
+	if (m_showModelBrowser)
+	{
+		drawFileExplorerPopup();
+	}
 }
 
 void RaytracerUI::endFrame()
@@ -94,7 +94,6 @@ void RaytracerUI::drawView()
 	ImGui::End();
 }
 
-
 void RaytracerUI::drawTool()
 {
 	ImVec2 screen = ImGui::GetIO().DisplaySize;
@@ -131,12 +130,21 @@ void RaytracerUI::drawTool()
 			{
 				if (ImGui::MenuItem("Open Scene"))
 				{
-					// TODO: open scene
+					std::string p = OpenZipFileDialog();
+					if (!p.empty())
+					{
+						std::cout << "Selected ZIP scene: " << p << "\n";
+						m_requestedZipPath = p;
+						m_requestLoadZip = true;
+						raytraceRequested = true;
+					}
 				}
 
 				if (ImGui::MenuItem("Open Model"))
 				{
+					m_browserMode = BrowserMode::Model;
 					m_showModelBrowser = true;
+					m_currentDir = "assets/models";
 				}
 
 				ImGui::EndMenu();
@@ -157,14 +165,14 @@ void RaytracerUI::drawTool()
 
 		ImGui::Separator();
 		ImGui::Spacing();
-    }
+	}
 	ImGui::End();
 }
 
 void RaytracerUI::drawFileExplorerPopup()
 {
 
-    ImVec2 screen = ImGui::GetIO().DisplaySize;
+	ImVec2 screen = ImGui::GetIO().DisplaySize;
 
 	float width = screen.x * 0.25f;
 	float height = screen.y * 0.55f;
@@ -172,75 +180,96 @@ void RaytracerUI::drawFileExplorerPopup()
 	ImGui::SetNextWindowPos(ImVec2(screen.x * 0.25f, 0), ImGuiCond_Always);
 	ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Once);
 
-	ImGuiWindowFlags flags =
-	    ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar;
-    
-    if (ImGui::Begin("Open Model", &m_showModelBrowser, flags)) 
-    {
-         ImGui::Text("Current Path: %s", m_currentDir.string().c_str());
-        ImGui::Separator();
+	ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar;
 
-        if (m_currentDir.has_parent_path())
-        {
-            if (ImGui::Button(".."))
-            {
-                m_currentDir = m_currentDir.parent_path();
-            }
-        }
-        if (ImGui::BeginChild("BrowserContent", ImVec2(0, 250), true))
-        {
-            try
-            {
-                for (const auto &entry : std::filesystem::directory_iterator(m_currentDir))
-                {
-                    std::string entryName = entry.path().filename().string();
+	if (ImGui::Begin("Open Model", &m_showModelBrowser, flags))
+	{
+		ImGui::Text("Current Path: %s", m_currentDir.string().c_str());
+		ImGui::Separator();
 
-                    if (entryName.empty() || entryName[0] == '.')
-                        continue;
+		if (m_currentDir.has_parent_path())
+		{
+			if (ImGui::Button(".."))
+			{
+				m_currentDir = m_currentDir.parent_path();
+			}
+		}
+		if (ImGui::BeginChild("BrowserContent", ImVec2(0, 250), true))
+		{
+			try
+			{
+				for (const auto &entry : std::filesystem::directory_iterator(m_currentDir))
+				{
+					std::string entryName = entry.path().filename().string();
 
-                    if (entry.is_directory())
-                    {
-                        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.2f, 0.7f, 1.0f, 1.0f));
-                        if (ImGui::Selectable((entryName + "/").c_str()))
-                        {
-                            m_currentDir /= entry.path().filename();
-                        }
-                        ImGui::PopStyleColor();
-                    }
-                    else if (entry.is_regular_file())
-                    {
-                        if (ImGui::Selectable(entryName.c_str()))
-                        {
-                            if (entry.path().extension() == ".obj")
-                            {
-                                std::string fullPath = entry.path().string();
-                                scene.mesh = ObjectLoader::loadMesh(fullPath);
-                                raytraceRequested = true;
-                                std::cout << "SUCCESS: Loaded mesh from: " << fullPath << std::endl;
-                                m_showModelBrowser = false; 
-                            }
-                            else
-                            {
-                                std::cout << "WARNING: File is not Allowed! " << std::endl;
-                            }
-                        }
-                    }
-                }
-            }
-            catch (const std::filesystem::filesystem_error &)
-            {
-                ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "ERROR: Cannot access path.");
-                m_currentDir = "C:\\";
-            }
-            ImGui::EndChild();
-        }
-            
-        if (ImGui::Button("Close")) {
-            m_showModelBrowser = false;
-        }
+					if (entryName.empty() || entryName[0] == '.')
+						continue;
 
-    }
-    ImGui::End();
+					if (entry.is_directory())
+					{
+						ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.2f, 0.7f, 1.0f, 1.0f));
+						if (ImGui::Selectable((entryName + "/").c_str()))
+						{
+							m_currentDir /= entry.path().filename();
+						}
+						ImGui::PopStyleColor();
+					}
+					else if (entry.is_regular_file())
+					{
+						if (ImGui::Selectable(entryName.c_str()))
+						{
+							auto ext = entry.path().extension().string();
+
+							if (m_browserMode == BrowserMode::Model)
+							{
+								if (ext == ".obj")
+								{
+									std::string fullPath = entry.path().string();
+									scene.mesh = ObjectLoader::loadMesh(fullPath);
+									raytraceRequested = true;
+									std::cout << "SUCCESS: Loaded mesh from: " << fullPath << std::endl;
+									m_showModelBrowser = false;
+								}
+								else
+								{
+									std::cout << "WARNING: File is not Allowed! (need .obj)\n";
+								}
+							}
+							else if (m_browserMode == BrowserMode::SceneZip)
+							{
+								if (ext == ".zip")
+								{
+									std::string zipPath = entry.path().string();
+									std::cout << "Selected ZIP scene: " << zipPath << "\n";
+
+									m_requestedZipPath = zipPath;
+									m_requestLoadZip = true;
+
+									m_showModelBrowser = false;
+								}
+								else
+								{
+									std::cout << "WARNING: File is not Allowed! (need .zip)\n";
+								}
+							}
+						}
+					}
+				}
+			}
+			catch (const std::filesystem::filesystem_error &)
+			{
+				ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "ERROR: Cannot access path.");
+				m_currentDir = "C:\\";
+			}
+			ImGui::EndChild();
+		}
+
+		if (ImGui::Button("Close"))
+		{
+			m_showModelBrowser = false;
+		}
+	}
+	ImGui::End();
 }
 
 void RaytracerUI::drawSettings()
@@ -257,68 +286,67 @@ void RaytracerUI::drawSettings()
 
 	if (ImGui::Begin("Attributes", &opened_settings, flags))
 	{
-        ImGui::SeparatorText("Object");
+		ImGui::SeparatorText("Object");
 
-        // Hardcoded Test-Daten, damit man im UI etwas sieht
-static float testObjectPos[3] = { 1.0f, 2.0f, 3.0f };
-static float testObjectRot[3] = { 0.0f, 45.0f, 0.0f };
+		// Hardcoded Test-Daten, damit man im UI etwas sieht
+		static float testObjectPos[3] = { 1.0f, 2.0f, 3.0f };
+		static float testObjectRot[3] = { 0.0f, 45.0f, 0.0f };
 
-// Position
-ImGui::Text("ID 1");
-ImGui::DragFloat3("##ObjectPos", testObjectPos, 0.1f, -100.0f, 100.0f, "%.2f");
-ImGui::SameLine();
-ImGui::Text("Position");
+		// Position
+		ImGui::Text("ID 1");
+		ImGui::DragFloat3("##ObjectPos", testObjectPos, 0.1f, -100.0f, 100.0f, "%.2f");
+		ImGui::SameLine();
+		ImGui::Text("Position");
 
-// Rotation als Slider
+		// Rotation als Slider
 
-ImGui::SliderFloat3("##ObjectRotSlider", testObjectRot, -360.0f, 360.0f, "%.1f°");
-ImGui::SameLine();
-ImGui::Text("Rotation");
-
+		ImGui::SliderFloat3("##ObjectRotSlider", testObjectRot, -360.0f, 360.0f, "%.1f°");
+		ImGui::SameLine();
+		ImGui::Text("Rotation");
 
 		ImGui::SeparatorText("Light");
-        ImGui::Text("ID 1");
+		ImGui::Text("ID 1");
 
 		bool somethingChanged = false;
 
-		if (ImGui::DragFloat3("Position##Light", &scene.light.position.x, 0.1f)) 
+		if (ImGui::DragFloat3("Position##Light", &scene.light.position.x, 0.1f))
 		{
-            somethingChanged = true;
-        }
+			somethingChanged = true;
+		}
 
-		if (ImGui::ColorEdit3("Color", &scene.light.color.x)) 
+		if (ImGui::ColorEdit3("Color", &scene.light.color.x))
 		{
-            somethingChanged = true;
-        }
+			somethingChanged = true;
+		}
 
-		if (ImGui::SliderFloat("Intensity", &scene.light.intensity, 0.0f, 5.0f)) 
+		if (ImGui::SliderFloat("Intensity", &scene.light.intensity, 0.0f, 5.0f))
 		{
-            somethingChanged = true;
-        }
+			somethingChanged = true;
+		}
 
 		ImGui::Spacing();
 
 		ImGui::SeparatorText("Camera");
 
 		glm::vec3 tempCamPos = glm::vec3(scene.camera.getOrigin());
-        float tempFov = scene.camera.getFov();
+		float tempFov = scene.camera.getFov();
 
-		if (ImGui::DragFloat3("Position##Cam", &tempCamPos.x, 0.1f)) 
-        {
-            scene.camera.setOrigin(tempCamPos);
-            somethingChanged = true;
-        }
-
-		if (ImGui::SliderFloat("FOV", &tempFov, 1.0f, 179.0f)) 
-        {
-            scene.camera.setFov(tempFov);
-            somethingChanged = true;
-        }
-
-		if (somethingChanged) 
+		if (ImGui::DragFloat3("Position##Cam", &tempCamPos.x, 0.1f))
 		{
-            raytraceRequested = true;
-        }
+			scene.camera.setOrigin(tempCamPos);
+			somethingChanged = true;
+		}
+
+		if (ImGui::SliderFloat("FOV", &tempFov, 1.0f, 179.0f))
+		{
+			scene.camera.setFov(tempFov);
+			somethingChanged = true;
+		}
+
+		if (somethingChanged)
+		{
+			raytraceRequested = true;
+		}
 
 		ImGui::Spacing();
 
