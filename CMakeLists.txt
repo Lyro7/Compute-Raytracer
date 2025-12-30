@@ -10,6 +10,7 @@ endif()
 # C++ standard
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Paths
 set(PROJ_INCL_DIR "${CMAKE_SOURCE_DIR}/include")
@@ -21,6 +22,18 @@ set(EXTERNAL_DIR "${CMAKE_SOURCE_DIR}/external")
 # Sources
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/*.cpp")
 add_executable(Raytracer ${SOURCES})
+
+add_library(miniz STATIC
+    "${CMAKE_SOURCE_DIR}/external/miniz/miniz.c"
+    "${CMAKE_SOURCE_DIR}/external/miniz/miniz_tdef.c"
+    "${CMAKE_SOURCE_DIR}/external/miniz/miniz_tinfl.c"
+    "${CMAKE_SOURCE_DIR}/external/miniz/miniz_zip.c"
+)
+
+target_include_directories(miniz PUBLIC
+    "${CMAKE_SOURCE_DIR}/external/miniz"
+)
+
 
 # GLM
 add_subdirectory(${EXTERNAL_DIR}/glm)
@@ -63,10 +76,10 @@ target_compile_definitions(imgui PUBLIC IMGUI_IMPL_OPENGL_LOADER_GLAD)
 target_link_libraries(imgui PUBLIC glfw OpenGL::GL)
 
 # Link executable
-target_link_libraries(Raytracer PRIVATE glad glfw OpenGL::GL imgui)
+target_link_libraries(Raytracer PRIVATE glad glfw OpenGL::GL imgui miniz)
 
 # Include directories
-target_include_directories(Raytracer PRIVATE "${CMAKE_SOURCE_DIR}/src" "${GLAD_DIR}/include" "${PROJ_INCL_DIR}" "${EXTERNAL_DIR}")
+target_include_directories(Raytracer PRIVATE "${CMAKE_SOURCE_DIR}/src" "${GLAD_DIR}/include" "${PROJ_INCL_DIR}" "${EXTERNAL_DIR}" "${CMAKE_SOURCE_DIR}/external/miniz")
 
 # Copy assets to output folder
 add_custom_target(sync_assets

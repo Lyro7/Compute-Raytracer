@@ -1,0 +1,18 @@
+CompileFlags:
+  Add:
+    - -Wno-unused-function
+    - -Wno-unused-parameter
+    - -Wno-unused-variable
+
+Diagnostics:
+  Suppress:
+    - clang-diagnostic-unused-function
+    - clang-diagnostic-unused-parameter
+    - clang-diagnostic-unused-variable
+
+---
+
+If:
+  PathMatch: external/.*
+Diagnostics:
+  Suppress: "*"

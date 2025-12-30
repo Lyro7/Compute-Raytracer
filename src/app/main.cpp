@@ -1,45 +1,54 @@
 #include <glad/glad.h>
 #include <iostream>
-#include "compute_program.h"
-#include "render_program.h"
+#include <string>
+
 #include "core/window.h"
-#include "object_loader.h"
-#include "imgui.h"
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
 #include "../ui/raytracer_ui.h"
-#include <algorithm>
-#include <climits>
-#include <cfloat>
-#include <glm/glm.hpp>
+#include "scene_loader.h"
+#include "zip_reader.h"
+#include "../include/scene_bootstrap.h"
 
 int main()
 {
-	Window window(1280, 720, "Raytracer");
+    try
+    {
+        ZipReader zr;
+        SceneLoader loader;
+        SceneBootstrap bootstrap(zr, loader);
 
-    Scene scene;
-	scene.mesh = ObjectLoader::loadMesh("assets/models/porsche.obj");
-    scene.fitCameraToMesh(1920.0f / 1080.0f);
+        Scene scene = bootstrap.loadInitial(
+            "" /* optional zip */,
+            "assets/scenes/example.scene.json"
+        );
 
-    // Base raytrace resolution
-	const GLsizei width = 320;
-	const GLsizei height = 180;
+        Window window(1280, 720, "Raytracer");
 
-    RaytracerEngine engine(height, width, scene);
+        RaytracerEngine engine(180, 320, scene);
+        RaytracerUI ui(engine, scene);
+        ui.init(window);
 
-	// UI
-    RaytracerUI ui(engine, scene);
-    ui.init(window);
+        while (!window.shouldClose())
+        {
+            window.pollEvents();
 
-    while (!window.shouldClose()) 
-	{
-        window.pollEvents();
-        ui.beginFrame();
-        ui.draw();
-        ui.endFrame();
+            ui.beginFrame();
+            ui.draw();
+            ui.endFrame();
+
+            std::string zip;
+            if (ui.consumeZipLoadRequest(zip))
+            {
+                scene = bootstrap.loadFromZipOrFallback(
+                    zip,
+                    "assets/scenes/example.scene.json"
+                );
+            }
+        }
+
+        ui.shutdown();
     }
-
-    ui.shutdown();
-
-	return 0;
+    catch (const std::exception& e)
+    {
+        std::cerr << e.what() << "\n";
+    }
 }
