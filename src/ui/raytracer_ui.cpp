@@ -165,6 +165,21 @@ void RaytracerUI::drawTool()
 
 		ImGui::Separator();
 		ImGui::Spacing();
+		ImGui::TextDisabled("Active Scene JSON");
+		ImGui::Separator();
+
+		ImGui::BeginChild("##SceneJsonViewer", ImVec2(0, 0), true, ImGuiWindowFlags_HorizontalScrollbar);
+
+		if (m_activeSceneJson.empty())
+		{
+			ImGui::TextDisabled("No scene loaded yet.");
+		}
+		else
+		{
+			ImGui::TextUnformatted(m_activeSceneJson.c_str());
+		}
+
+		ImGui::EndChild();
 	}
 	ImGui::End();
 }
@@ -314,13 +329,12 @@ void RaytracerUI::drawSettings()
 			somethingChanged = true;
 		}
 
-
 		if (ImGui::ColorEdit3("Color", &scene.light.color.x))
 		{
 			somethingChanged = true;
 		}
 
-		if (ImGui::SliderFloat("Intensity", &scene.light.intensity, 0.0f, 100.0f)) 
+		if (ImGui::SliderFloat("Intensity", &scene.light.intensity, 0.0f, 100.0f))
 		{
 			somethingChanged = true;
 		}
@@ -394,11 +408,11 @@ void RaytracerUI::drawSettings()
 	}
 	ImGui::End();
 }
-void RaytracerUI::onSceneChanged()
+void RaytracerUI::onSceneChanged(const std::string& json)
 {
-    raytraceRequested = true;
+	raytraceRequested = true;
+	m_activeSceneJson = json;
 }
-
 
 void RaytracerUI::drawBar()
 {

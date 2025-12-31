@@ -68,7 +68,7 @@ public:
 	*
 	* Updates UI state (camera/light sliders, cached paths, etc.) from the new scene.
 	*/
-	void onSceneChanged();
+	void onSceneChanged(const std::string& json);
 
 	bool consumeZipLoadRequest(std::string &outPath)
 	{
@@ -78,6 +78,10 @@ public:
 		m_requestedZipPath.clear();
 		m_requestLoadZip = false;
 		return !outPath.empty();
+	}
+	void setActiveSceneJson(std::string json)
+	{
+		m_activeSceneJson = std::move(json);
 	}
 
 private:
@@ -148,6 +152,8 @@ private:
 	std::string m_requestedZipPath;
 
 	bool m_requestLoadZip = false;
+
+	std::string m_activeSceneJson;
 
 	/** @brief Determines what the file explorer should load (models or scene zip). */
 	enum class BrowserMode
