@@ -79,6 +79,13 @@ struct RenderProgram
 	 */
 	void render() const;
 
+	/**
+	* @brief Re-uploads the mesh geometry to the GPU (VBO/EBO).
+	*
+	* Use this after the scene/mesh was replaced to synchronize the preview renderer.
+	*/
+	void updateMesh();
+
 private:
 	/** @brief The height of the output texture. */
 	GLsizei _height;
