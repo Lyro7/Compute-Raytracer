@@ -1,4 +1,4 @@
-﻿cmake_minimum_required (VERSION 3.8)
+﻿cmake_minimum_required (VERSION 3.11)
 project ("Raytracer")
 
 # Enable Hot Reload for MSVC compilers if supported.
@@ -22,6 +22,9 @@ set(EXTERNAL_DIR "${CMAKE_SOURCE_DIR}/external")
 # Sources
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/*.cpp")
 add_executable(Raytracer ${SOURCES})
+
+target_compile_definitions(Raytracer PRIVATE ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets")
+
 
 add_library(miniz STATIC
     "${CMAKE_SOURCE_DIR}/external/miniz/miniz.c"
