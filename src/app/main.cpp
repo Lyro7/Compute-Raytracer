@@ -16,13 +16,16 @@ int main()
 		SceneLoader loader;
 		SceneBootstrap bootstrap(zr, loader);
 
-		Scene scene = bootstrap.loadInitial("" /* optional zip */, "assets/scenes/example.scene.json");
+		auto loaded = bootstrap.loadInitial("" /* optional zip */, "assets/scenes/example.scene.json");
+		Scene scene = std::move(loaded.scene);
 
 		Window window(1280, 720, "Raytracer");
 
 		RaytracerEngine engine(180, 320, scene);
 		RaytracerUI ui(engine, scene);
 		ui.init(window);
+
+		ui.onSceneChanged(loaded.json);
 
 		while (!window.shouldClose())
 		{
@@ -35,12 +38,12 @@ int main()
 			std::string zip;
 			if (ui.consumeZipLoadRequest(zip))
 			{
-				Scene newScene = bootstrap.loadFromZipOrFallback(zip, "assets/scenes/example.scene.json");
+				auto loadedZip = bootstrap.loadFromZipOrFallback(zip, "assets/scenes/example.scene.json");
 
-				scene = std::move(newScene); // same adress, new scene data 
-                
-				engine.onSceneChanged(); 
-	            ui.onSceneChanged(); 
+				scene = std::move(loadedZip.scene); // gleicher scene-Container, neue Daten
+
+				engine.onSceneChanged();
+				ui.onSceneChanged(loadedZip.json);
 			}
 		}
 		ui.shutdown();
