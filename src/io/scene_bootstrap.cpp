@@ -45,12 +45,13 @@ static void writeBytes(const fs::path &outPath, const std::vector<unsigned char>
 	out.write(reinterpret_cast<const char *>(bytes.data()), (std::streamsize)bytes.size());
 }
 
-Scene SceneBootstrap::loadInitial(const std::string &zipPath, const std::string &fallbackFile)
+SceneBootstrap::LoadedScene SceneBootstrap::loadInitial(const std::string &zipPath, const std::string &fallbackFile)
 {
 	return loadFromZipOrFallback(zipPath, fallbackFile);
 }
 
-Scene SceneBootstrap::loadFromZipOrFallback(const std::string &zipPath, const std::string &fallbackFile)
+SceneBootstrap::LoadedScene SceneBootstrap::loadFromZipOrFallback(const std::string &zipPath,
+                                                                  const std::string &fallbackFile)
 {
 	std::string sceneJsonContent;
 
@@ -88,8 +89,10 @@ Scene SceneBootstrap::loadFromZipOrFallback(const std::string &zipPath, const st
 
 		std::cout << "[Fallback] Loaded: " << fallbackFile << "\n";
 	}
-
-	return m_loader.loadScene(sceneJsonContent);
+	LoadedScene out;
+	out.json = sceneJsonContent; // <- DAS ist der JSON Text für die UI
+	out.scene = m_loader.loadScene(sceneJsonContent); // <- parsed Scene für Engine/Renderer
+	return out;
 }
 
 fs::path SceneBootstrap::importZipToOpenedScenes(const std::string &zipPath)
