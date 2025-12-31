@@ -394,6 +394,11 @@ void RaytracerUI::drawSettings()
 	}
 	ImGui::End();
 }
+void RaytracerUI::onSceneChanged()
+{
+    raytraceRequested = true;
+}
+
 
 void RaytracerUI::drawBar()
 {
