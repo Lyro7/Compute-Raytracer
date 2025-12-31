@@ -134,3 +134,40 @@ void ComputeProgram::dispatchCompute() const
 	glDispatchCompute(workGroupX, workGroupY, 1);
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
 }
+
+void ComputeProgram::updateMesh()
+{
+    // Vertices
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, verticesBuffer);
+    glBufferData(GL_SHADER_STORAGE_BUFFER,
+                 _mesh.vertices.size() * sizeof(Vertex),
+                 _mesh.vertices.data(),
+                 GL_DYNAMIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, verticesBuffer);
+
+    // Indices
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, indicesBuffer);
+    glBufferData(GL_SHADER_STORAGE_BUFFER,
+                 _mesh.indices.size() * sizeof(unsigned int),
+                 _mesh.indices.data(),
+                 GL_DYNAMIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, indicesBuffer);
+
+    // Materials
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, materialsBuffer);
+    glBufferData(GL_SHADER_STORAGE_BUFFER,
+                 _mesh.materials.size() * sizeof(Material),
+                 _mesh.materials.data(),
+                 GL_DYNAMIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, materialsBuffer);
+
+    // Material IDs (per triangle)
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, materialIdsBuffer);
+    glBufferData(GL_SHADER_STORAGE_BUFFER,
+                 _mesh.triangleMaterialIds.size() * sizeof(unsigned int),
+                 _mesh.triangleMaterialIds.data(),
+                 GL_DYNAMIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, materialIdsBuffer);
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+}

@@ -3,7 +3,7 @@
 #include <glad/glad.h>
 #include <string>
 #include <array>
-#include "scene.h"
+#include <scene.h>
 
 /**
  * @class ComputeProgram
@@ -15,7 +15,6 @@
 class ComputeProgram
 {
 public:
-
 	/** ID of the shader program . */
 	GLuint ID = 0;
 
@@ -80,8 +79,15 @@ public:
 	 */
 	void dispatchCompute() const;
 
-private:
+	/**
+	* @brief Re-uploads mesh data (vertices/indices/materials) to the GPU buffers.
+	*
+	* Use this after the scene/mesh was replaced to synchronize SSBO contents.
+	* The SSBO buffer handles remain the same; only their data is updated.
+	*/
+	void updateMesh();
 
+private:
 	/** Output height in pixels. */
 	GLsizei _height;
 
