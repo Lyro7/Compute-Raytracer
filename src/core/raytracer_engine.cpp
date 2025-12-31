@@ -1,5 +1,5 @@
 #define GLM_ENABLE_EXPERIMENTAL
-#include <glm/gtx/string_cast.hpp>Y
+#include <glm/gtx/string_cast.hpp>
 #include "raytracer_engine.h"
 #include <iostream>
 
@@ -61,4 +61,17 @@ void RaytracerEngine::uploadSceneParams() const
 	glBindBuffer(GL_UNIFORM_BUFFER, _sceneUbo);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(GpuSceneParams), &_gpuParams);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+}
+
+void RaytracerEngine::onSceneChanged()
+{
+    std::cout << "[Engine] Scene changed -> updating GPU buffers\n";
+
+    // Update uniform params (camera/light etc.)
+    _gpuParams.updateGpuSceneParams(_scene);
+    uploadSceneParams();
+
+    // Re-upload mesh for both pipelines
+    _compute.updateMesh();
+    _preview.updateMesh();
 }

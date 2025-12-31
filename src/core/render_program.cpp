@@ -164,3 +164,22 @@ void RenderProgram::render() const
 	glBindVertexArray(0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
+
+void RenderProgram::updateMesh()
+{
+    glBindVertexArray(_vao);
+
+    glBindBuffer(GL_ARRAY_BUFFER, _vbo);
+    glBufferData(GL_ARRAY_BUFFER,
+                 _mesh.vertices.size() * sizeof(Vertex),
+                 _mesh.vertices.data(),
+                 GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                 _mesh.indices.size() * sizeof(unsigned int),
+                 _mesh.indices.data(),
+                 GL_STATIC_DRAW);
+
+    glBindVertexArray(0);
+}

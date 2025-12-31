@@ -6,6 +6,7 @@
 #include <vector>
 #include <map>
 #include <variant>
+#include <filesystem>
 
 struct JsonValue;
 
@@ -105,14 +106,16 @@ public:
 		m_zip = zip;
 	}
 
-	void setSceneRoot(const std::string& root) { m_sceneRoot = root; }
+	void setSceneRoot(const std::filesystem::path &root);
 
+	void setSceneZipRoot(const std::string &root);
 
 private:
 	// --- Extraction / Mapping Methods ---
 	ZipReader *m_zip = nullptr;
 
-	std::string m_sceneRoot;
+	std::filesystem::path m_sceneRootDisk; 
+    std::string m_sceneRootZip;
 
 	/** @brief Extracts light properties (position, color, intensity). */
 	Light extractLight(const JsonValue &json);

@@ -63,6 +63,13 @@ public:
      */
 	void shutdown();
 
+	/**
+	* @brief Called when the active scene was replaced.
+	*
+	* Updates UI state (camera/light sliders, cached paths, etc.) from the new scene.
+	*/
+	void onSceneChanged();
+
 	bool consumeZipLoadRequest(std::string &outPath)
 	{
 		if (!m_requestLoadZip)

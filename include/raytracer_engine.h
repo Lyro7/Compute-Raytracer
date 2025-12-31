@@ -18,8 +18,8 @@ struct RaytracerEngine
 	/** Output texture containing the raytraced image. */
 	GLuint raytraceTex = 0;
 
-	 /** Output texture containing the 3D preview image. */
-	GLuint previewTex  = 0;
+	/** Output texture containing the 3D preview image. */
+	GLuint previewTex = 0;
 
 	/**
      * @brief Constructs the raytracer engine for a given resolution and scene.
@@ -37,7 +37,7 @@ struct RaytracerEngine
      *
      * @param[in] path The path to the mesh file.
      */
-	void loadMesh(std::string& path);
+	void loadMesh(std::string &path);
 
 	/**
      * @brief Renders a single frame using preview and optional raytracing.
@@ -49,30 +49,39 @@ struct RaytracerEngine
      */
 	void renderFrame(bool raytraceRequested);
 
+	/**
+    * @brief Notifies the engine that the referenced scene content has changed.
+    *
+    * The engine stores a reference to a Scene. When the Scene is replaced
+    * (e.g. via assignment in main), GPU buffers and cached parameters must be
+    * re-synchronized.
+    */
+	void onSceneChanged();
+
 private:
 	/** Reference to the CPU-side scene (mesh, camera, light). */
 	Scene &_scene;
 
-    /** GPU-side scene parameters shared between compute and preview. */
+	/** GPU-side scene parameters shared between compute and preview. */
 	GpuSceneParams _gpuParams;
 
-    /** UBO handle for uploading GpuSceneParams to the GPU. */
+	/** UBO handle for uploading GpuSceneParams to the GPU. */
 	GLuint _sceneUbo = 0;
 
-    /** Compute program used for raytracing into the raytrace texture. */
+	/** Compute program used for raytracing into the raytrace texture. */
 	ComputeProgram _compute;
 
-    /** Render program used for the rasterized 3D preview. */
+	/** Render program used for the rasterized 3D preview. */
 	RenderProgram _preview;
-    
-    /**
+
+	/**
      * @brief Initializes the uniform buffer object for scene parameters.
      *
      * Allocates and binds the UBO used to store GpuSceneParams on the GPU.
      */
 	void initSceneUbo();
 
-    /**
+	/**
      * @brief Uploads the current GpuSceneParams to the scene UBO.
      *
      * Writes the CPU-side scene parameters into the GPU uniform buffer.

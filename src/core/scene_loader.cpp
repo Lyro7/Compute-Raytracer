@@ -240,7 +240,6 @@ Light SceneLoader::extractLight(const JsonValue &json)
 
 Camera SceneLoader::extractCamera(const JsonValue &json)
 {
-	// 1. Defaults setzen (Werte aus deinem Main/Konstruktor-Beispiel)
 	glm::vec3 lookFrom(0.0f, 0.0f, 5.0f);
 	glm::vec3 lookAt(0.0f, 0.0f, 0.0f);
 	glm::vec3 up(0.0f, 1.0f, 0.0f);
@@ -249,7 +248,7 @@ Camera SceneLoader::extractCamera(const JsonValue &json)
 	float nearPlane = 0.1f;
 	float farPlane = 100.0f;
 
-	// 2. Werte Einlesen
+	// read values	
 	if (json.has("position"))
 		lookFrom = parseVec3(json.asObj()->at("position"));
 	if (json.has("look_at"))
@@ -280,7 +279,6 @@ Camera SceneLoader::extractCamera(const JsonValue &json)
 			aspectRatio = w / h;
 	}
 
-	// Pane lesen (f�r FOV Berechnung - Notwendige Konvertierung f�r Constructor Interface)
 	float dist = getFloatRobust(json, "pane_distance", "paneDistance");
 	float width = getFloatRobust(json, "pane_width", "paneWidth");
 
@@ -302,41 +300,56 @@ Mesh SceneLoader::extractMesh(const JsonValue& json)
 
     std::cout << "Loading OBJ: " << path << "\n";
 
-    // zipPath = das, was wirklich im ZIP liegt
-    std::string zipPath = path;
-    if (!m_sceneRoot.empty())
-    {
-        // nur wenn nicht absolut und nicht schon mit root beginnt
-        if (zipPath.rfind(m_sceneRoot, 0) != 0 &&
-            zipPath.find(':') == std::string::npos &&
-            !zipPath.empty() && zipPath[0] != '/')
-        {
-            zipPath = m_sceneRoot + zipPath; // z.B. "scene1/obj/cube_bare.obj"
-        }
-    }
-
-    std::cout << "ZIP lookup: " << zipPath << "\n";
-
     Mesh mesh;
 
-    // ✅ HIER: mit zipPath checken + lesen
-    if (m_zip && m_zip->has(zipPath))
+    if (m_zip)
     {
-        std::cout << "  source: ZIP\n";
-        auto bytes = m_zip->readBytes(zipPath);
-        mesh = ObjectLoader::loadMeshFromMemory(bytes, path);
-    }
-    else
-    {
-        std::cout << "  source: DISK\n";
-        std::cout << "  CWD: " << std::filesystem::current_path() << "\n";
-        std::cout << "  exists: " << std::filesystem::exists(path) << "\n";
-        mesh = ObjectLoader::loadMesh(path);
+        std::string zipInner = path;
+
+        if (!m_sceneRootZip.empty())
+        {
+            if (zipInner.find(':') == std::string::npos &&
+                !zipInner.empty() && zipInner[0] != '/' &&
+                zipInner.rfind(m_sceneRootZip, 0) != 0)
+            {
+                zipInner = m_sceneRootZip + zipInner;
+            }
+        }
+
+        std::cout << "ZIP lookup: " << zipInner << "\n";
+
+        if (m_zip->has(zipInner))
+        {
+            std::cout << "  source: ZIP\n";
+            auto bytes = m_zip->readBytes(zipInner);
+            mesh = ObjectLoader::loadMeshFromMemory(bytes, path);
+            std::cout << "mesh verts=" << mesh.vertices.size() << " idx=" << mesh.indices.size() << "\n";
+            return mesh;
+        }
+
+        std::cout << "  ZIP missing -> fallback to DISK\n";
     }
 
+    std::filesystem::path fullPath = std::filesystem::path(path);
+
+    if (!m_sceneRootDisk.empty())
+    {
+        if (!fullPath.is_absolute())
+            fullPath = m_sceneRootDisk / fullPath;
+    }
+
+    fullPath = fullPath.lexically_normal();
+    fullPath.make_preferred();
+
+    std::cout << "DISK lookup: " << fullPath.string() << "\n";
+    std::cout << "  CWD: " << std::filesystem::current_path() << "\n";
+    std::cout << "  exists: " << std::filesystem::exists(fullPath) << "\n";
+
+    mesh = ObjectLoader::loadMesh(fullPath.string());
     std::cout << "mesh verts=" << mesh.vertices.size() << " idx=" << mesh.indices.size() << "\n";
     return mesh;
 }
+
 
 
 // -----------------------------------------------------------------------------
@@ -457,4 +470,20 @@ Scene SceneLoader::loadScene(const std::string &jsonString)
 	}
 
 	return scene;
+}
+void SceneLoader::setSceneRoot(const std::filesystem::path& root)
+{
+    m_sceneRootDisk = root;
+}
+
+static std::string normalizeZipRoot(std::string r)
+{
+    for (auto& c : r) if (c == '\\') c = '/';
+    if (!r.empty() && r.back() != '/') r += '/';
+    return r;
+}
+
+void SceneLoader::setSceneZipRoot(const std::string& root)
+{
+    m_sceneRootZip = normalizeZipRoot(root);
 }

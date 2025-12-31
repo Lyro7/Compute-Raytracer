@@ -6,49 +6,47 @@
 #include "../ui/raytracer_ui.h"
 #include "scene_loader.h"
 #include "zip_reader.h"
-#include "../include/scene_bootstrap.h"
+#include "../include/scene_bootstrap.hpp"
 
 int main()
 {
-    try
-    {
-        ZipReader zr;
-        SceneLoader loader;
-        SceneBootstrap bootstrap(zr, loader);
+	try
+	{
+		ZipReader zr;
+		SceneLoader loader;
+		SceneBootstrap bootstrap(zr, loader);
 
-        Scene scene = bootstrap.loadInitial(
-            "" /* optional zip */,
-            "assets/scenes/example.scene.json"
-        );
+		Scene scene = bootstrap.loadInitial("" /* optional zip */, "assets/scenes/example.scene.json");
 
-        Window window(1280, 720, "Raytracer");
+		Window window(1280, 720, "Raytracer");
 
-        RaytracerEngine engine(180, 320, scene);
-        RaytracerUI ui(engine, scene);
-        ui.init(window);
+		RaytracerEngine engine(180, 320, scene);
+		RaytracerUI ui(engine, scene);
+		ui.init(window);
 
-        while (!window.shouldClose())
-        {
-            window.pollEvents();
+		while (!window.shouldClose())
+		{
+			window.pollEvents();
 
-            ui.beginFrame();
-            ui.draw();
-            ui.endFrame();
+			ui.beginFrame();
+			ui.draw();
+			ui.endFrame();
 
-            std::string zip;
-            if (ui.consumeZipLoadRequest(zip))
-            {
-                scene = bootstrap.loadFromZipOrFallback(
-                    zip,
-                    "assets/scenes/example.scene.json"
-                );
-            }
-        }
+			std::string zip;
+			if (ui.consumeZipLoadRequest(zip))
+			{
+				Scene newScene = bootstrap.loadFromZipOrFallback(zip, "assets/scenes/example.scene.json");
 
-        ui.shutdown();
-    }
-    catch (const std::exception& e)
-    {
-        std::cerr << e.what() << "\n";
-    }
+				scene = std::move(newScene); // same adress, new scene data 
+                
+				engine.onSceneChanged(); 
+	            ui.onSceneChanged(); 
+			}
+		}
+		ui.shutdown();
+	}
+	catch (const std::exception &e)
+	{
+		std::cerr << e.what() << "\n";
+	}
 }
