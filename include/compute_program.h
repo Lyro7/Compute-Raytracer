@@ -3,7 +3,8 @@
 #include <glad/glad.h>
 #include <string>
 #include <array>
-#include <scene.h>
+#include "scene.h"
+#include "gpu_scene_params.h"
 
 /**
  * @class ComputeProgram
@@ -17,6 +18,8 @@ class ComputeProgram
 public:
 	/** ID of the shader program . */
 	GLuint ID = 0;
+
+	GLuint sceneUbo = 0;
 
 	/** Output texture. */
 	GLuint &tex;
@@ -86,6 +89,16 @@ public:
 	* The SSBO buffer handles remain the same; only their data is updated.
 	*/
 	void updateMesh();
+
+	/**
+	* @brief Uploads the current GPU scene parameters (camera/light/background) into the UBO.
+	*
+	* Must be called whenever scene parameters change (e.g. UI edits),
+	* so the compute shader sees the updated values.
+	*
+	* @param[in] params CPU-side packed GPU parameters.
+	*/
+	void updateSceneParams(const GpuSceneParams &params);
 
 private:
 	/** Output height in pixels. */
