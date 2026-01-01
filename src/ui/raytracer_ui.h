@@ -208,4 +208,7 @@ private:
      * @brief Draws the separate, modal file explorer popup window.
      */
 	void drawFileExplorerPopup();
+
+	void patchActiveSceneJsonModelPath(const std::string& fullPath);
+
 };
