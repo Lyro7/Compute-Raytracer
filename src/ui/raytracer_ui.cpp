@@ -253,14 +253,12 @@ void RaytracerUI::drawFileExplorerPopup()
 								{
 									std::string fullPath = entry.path().string();
 
-									// 1) Mesh laden
+									
 									scene.mesh = ObjectLoader::loadMesh(fullPath);
 
-									// 2) JSON patchen (string-basiert, erstmal “quick & dirty”)
 									patchActiveSceneJsonModelPath(fullPath);
 									;
 
-									// 3) UI updaten + rerender
 									raytraceRequested = true;
 									m_showModelBrowser = false;
 
@@ -489,7 +487,6 @@ void RaytracerUI::patchActiveSceneJsonModelPath(const std::string &fullPath)
 
 	std::string json = m_activeSceneJson;
 
-	// Suche nach "path"
 	size_t pathKey = json.find("\"path\"");
 	if (pathKey == std::string::npos)
 	{
@@ -497,20 +494,16 @@ void RaytracerUI::patchActiveSceneJsonModelPath(const std::string &fullPath)
 		return;
 	}
 
-	// Suche erstes Anführungszeichen NACH dem :
 	size_t firstQuote = json.find("\"", pathKey + 6);
 	if (firstQuote == std::string::npos)
 		return;
 
-	// Suche schließendes "
 	size_t secondQuote = json.find("\"", firstQuote + 1);
 	if (secondQuote == std::string::npos)
 		return;
 
-	// Ersetze alten Pfad
 	json.replace(firstQuote + 1, secondQuote - firstQuote - 1, fullPath);
 
-	// optional: name ebenfalls ersetzen
 	size_t nameKey = json.find("\"name\"");
 	if (nameKey != std::string::npos)
 	{
@@ -523,6 +516,5 @@ void RaytracerUI::patchActiveSceneJsonModelPath(const std::string &fullPath)
 		}
 	}
 
-	// UI + State aktualisieren
 	onSceneChanged(json);
 }
