@@ -142,9 +142,21 @@ void RaytracerUI::drawTool()
 
 				if (ImGui::MenuItem("Open Model"))
 				{
-					m_browserMode = BrowserMode::Model;
-					m_showModelBrowser = true;
-					m_currentDir = "assets/models";
+					std::string p = OpenObjFileDialog();
+					if (!p.empty())
+					{
+						// optional: extension check
+						if (std::filesystem::path(p).extension() == ".obj")
+						{
+							scene.mesh = ObjectLoader::loadMesh(p);
+							patchActiveSceneJsonModelPath(p);
+							raytraceRequested = true;
+						}
+						else
+						{
+							std::cout << "WARNING: File is not Allowed! (need .obj)\n";
+						}
+					}
 				}
 
 				ImGui::EndMenu();
@@ -240,10 +252,17 @@ void RaytracerUI::drawFileExplorerPopup()
 								if (ext == ".obj")
 								{
 									std::string fullPath = entry.path().string();
+
+									
 									scene.mesh = ObjectLoader::loadMesh(fullPath);
+
+									patchActiveSceneJsonModelPath(fullPath);
+									;
+
 									raytraceRequested = true;
-									std::cout << "SUCCESS: Loaded mesh from: " << fullPath << std::endl;
 									m_showModelBrowser = false;
+
+									std::cout << "SUCCESS: Loaded mesh from: " << fullPath << std::endl;
 								}
 								else
 								{
@@ -408,7 +427,7 @@ void RaytracerUI::drawSettings()
 	}
 	ImGui::End();
 }
-void RaytracerUI::onSceneChanged(const std::string& json)
+void RaytracerUI::onSceneChanged(const std::string &json)
 {
 	raytraceRequested = true;
 	m_activeSceneJson = json;
@@ -459,4 +478,43 @@ void RaytracerUI::drawBar()
 		ImGui::PopStyleColor(3);
 	}
 	ImGui::End();
+}
+
+void RaytracerUI::patchActiveSceneJsonModelPath(const std::string &fullPath)
+{
+	if (m_activeSceneJson.empty())
+		return;
+
+	std::string json = m_activeSceneJson;
+
+	size_t pathKey = json.find("\"path\"");
+	if (pathKey == std::string::npos)
+	{
+		std::cout << "WARNING: No 'path' key found in active JSON\n";
+		return;
+	}
+
+	size_t firstQuote = json.find("\"", pathKey + 6);
+	if (firstQuote == std::string::npos)
+		return;
+
+	size_t secondQuote = json.find("\"", firstQuote + 1);
+	if (secondQuote == std::string::npos)
+		return;
+
+	json.replace(firstQuote + 1, secondQuote - firstQuote - 1, fullPath);
+
+	size_t nameKey = json.find("\"name\"");
+	if (nameKey != std::string::npos)
+	{
+		size_t n1 = json.find("\"", nameKey + 6);
+		size_t n2 = json.find("\"", n1 + 1);
+		if (n1 != std::string::npos && n2 != std::string::npos)
+		{
+			std::string newName = std::filesystem::path(fullPath).stem().string();
+			json.replace(n1 + 1, n2 - n1 - 1, newName);
+		}
+	}
+
+	onSceneChanged(json);
 }

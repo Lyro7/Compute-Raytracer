@@ -30,3 +30,26 @@ std::string OpenZipFileDialog()
 #else
 std::string OpenZipFileDialog()  { return ""; }
 #endif
+
+
+std::string OpenObjFileDialog()
+{
+    char filename[MAX_PATH] = {0};
+
+    OPENFILENAMEA ofn;
+    ZeroMemory(&ofn, sizeof(ofn));
+    ofn.lStructSize = sizeof(ofn);
+    ofn.hwndOwner   = nullptr;
+    ofn.lpstrFile   = filename;
+    ofn.nMaxFile    = MAX_PATH;
+
+    ofn.lpstrFilter = "Wavefront OBJ (*.obj)\0*.obj\0All Files (*.*)\0*.*\0";
+    ofn.nFilterIndex = 1;
+
+    ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
+
+    if (GetOpenFileNameA(&ofn))
+        return std::string(filename);
+
+    return "";
+}

@@ -68,7 +68,7 @@ public:
 	*
 	* Updates UI state (camera/light sliders, cached paths, etc.) from the new scene.
 	*/
-	void onSceneChanged(const std::string& json);
+	void onSceneChanged(const std::string &json);
 
 	bool consumeZipLoadRequest(std::string &outPath)
 	{
@@ -208,4 +208,16 @@ private:
      * @brief Draws the separate, modal file explorer popup window.
      */
 	void drawFileExplorerPopup();
+
+	/**
+	* @brief Updates the active scene JSON to reference a new model path.
+	*
+	* Replaces the model path of the currently active object inside the cached
+	* scene JSON string when a new OBJ model is loaded via "Open Model".
+	* This keeps the UI (Active Scene JSON viewer) and the internal scene state
+	* synchronized after changing the model.
+	*
+	* @param fullPath Absolute file path to the newly selected OBJ model.
+	*/
+	void patchActiveSceneJsonModelPath(const std::string &fullPath);
 };
