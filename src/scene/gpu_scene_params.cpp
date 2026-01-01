@@ -10,4 +10,6 @@ void GpuSceneParams::updateGpuSceneParams(Scene &scene)
 	light.position = scene.light.position;
 	light.color = scene.light.color;
 	light.intensity = scene.light.intensity;
+	backgroundColor = scene.backgroundColor;
+
 }
