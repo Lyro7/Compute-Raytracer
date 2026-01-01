@@ -6,7 +6,7 @@
 #include "scene.h"
 #include <filesystem>
 
-class ZipReader;   
+class ZipReader;
 class SceneLoader;
 struct Scene;
 
@@ -22,15 +22,21 @@ struct Scene;
 class SceneBootstrap
 {
 public:
-    /**
+	/**
      * @brief Constructs a SceneBootstrap instance.
      *
      * @param zr Reference to a ZipReader used for extracting ZIP scenes
      * @param loader Reference to a SceneLoader used for parsing scene files
      */
-    SceneBootstrap(ZipReader& zr, SceneLoader& loader);
+	SceneBootstrap(ZipReader &zr, SceneLoader &loader);
 
-    /**
+	struct LoadedScene
+	{
+		Scene scene;
+		std::string json;
+	};
+
+	/**
      * @brief Loads the initial scene at application startup.
      *
      * If a ZIP path is provided, the scene is loaded from the ZIP.
@@ -41,12 +47,9 @@ public:
      *
      * @return Fully constructed Scene object
      */
-    Scene loadInitial(
-        const std::string& zipPath,
-        const std::string& fallbackFile
-    );
+	LoadedScene loadInitial(const std::string &zipPath, const std::string &fallbackFile);
 
-    /**
+	/**
      * @brief Loads a scene from a ZIP file or falls back to a default scene.
      *
      * If the ZIP path is valid, the ZIP is extracted into
@@ -58,13 +61,11 @@ public:
      *
      * @return Fully constructed Scene object
      */
-    Scene loadFromZipOrFallback(
-        const std::string& zipPath,
-        const std::string& fallbackFile
-    );
+
+	LoadedScene loadFromZipOrFallback(const std::string &zipPath, const std::string &fallbackFile);
 
 private:
-    /**
+	/**
      * @brief Extracts a ZIP scene into a new opened_scenes directory.
      *
      * Creates a timestamp-based directory using OpenedSceneManager,
@@ -74,9 +75,9 @@ private:
      * @param zipPath Path to the ZIP archive
      * @return Path to the extracted scene file
      */
-    std::filesystem::path importZipToOpenedScenes(const std::string& zipPath);
+	std::filesystem::path importZipToOpenedScenes(const std::string &zipPath);
 
-    /**
+	/**
      * @brief Reads a text file into a string.
      *
      * Used for loading JSON scene files before passing them to SceneLoader.
@@ -84,9 +85,9 @@ private:
      * @param path Path to the file
      * @return File contents as string
      */
-    static std::string readTextFile(const std::string& path);
+	static std::string readTextFile(const std::string &path);
 
 private:
-    ZipReader&  m_zr;
-    SceneLoader& m_loader;
+	ZipReader &m_zr;
+	SceneLoader &m_loader;
 };
