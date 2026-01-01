@@ -25,7 +25,7 @@ add_executable(Raytracer ${SOURCES})
 
 target_compile_definitions(Raytracer PRIVATE ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets")
 
-
+# Miniz
 add_library(miniz STATIC
     "${CMAKE_SOURCE_DIR}/external/miniz/miniz.c"
     "${CMAKE_SOURCE_DIR}/external/miniz/miniz_tdef.c"
@@ -36,6 +36,10 @@ add_library(miniz STATIC
 target_include_directories(miniz PUBLIC
     "${CMAKE_SOURCE_DIR}/external/miniz"
 )
+
+# Nlohmann_json
+add_subdirectory(external/nlohmann_json)
+target_link_libraries(Raytracer PRIVATE nlohmann_json::nlohmann_json)
 
 
 # GLM
