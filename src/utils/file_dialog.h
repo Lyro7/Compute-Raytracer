@@ -2,3 +2,5 @@
 #include <string>
 
 std::string OpenZipFileDialog(); // returns "" if canceled
+
+std::string OpenObjFileDialog();
