@@ -25,3 +25,11 @@ std::string OpenZipFileDialog(); // returns "" if canceled
  *         or an empty string if the dialog was canceled.
  */
 std::string OpenObjFileDialog();
+
+
+/**
+ * @brief Opens a native "Save File" dialog for exporting a scene JSON file.
+ *
+ * @return Full file path chosen by the user, or empty string if canceled.
+ */
+std::string SaveJsonFileDialog();
