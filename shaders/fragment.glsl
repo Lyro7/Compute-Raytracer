@@ -1,6 +1,6 @@
 #version 430
 
-struct CameraParams {
+struct GpuCameraParams  {
     mat4 viewProj;
     vec4 origin;
     vec4 lowerLeft;
@@ -8,15 +8,22 @@ struct CameraParams {
     vec4 vertical;
 };
 
-struct LightParams {
+struct GpuLightParams  {
     vec4 position;
     vec4 color;
+    float intensity;
+    vec3 _pad;
 };
 
-layout(std140, binding = 0) uniform SceneBlock
+struct GpuSceneParams {
+    GpuCameraParams camera;
+    GpuLightParams  light;
+    vec4 backgroundColor;
+};
+
+layout(std140, binding = 0) uniform SceneParams
 {
-    CameraParams camera;
-    LightParams  light;
+    GpuSceneParams gpuSceneParams;
 };
 
 in vec4 vWorldPos;
@@ -27,5 +34,5 @@ layout(location = 0) out vec4 FragColor;
 
 void main()
 {
-    FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+    FragColor = vec4(gpuSceneParams.backgroundColor.rgb, 1.0);
 }

@@ -4,7 +4,7 @@ layout(location = 0) in vec4 aPos;
 layout(location = 1) in vec4 aNormal;
 layout(location = 2) in vec2 aUv;
 
-struct CameraParams {
+struct GpuCameraParams{
     mat4 viewProj;
     vec4 origin;
     vec4 lowerLeft;
@@ -12,15 +12,22 @@ struct CameraParams {
     vec4 vertical;
 };
 
-struct LightParams {
+struct GpuLightParams  {
     vec4 position;
     vec4 color;
+    float intensity;
+    vec3 _pad;
 };
 
-layout(std140, binding = 0) uniform SceneBlock 
+struct GpuSceneParams {
+    GpuCameraParams camera;
+    GpuLightParams  light;
+    vec4 backgroundColor;
+};
+
+layout(std140, binding = 0) uniform SceneParams 
 {
-    CameraParams camera;
-    LightParams light;
+       GpuSceneParams gpuSceneParams;
 };
 
 out vec4 vWorldPos;
@@ -32,5 +39,5 @@ void main()
     vWorldPos = aPos;
 	vNormal   = aNormal;
     vUv       = aUv;
-    gl_Position = camera.viewProj * aPos;
+    gl_Position = gpuSceneParams.camera.viewProj * aPos;
 }

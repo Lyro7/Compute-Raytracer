@@ -31,12 +31,14 @@ struct GpuLightParams{
 	vec4 position;
 	vec4 color;
     float intensity;
+    vec3 _pad;
 };
 
 struct GpuSceneParams
 {
     GpuCameraParams camera;
     GpuLightParams light;
+    vec4 backgroundColor;
 };
 
 layout(binding = 0, rgba32f) uniform image2D outputImage;
@@ -141,6 +143,7 @@ bool isInShadow(vec3 hitPos, vec3 lightPos, uint ignoreTri)
 
 void main() 
 {
+    
     ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
     ivec2 size  = imageSize(outputImage);
 
@@ -202,7 +205,7 @@ void main()
         }
     }
 
-    vec3 color = vec3(0.0);
+    vec3 color = gpuSceneParams.backgroundColor.rgb;
 
     if (isHit)
   {
