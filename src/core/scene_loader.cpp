@@ -454,6 +454,11 @@ Scene SceneLoader::loadScene(const std::string &jsonString)
 
 	Scene scene;
 
+	if(root.has("background_color"))
+	{
+		scene.backgroundColor = parseColor(root.asObj()->at("background_color"));
+	}
+
 	if (root.has("lights") && !root.asObj()->at("lights").asArr()->empty())
 	{
 		scene.light = extractLight(root.asObj()->at("lights").asArr()->at(0));

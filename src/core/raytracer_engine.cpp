@@ -30,8 +30,8 @@ RaytracerEngine::RaytracerEngine(const GLsizei height, const GLsizei width, Scen
 
 	initSceneUbo();
 }
-	
-void RaytracerEngine::renderFrame(bool raytraceRequested)
+
+/*void RaytracerEngine::renderFrame(bool raytraceRequested)
 {
 	_gpuParams.updateGpuSceneParams(_scene);
 	uploadSceneParams();
@@ -45,19 +45,44 @@ void RaytracerEngine::renderFrame(bool raytraceRequested)
 
 	_preview.startRenderProgram();
 	_preview.render();
+}*/
+void RaytracerEngine::renderFrame(bool raytraceRequested)
+{
+	_gpuParams.updateGpuSceneParams(_scene);
+
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, _sceneUbo);
+	uploadSceneParams();
+
+	if (raytraceRequested)
+	{
+		_compute.startComputeProgram();
+		_compute.dispatchCompute();
+	}
+
+	_preview.startRenderProgram();
+	_preview.render();
 }
 
 void RaytracerEngine::initSceneUbo()
 {
 	glGenBuffers(1, &_sceneUbo);
 	glBindBuffer(GL_UNIFORM_BUFFER, _sceneUbo);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(_gpuParams), nullptr, GL_DYNAMIC_DRAW);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(GpuSceneParams), nullptr, GL_DYNAMIC_DRAW);
 	glBindBufferBase(GL_UNIFORM_BUFFER, 0, _sceneUbo);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
-
+/*
 void RaytracerEngine::uploadSceneParams() const
 {
+	glBindBuffer(GL_UNIFORM_BUFFER, _sceneUbo);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(GpuSceneParams), &_gpuParams);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+}*/
+void RaytracerEngine::uploadSceneParams() const
+{
+	// <-- WICHTIG: sicherstellen, dass Binding 0 wirklich auf UNSEREN Buffer zeigt
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, _sceneUbo);
+
 	glBindBuffer(GL_UNIFORM_BUFFER, _sceneUbo);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(GpuSceneParams), &_gpuParams);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
@@ -65,13 +90,13 @@ void RaytracerEngine::uploadSceneParams() const
 
 void RaytracerEngine::onSceneChanged()
 {
-    std::cout << "[Engine] Scene changed -> updating GPU buffers\n";
+	std::cout << "[Engine] Scene changed -> updating GPU buffers\n";
 
-    // Update uniform params (camera/light etc.)
-    _gpuParams.updateGpuSceneParams(_scene);
-    uploadSceneParams();
+	// Update uniform params (camera/light etc.)
+	_gpuParams.updateGpuSceneParams(_scene);
+	uploadSceneParams();
 
-    // Re-upload mesh for both pipelines
-    _compute.updateMesh();
-    _preview.updateMesh();
+	// Re-upload mesh for both pipelines
+	_compute.updateMesh();
+	_preview.updateMesh();
 }
