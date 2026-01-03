@@ -53,3 +53,29 @@ std::string OpenObjFileDialog()
 
     return "";
 }
+
+
+std::string SaveJsonFileDialog()
+{
+#ifdef _WIN32
+    char fileName[MAX_PATH] = { 0 };
+
+    OPENFILENAMEA ofn{};
+    ofn.lStructSize = sizeof(ofn);
+    ofn.lpstrFilter = "Scene JSON (*.json)\0*.json\0";
+    ofn.lpstrFile = fileName;
+    ofn.nMaxFile = MAX_PATH;
+    ofn.Flags = OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT;
+    ofn.lpstrDefExt = "json";
+
+    if (GetSaveFileNameA(&ofn))
+    {
+        return std::string(fileName);
+    }
+
+    return "";
+#else
+    // Fallback for Linux / macOS (no native dialog yet)
+    return "assets/exported_scene.json";
+#endif
+}

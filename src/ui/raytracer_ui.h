@@ -4,6 +4,7 @@
 #include "raytracer_engine.h"
 #include <glad/glad.h>
 #include <filesystem>
+#include <nlohmann/json.hpp>
 
 /**
  * @class RaytracerUI
@@ -149,11 +150,71 @@ private:
 	/** @brief Index of currently selected resolution preset (0–4). */
 	int currentPreset = 1;
 
+	///** * @brief Background color (RGB 0–1).*/
+	float bg[3] = { 0.0f, 0.0f, 0.0f }; 
+
+	/**
+	* @brief Full file system path of a ZIP scene requested by the user.
+	*
+	* This path is set when the user selects a scene archive via the UI
+	* (e.g. through the "Import -> Open Scene" menu). The actual loading
+	* of the ZIP is deferred and handled later by the application logic.
+	*/
 	std::string m_requestedZipPath;
 
+	/**
+	* @brief Indicates that a ZIP scene load has been requested.
+	*
+	* This flag is set by the UI when the user selects a ZIP file.
+	* The main application loop checks this flag and performs the
+	* actual scene loading in a controlled and safe context.
+	*/
 	bool m_requestLoadZip = false;
 
+	/**
+	* @brief String representation of the currently active scene JSON.
+	*
+	* This JSON string is displayed in the UI and is also used for
+	* exporting the scene to disk. It is kept in sync with the runtime
+	* scene whenever scene-related parameters are modified via the UI.
+	*/
 	std::string m_activeSceneJson;
+
+	/**
+	* @brief Parsed JSON object of the currently active scene.
+	*
+	* This object represents the structured form of @ref m_activeSceneJson
+	* and allows safe and reliable modification of scene parameters
+	* (e.g. camera, light, model paths) without fragile string operations.
+	*/
+	nlohmann::json m_activeSceneJsonObj;
+
+	/**
+	* @brief Synchronizes the active scene JSON with the current runtime scene.
+	*
+	* This function updates the parsed JSON object based on the current
+	* state of the runtime scene (camera, light, etc.) and regenerates
+	* the JSON string used by the UI and export functionality.
+	*
+	* It is typically called whenever scene parameters are changed
+	* interactively via the UI.
+	*/
+	void syncActiveSceneJsonFromScene();
+
+	/**
+	* @brief Writes a glm::vec3 into a JSON object using x/y/z keys.
+	*
+	* This helper function converts a glm::vec3 into a JSON representation
+	* of the form:
+	* @code
+	* { "x": v.x, "y": v.y, "z": v.z }
+	* @endcode
+	*
+	* @param j   JSON object to write into
+	* @param key Name of the JSON field
+	* @param v   Vector to serialize
+	*/
+	static void setVec3(nlohmann::json &j, const char *key, const glm::vec3 &v);
 
 	/** @brief Determines what the file explorer should load (models or scene zip). */
 	enum class BrowserMode
