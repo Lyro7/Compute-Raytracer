@@ -37,6 +37,9 @@ target_include_directories(miniz PUBLIC
     "${CMAKE_SOURCE_DIR}/external/miniz"
 )
 
+# Nlohmann_json
+add_subdirectory(external/nlohmann_json)
+target_link_libraries(Raytracer PRIVATE nlohmann_json::nlohmann_json)
 
 # GLM
 add_subdirectory(${EXTERNAL_DIR}/glm)
