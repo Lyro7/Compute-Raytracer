@@ -10,6 +10,8 @@
 #include "object_loader.h"
 #include "../include/scene.h"
 #include "../utils/file_dialog.h"
+#include <fstream>
+#include <nlohmann/json.hpp>
 
 RaytracerUI::RaytracerUI(RaytracerEngine &engine, Scene &scene)
     : engine(engine)
@@ -166,12 +168,35 @@ void RaytracerUI::drawTool()
 			{
 				if (ImGui::MenuItem("Save Scene"))
 				{
-					// TODO:save scene
-				}
+					if (m_activeSceneJson.empty())
+					{
+						std::cout << "WARNING: No active scene JSON to save.\n";
+					}
+					else
+					{
+						std::string outPath = SaveJsonFileDialog();
+						if (!outPath.empty())
+						{
+							try
+							{
+								std::ofstream out(outPath, std::ios::binary);
+								if (!out)
+									throw std::runtime_error("Cannot open output file: " + outPath);
 
+								out << m_activeSceneJson;
+								out.close();
+
+								std::cout << "SUCCESS: Scene JSON saved to: " << outPath << "\n";
+							}
+							catch (const std::exception &e)
+							{
+								std::cout << "ERROR: Failed to save scene JSON: " << e.what() << "\n";
+							}
+						}
+					}
+				}
 				ImGui::EndMenu();
 			}
-
 			ImGui::EndMenuBar();
 		}
 
@@ -192,8 +217,9 @@ void RaytracerUI::drawTool()
 		}
 
 		ImGui::EndChild();
+
+		ImGui::End();
 	}
-	ImGui::End();
 }
 
 void RaytracerUI::drawFileExplorerPopup()
@@ -253,7 +279,6 @@ void RaytracerUI::drawFileExplorerPopup()
 								{
 									std::string fullPath = entry.path().string();
 
-									
 									scene.mesh = ObjectLoader::loadMesh(fullPath);
 
 									patchActiveSceneJsonModelPath(fullPath);
@@ -309,6 +334,7 @@ void RaytracerUI::drawFileExplorerPopup()
 void RaytracerUI::drawSettings()
 {
 	ImVec2 screen = ImGui::GetIO().DisplaySize;
+	bool somethingChanged = false;
 
 	float width = screen.x * 0.25f;
 	float height = screen.y * 0.65f;
@@ -318,8 +344,17 @@ void RaytracerUI::drawSettings()
 
 	ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove;
 
+	ImGui::SeparatorText("Environment");
+
 	if (ImGui::Begin("Attributes", &opened_settings, flags))
 	{
+
+		if (ImGui::ColorEdit3("Background", bg))
+		{
+			scene.backgroundColor = glm::vec4(bg[0], bg[1], bg[2], 1.0f);
+
+			somethingChanged = true;
+		}
 		ImGui::SeparatorText("Object");
 
 		// Hardcoded Test-Daten, damit man im UI etwas sieht
@@ -340,8 +375,6 @@ void RaytracerUI::drawSettings()
 
 		ImGui::SeparatorText("Light");
 		ImGui::Text("ID 1");
-
-		bool somethingChanged = false;
 
 		if (ImGui::DragFloat3("Position##Light", &scene.light.position.x, 0.1f, -20.0f, 20.0f))
 		{
@@ -379,6 +412,7 @@ void RaytracerUI::drawSettings()
 
 		if (somethingChanged)
 		{
+			syncActiveSceneJsonFromScene();
 			raytraceRequested = true;
 		}
 
@@ -431,6 +465,25 @@ void RaytracerUI::onSceneChanged(const std::string &json)
 {
 	raytraceRequested = true;
 	m_activeSceneJson = json;
+
+	try
+	{
+		m_activeSceneJsonObj = nlohmann::json::parse(json);
+		if (m_activeSceneJsonObj.contains("background_color"))
+		{
+			auto &bc = m_activeSceneJsonObj["background_color"];
+			bg[0] = bc.value("r", 0.0f);
+			bg[1] = bc.value("g", 0.0f);
+			bg[2] = bc.value("b", 0.0f);
+
+			scene.backgroundColor = glm::vec4(bg[0], bg[1], bg[2], 1.0f);
+		}
+	}
+	catch (const std::exception &e)
+	{
+		std::cout << "ERROR: Failed to parse active scene JSON: " << e.what() << "\n";
+		m_activeSceneJsonObj = nlohmann::json{};
+	}
 }
 
 void RaytracerUI::drawBar()
@@ -517,4 +570,45 @@ void RaytracerUI::patchActiveSceneJsonModelPath(const std::string &fullPath)
 	}
 
 	onSceneChanged(json);
+}
+
+void RaytracerUI::setVec3(nlohmann::json &j, const char *key, const glm::vec3 &v)
+{
+	j[key] = { { "x", v.x }, { "y", v.y }, { "z", v.z } };
+}
+
+void RaytracerUI::syncActiveSceneJsonFromScene()
+{
+	if (m_activeSceneJsonObj.is_null() || m_activeSceneJsonObj.empty())
+		return;
+
+	// Light block
+	if (m_activeSceneJsonObj.contains("lights") && m_activeSceneJsonObj["lights"].is_array() &&
+	    !m_activeSceneJsonObj["lights"].empty())
+	{
+		auto &jl0 = m_activeSceneJsonObj["lights"][0];
+
+		setVec3(jl0, "position", scene.light.position);
+
+		jl0["color"] = { { "r", scene.light.color.x }, { "g", scene.light.color.y }, { "b", scene.light.color.z } };
+
+		jl0["luminosity"] = scene.light.intensity;
+	}
+
+	// Camera block
+	if (m_activeSceneJsonObj.contains("camera"))
+	{
+		auto &jc = m_activeSceneJsonObj["camera"];
+
+		setVec3(jc, "position", glm::vec3(scene.camera.getOrigin()));
+		jc["fov"] = scene.camera.getFov();
+	}
+
+	// background color (always write / create)
+	m_activeSceneJsonObj["background_color"] = { { "r", scene.backgroundColor.x },
+		                                         { "g", scene.backgroundColor.y },
+		                                         { "b", scene.backgroundColor.z } };
+
+	// Update the string shown in UI + used for export
+	m_activeSceneJson = m_activeSceneJsonObj.dump(2);
 }
