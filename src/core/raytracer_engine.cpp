@@ -6,6 +6,8 @@
 RaytracerEngine::RaytracerEngine(const GLsizei height, const GLsizei width, Scene &sc)
     : _scene(sc)
     , _gpuParams()
+    , _height(height)
+    , _width(width)
     , _compute(height, width, sc.mesh, raytraceTex)
     , _preview(height, width, sc.mesh, _gpuParams, previewTex)
 {
@@ -30,11 +32,17 @@ RaytracerEngine::RaytracerEngine(const GLsizei height, const GLsizei width, Scen
 
 	initSceneUbo();
 }
-	
+
 void RaytracerEngine::renderFrame(bool raytraceRequested)
 {
+	const bool hasMesh = !_scene.mesh.vertices.empty() && !_scene.mesh.indices.empty();
+
 	_gpuParams.updateGpuSceneParams(_scene);
 	uploadSceneParams();
+	if (!hasMesh)
+	{
+		raytraceRequested = false;
+	}
 
 	if (raytraceRequested)
 	{
@@ -65,13 +73,45 @@ void RaytracerEngine::uploadSceneParams() const
 
 void RaytracerEngine::onSceneChanged()
 {
-    std::cout << "[Engine] Scene changed -> updating GPU buffers\n";
+	std::cout << "[Engine] Scene changed -> updating GPU buffers\n";
 
-    // Update uniform params (camera/light etc.)
-    _gpuParams.updateGpuSceneParams(_scene);
-    uploadSceneParams();
+	// Update uniform params (camera/light etc.)
+	_gpuParams.updateGpuSceneParams(_scene);
+	uploadSceneParams();
 
-    // Re-upload mesh for both pipelines
-    _compute.updateMesh();
-    _preview.updateMesh();
+	// Re-upload mesh for both pipelines
+	_compute.updateMesh();
+	_preview.updateMesh();
+}
+
+static void printTexFormat(GLuint tex, const char *name)
+{
+	GLint internalFmt = 0;
+	glBindTexture(GL_TEXTURE_2D, tex);
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &internalFmt);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	std::cout << name << " internal format = 0x" << std::hex << internalFmt << std::dec << "\n";
+}
+
+void RaytracerEngine::clearOutputTextures(float r, float g, float b, float a)
+{
+	auto clearTex = [&](GLuint tex)
+	{
+		if (tex == 0)
+			return;
+		GLuint fbo = 0;
+		glGenFramebuffers(1, &fbo);
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0);
+
+		glViewport(0, 0, _width, _height);
+		glClearColor(r, g, b, a);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glDeleteFramebuffers(1, &fbo);
+	};
+
+	clearTex(previewTex);
+	clearTex(raytraceTex);
 }

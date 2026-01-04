@@ -3,36 +3,36 @@
 #include <fstream>
 #include <iostream>
 
-RenderProgram::RenderProgram(const GLsizei height, const GLsizei width, Mesh &mesh, GpuSceneParams &gpuParams, GLuint &tex)
+RenderProgram::RenderProgram(const GLsizei height, const GLsizei width, Mesh &mesh, GpuSceneParams &gpuParams,
+                             GLuint &tex)
     : _height(height)
     , _width(width)
-    , _mesh(mesh) 
-	, _gpuParams(gpuParams)
-	, tex(tex)
+    , _mesh(mesh)
+    , _gpuParams(gpuParams)
+    , tex(tex)
 {
 	initRenderResources();
 }
 
 void RenderProgram::initRenderResources()
-{ 
-	glGenVertexArrays(1, &_vao); 
+{
+	glGenVertexArrays(1, &_vao);
 	glGenBuffers(1, &_vbo);
 	glGenBuffers(1, &_ebo);
 
 	glBindVertexArray(_vao);
 
 	glBindBuffer(GL_ARRAY_BUFFER, _vbo);
-	glBufferData(GL_ARRAY_BUFFER, _mesh.vertices.size() * sizeof(Vertex), 
-		_mesh.vertices.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, _mesh.vertices.size() * sizeof(Vertex), _mesh.vertices.data(), GL_STATIC_DRAW);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, _mesh.indices.size() * sizeof(unsigned int), 
-		_mesh.indices.data(),  GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, _mesh.indices.size() * sizeof(unsigned int), _mesh.indices.data(),
+	             GL_STATIC_DRAW);
 
-	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex),  (void*)offsetof(Vertex, pos));
+	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, pos));
 	glEnableVertexAttribArray(0);
 
-	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, normal));
 	glEnableVertexAttribArray(1);
 
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, uv));
@@ -155,8 +155,14 @@ void RenderProgram::render() const
 	glBindFramebuffer(GL_FRAMEBUFFER, _fbo);
 	glViewport(0, 0, _width, _height);
 
-	glClearColor(0.1f, 0.1f, 0.1f, 1.0f); 
+	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
+
+	if (_mesh.indices.empty() || _mesh.vertices.empty())
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		return;
+	}
 
 	glBindVertexArray(_vao);
 	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(_mesh.indices.size()), GL_UNSIGNED_INT, nullptr);
@@ -167,19 +173,20 @@ void RenderProgram::render() const
 
 void RenderProgram::updateMesh()
 {
-    glBindVertexArray(_vao);
+	glBindVertexArray(_vao);
 
-    glBindBuffer(GL_ARRAY_BUFFER, _vbo);
-    glBufferData(GL_ARRAY_BUFFER,
-                 _mesh.vertices.size() * sizeof(Vertex),
-                 _mesh.vertices.data(),
-                 GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, _vbo);
+	if (_mesh.vertices.empty())
+		glBufferData(GL_ARRAY_BUFFER, 0, nullptr, GL_STATIC_DRAW);
+	else
+		glBufferData(GL_ARRAY_BUFFER, _mesh.vertices.size() * sizeof(Vertex), _mesh.vertices.data(), GL_STATIC_DRAW);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                 _mesh.indices.size() * sizeof(unsigned int),
-                 _mesh.indices.data(),
-                 GL_STATIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _ebo);
+	if (_mesh.indices.empty())
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, 0, nullptr, GL_STATIC_DRAW);
+	else
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, _mesh.indices.size() * sizeof(unsigned int), _mesh.indices.data(),
+		             GL_STATIC_DRAW);
 
-    glBindVertexArray(0);
+	glBindVertexArray(0);
 }
