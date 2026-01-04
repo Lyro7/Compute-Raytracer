@@ -7,160 +7,100 @@
 #include <vector>
 #include <algorithm>
 
-static glm::vec4 getPosition(const tinyobj::attrib_t &attribute, tinyobj::index_t index)
+Material convertMaterial(const tinyobj::material_t &m)
 {
-	glm::vec4 pos{ 0, 0, 0, 1 };
-	const auto &pIndex = index.vertex_index;
+	Material mat;
 
-	if (pIndex >= 0)
-	{
-		pos.x = attribute.vertices[3 * pIndex + 0];
-		pos.y = attribute.vertices[3 * pIndex + 1];
-		pos.z = attribute.vertices[3 * pIndex + 2];
-	}
+	mat.diffuseColor = glm::vec4(m.diffuse[0], m.diffuse[1], m.diffuse[2], 0.0f);
 
-	return pos;
-}
+	mat.specularColor = glm::vec4(m.specular[0], m.specular[1], m.specular[2], m.shininess );
 
-static glm::vec4 getNormal(const tinyobj::attrib_t &attribute, tinyobj::index_t index)
-{
-	glm::vec4 normal{ 0, 0, 1, 1 };
-	const auto &nIndex = index.normal_index;
+	mat.emission = glm::vec4(0.0f); 
 
-	if (nIndex >= 0)
-	{
-		normal.x = attribute.normals[3 * nIndex + 0];
-		normal.y = attribute.normals[3 * nIndex + 1];
-		normal.z = attribute.normals[3 * nIndex + 2];
-	}
-
-	return normal;
-}
-
-static glm::vec2 getUv(const tinyobj::attrib_t &attribute, tinyobj::index_t index)
-{
-	glm::vec2 uv{ 1, 0 };
-	const auto &uIndex = index.texcoord_index;
-
-	if (uIndex >= 0)
-	{
-		uv.x = attribute.texcoords[2 * uIndex + 0];
-		uv.y = attribute.texcoords[2 * uIndex + 1];
-	}
-
-	return uv;
+	return mat;
 }
 
 Mesh ObjectLoader::loadMesh(const std::string &path)
 {
 	Mesh mesh;
+	Material defaultMat;
+	defaultMat.diffuseColor = glm::vec4(0.8f, 0.8f, 0.8f, 0.0);
+	defaultMat.specularColor = glm::vec4(0.0, 0.0, 0.0, 0.0);
+	defaultMat.emission = glm::vec4(glm::vec3(0.8f, 0.7f, 0.6f), 0.0);
+
 	tinyobj::ObjReader reader;
 	tinyobj::ObjReaderConfig cfg;
-	cfg.triangulate = true;
+	cfg.triangulate = true; // Konvertiert Quads/Polygone automatisch in Dreiecke
 
 	if (!reader.ParseFromFile(path, cfg))
 	{
-		std::cerr << "Error while parsing file" << reader.Error() << std::endl;
-
-		return {};
-	}
-
-	const std::vector<tinyobj::shape_t> &shapes = reader.GetShapes();
-	const tinyobj::attrib_t &attribute = reader.GetAttrib();
-
-	const auto &materials = reader.GetMaterials();
-	if (!materials.empty())
-	{
-		for (const auto &m : materials)
+		if (!reader.Error().empty())
 		{
-			Material material{};
-
-			material.ka = glm::vec4(m.ambient[0], m.ambient[1], m.ambient[2], 0.0f);
-			material.kd = glm::vec4(m.diffuse[0], m.diffuse[1], m.diffuse[2], 0.0f);
-			material.ks = glm::vec4(m.specular[0], m.specular[1], m.specular[2], 0.0f);
-			material.ns = m.shininess;
-
-			mesh.materials.push_back(material);
+			std::cerr << "TinyObjReader Error: " << reader.Error() << std::endl;
 		}
-	}
-	else
-	{
-		// Default
-		Material def{};
-		def.ka = glm::vec4(0.1f, 0.1f, 0.1f, 0.0f);
-		def.kd = glm::vec4(0.8f, 0.8f, 0.8f, 0.0f);
-		def.ks = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
-		def.ns = 10.0f;
-		mesh.materials.push_back(def);
+		return mesh;
 	}
 
-	// Allocate memory
-	std::vector<Vertex> &vertices = mesh.vertices;
-	std::size_t amount = 0;
+	auto &attrib = reader.GetAttrib();
+	auto &shapes = reader.GetShapes();
+	auto &materials = reader.GetMaterials();
 
-	for (const tinyobj::shape_t &shape : shapes)
+	// Wir iterieren über alle "Shapes" (Teilobjekte) in der Datei
+	for (size_t s = 0; s < shapes.size(); s++)
 	{
-		amount += shape.mesh.indices.size();
-	}
+		size_t index_offset = 0;
 
-	vertices.reserve(amount);
-	mesh.triangleMaterialIds.reserve(amount / 3);
-
-	std::vector<unsigned int> &indices = mesh.indices;
-	indices.reserve(amount);
-
-	for (const tinyobj::shape_t &shape : shapes)
-	{
-		size_t indexOffset = 0;
-		const auto &faceVertexCounts = shape.mesh.num_face_vertices;
-		const auto &materialIds = shape.mesh.material_ids;
-
-		for (size_t f = 0; f < faceVertexCounts.size(); ++f)
+		// Jede Shape besteht aus mehreren Faces
+		for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++)
 		{
-			unsigned char fv = faceVertexCounts[f];
-			if (fv != 3)
+			Triangle tri;
+
+			// Da triangulate = true, hat jede Fläche 3 Vertices
+			for (size_t v = 0; v < 3; v++)
 			{
-				indexOffset += fv;
-				continue;
+				tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
+
+				// --- Positionen (Vertices) ---
+				float vx = attrib.vertices[3 * size_t(idx.vertex_index) + 0];
+				float vy = attrib.vertices[3 * size_t(idx.vertex_index) + 1];
+				float vz = attrib.vertices[3 * size_t(idx.vertex_index) + 2];
+
+				if (v == 0)
+					tri.v1 = glm::vec4(vx, vy, vz, 0.0);
+				if (v == 1)
+					tri.v2 = glm::vec4(vx, vy, vz, 0.0);
+				if (v == 2)
+					tri.v3 = glm::vec4(vx, vy, vz, 0.0);
+
+				// --- Normalen ---
+				if (idx.normal_index >= 0)
+				{
+					float nx = attrib.normals[3 * size_t(idx.normal_index) + 0];
+					float ny = attrib.normals[3 * size_t(idx.normal_index) + 1];
+					float nz = attrib.normals[3 * size_t(idx.normal_index) + 2];
+
+					if (v == 0)
+						tri.NA = glm::vec4(nx, ny, nz, 0.0);
+					if (v == 1)
+						tri.NB = glm::vec4(nx, ny, nz, 0.0);
+					if (v == 2)
+						tri.NC = glm::vec4(nx, ny, nz, 0.0);
+				}
 			}
 
-			const tinyobj::index_t index0 = shape.mesh.indices[indexOffset + 0];
-			const tinyobj::index_t index1 = shape.mesh.indices[indexOffset + 1];
-			const tinyobj::index_t index2 = shape.mesh.indices[indexOffset + 2];
+			int mat_id = shapes[s].mesh.material_ids[f];
 
-			// Position
-			glm::vec4 pos1 = getPosition(attribute, index0);
-			glm::vec4 pos2 = getPosition(attribute, index1);
-			glm::vec4 pos3 = getPosition(attribute, index2);
-			// Normale
-			glm::vec4 normal1 = getNormal(attribute, index0);
-			glm::vec4 normal2 = getNormal(attribute, index1);
-			glm::vec4 normal3 = getNormal(attribute, index2);
-			// UV
-			glm::vec2 uv1 = getUv(attribute, index0);
-			glm::vec2 uv2 = getUv(attribute, index1);
-			glm::vec2 uv3 = getUv(attribute, index2);
+			if (mat_id >= 0 && mat_id < materials.size())
+			{
+				tri.material = convertMaterial(materials[mat_id]);
+			}
+			else
+			{
+				tri.material = defaultMat;
+			}
 
-			unsigned int baseIndex = static_cast<unsigned int>(vertices.size());
-
-			mesh.vertices.emplace_back(pos1, normal1, uv1);
-			mesh.vertices.emplace_back(pos2, normal2, uv2);
-			mesh.vertices.emplace_back(pos3, normal3, uv3);
-
-			mesh.indices.push_back(baseIndex + 0);
-			mesh.indices.push_back(baseIndex + 1);
-			mesh.indices.push_back(baseIndex + 2);
-
-			int matId = 0;
-			if (f < materialIds.size() && materialIds[f] >= 0)
-				matId = materialIds[f];
-
-			if (matId < 0 || matId >= static_cast<int>(mesh.materials.size()))
-				matId = 0;
-
-			mesh.triangleMaterialIds.push_back(static_cast<unsigned int>(matId));
-
-			indexOffset += fv;
+			mesh.addTriangle(tri);
+			index_offset += 3;
 		}
 	}
 

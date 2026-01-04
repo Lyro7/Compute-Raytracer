@@ -3,40 +3,35 @@
 #include <fstream>
 #include <iostream>
 
-RenderProgram::RenderProgram(const GLsizei height, const GLsizei width, Mesh &mesh, GpuSceneParams &gpuParams, GLuint &tex)
+RenderProgram::RenderProgram(const GLsizei height, const GLsizei width, Scene &scene, GpuSceneParams &gpuParams, GLuint &tex)
     : _height(height)
-    , _width(width)
-    , _mesh(mesh) 
+    , _width(width) 
 	, _gpuParams(gpuParams)
 	, tex(tex)
 {
+	linearizeTriangles(scene.triangles, _positions, _colors);
+
 	initRenderResources();
 }
 
 void RenderProgram::initRenderResources()
 { 
 	glGenVertexArrays(1, &_vao); 
-	glGenBuffers(1, &_vbo);
-	glGenBuffers(1, &_ebo);
-
 	glBindVertexArray(_vao);
 
-	glBindBuffer(GL_ARRAY_BUFFER, _vbo);
-	glBufferData(GL_ARRAY_BUFFER, _mesh.vertices.size() * sizeof(Vertex), 
-		_mesh.vertices.data(), GL_STATIC_DRAW);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, _mesh.indices.size() * sizeof(unsigned int), 
-		_mesh.indices.data(),  GL_STATIC_DRAW);
-
-	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex),  (void*)offsetof(Vertex, pos));
+	// VBO für Punkte
+	glGenBuffers(1, &_posVbo);
+	glBindBuffer(GL_ARRAY_BUFFER, _posVbo);
+	glBufferData(GL_ARRAY_BUFFER, _positions.size() * sizeof(glm::vec4), _positions.data(), GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, nullptr); // location 0
 	glEnableVertexAttribArray(0);
 
-	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+	// VBO für Farben
+	glGenBuffers(1, &_colorVbo);
+	glBindBuffer(GL_ARRAY_BUFFER, _colorVbo);
+	glBufferData(GL_ARRAY_BUFFER, _colors.size() * sizeof(glm::vec4), _colors.data(), GL_STATIC_DRAW);
+	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, nullptr); // location 1
 	glEnableVertexAttribArray(1);
-
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, uv));
-	glEnableVertexAttribArray(2);
 
 	glBindVertexArray(0);
 
@@ -159,27 +154,9 @@ void RenderProgram::render() const
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	glBindVertexArray(_vao);
-	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(_mesh.indices.size()), GL_UNSIGNED_INT, nullptr);
+	glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(_positions.size()));
 
 	glBindVertexArray(0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void RenderProgram::updateMesh()
-{
-    glBindVertexArray(_vao);
-
-    glBindBuffer(GL_ARRAY_BUFFER, _vbo);
-    glBufferData(GL_ARRAY_BUFFER,
-                 _mesh.vertices.size() * sizeof(Vertex),
-                 _mesh.vertices.data(),
-                 GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                 _mesh.indices.size() * sizeof(unsigned int),
-                 _mesh.indices.data(),
-                 GL_STATIC_DRAW);
-
-    glBindVertexArray(0);
-}

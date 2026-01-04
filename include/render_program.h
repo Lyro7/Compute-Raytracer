@@ -4,6 +4,28 @@
 #include <glad/glad.h>
 #include <string>
 
+void linearizeTriangles(const std::vector<Triangle> &triangles, std::vector<glm::vec4> &outPositions,
+                        std::vector<glm::vec4> &outColors)
+{
+	outPositions.clear();
+	outColors.clear();
+
+	for (const auto &tri : triangles)
+	{
+		// Vertex 1
+		outPositions.push_back(tri.v1);
+		outColors.push_back(tri.material.diffuseColor);
+
+		// Vertex 2
+		outPositions.push_back(tri.v2);
+		outColors.push_back(tri.material.diffuseColor);
+
+		// Vertex 3
+		outPositions.push_back(tri.v3);
+		outColors.push_back(tri.material.diffuseColor);
+	}
+}
+
 /**
  * @class RenderProgram
  * @brief Handles the creation and management of OpenGL shaders and rendering.
@@ -30,7 +52,7 @@ struct RenderProgram
 	 * @param[in] gpuParams the GpuParams which are defined by the user, containing a fixed camera and light position.
 	 * @param[in] outTex The texture ID for the output image from the compute shader.
 	 */
-	RenderProgram(const GLsizei height, const GLsizei width, Mesh &mesh, GpuSceneParams &gpuParams, GLuint &tex);
+	RenderProgram(const GLsizei height, const GLsizei width, Scene &scene, GpuSceneParams &gpuParams, GLuint &tex);
 
 	/**
 	 * @brief Creates and compiles a vertex shader.
@@ -79,13 +101,6 @@ struct RenderProgram
 	 */
 	void render() const;
 
-	/**
-	* @brief Re-uploads the mesh geometry to the GPU (VBO/EBO).
-	*
-	* Use this after the scene/mesh was replaced to synchronize the preview renderer.
-	*/
-	void updateMesh();
-
 private:
 	/** @brief The height of the output texture. */
 	GLsizei _height;
@@ -93,8 +108,9 @@ private:
 	/** @brief The width of the output texture. */
 	GLsizei _width;
 
-	/*  @brief The mesh containing geometry and material data */
-	Mesh &_mesh;
+	std::vector<glm::vec4> _positions; 
+
+	std::vector<glm::vec4> _colors; 
 
 	/** @brief The gpuParams containing user specifications for light and camera. */
 	GpuSceneParams _gpuParams;
@@ -106,10 +122,9 @@ private:
 	GLuint _vao = 0;
 
 	/** @brief The vertex buffer object (VBO) containing vertices for the vertex shader. */
-	GLuint _vbo = 0;
+	GLuint _posVbo = 0;
 
-	/** @brief The element buffer object (EBO) containing indices for the vertex shader. */
-	GLuint _ebo = 0;
+	GLuint _colorVbo = 0;
 
 	/**
 	 * @brief Reads shader source code from a file.

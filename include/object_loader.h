@@ -13,6 +13,7 @@
 class ObjectLoader
 {
 public:
+	static Material convertMaterial(const tinyobj::material_t &m);
     static Mesh loadMesh(const std::string& path);
     static Mesh loadMeshFromMemory(const std::vector<uint8_t>& objBytes, const std::string& virtualName);
 };
