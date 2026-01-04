@@ -22,6 +22,13 @@ struct Light
 	float intensity;
 };
 
+struct ObjectTransform
+{
+	glm::vec3 translation{ 0, 0, 0 };
+	glm::vec3 rotationDeg{ 0, 0, 0 };
+	glm::vec3 scale{ 1, 1, 1 };
+};
+
 /**
  * @struct Scene
  * @brief Encapsulates all data required to render a scene.
@@ -32,15 +39,19 @@ struct Scene
 {
 	/** The mesh geometry of the scene (vertices, indices, materials). */
 	Mesh mesh;
+	/// The original mesh as loaded from file (for reset purposes).
+	Mesh meshOriginal;
 
 	/** The active camera used to view the scene. */
 	Camera camera;
 
-	 /** The main light source used for shading the scene. */
+	/** The main light source used for shading the scene. */
 	Light light;
-	
+
 	/** Background color of the scene. */
-	glm::vec4 backgroundColor{0.0f, 0.0f, 0.0f, 1.0f};
+	glm::vec4 backgroundColor{ 0.0f, 0.0f, 0.0f, 1.0f };
+
+	ObjectTransform obj;
 
 	/** Default constructor initializing the scene with sensible defaults. */
 	Scene();
@@ -49,5 +60,7 @@ struct Scene
 	void reset();
 
 	void fitCameraToMesh(float aspectRatio);
-};
 
+	void setMesh(const Mesh &m);
+	void applyObjectTransformToMesh();
+};

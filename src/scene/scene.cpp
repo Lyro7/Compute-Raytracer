@@ -2,6 +2,9 @@
 #include <cfloat>
 #include <glm/glm.hpp>
 #include <iostream>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp> 
+#include <glm/gtc/constants.hpp>
 
 
 Scene::Scene()
@@ -52,4 +55,35 @@ void Scene::reset()
     std::cout << "[Scene] reset\n";
 	*this = Scene();
 	backgroundColor = glm::vec4(0, 0, 0, 1);
+}
+
+void Scene::setMesh(const Mesh& m)
+{
+    meshOriginal = m;
+    mesh = m;
+}
+
+void Scene::applyObjectTransformToMesh()
+{
+    mesh = meshOriginal;
+
+    glm::mat4 M(1.0f);
+    M = glm::translate(M, obj.translation);
+    M = glm::rotate(M, glm::radians(obj.rotationDeg.x), glm::vec3(1,0,0));
+    M = glm::rotate(M, glm::radians(obj.rotationDeg.y), glm::vec3(0,1,0));
+    M = glm::rotate(M, glm::radians(obj.rotationDeg.z), glm::vec3(0,0,1));
+    M = glm::scale(M, obj.scale);
+
+    // Normal-Matrix (für korrektes Licht beim Rotieren/Skalieren)
+    glm::mat4 N = glm::transpose(glm::inverse(M));
+
+    for (auto& v : mesh.vertices)
+    {
+        // Position: w=1
+        v.pos = M * v.pos;
+
+        // Normal: w=0 (damit Translation egal ist)
+        glm::vec4 n = N * glm::vec4(glm::vec3(v.normal), 0.0f);
+        v.normal = glm::vec4(glm::normalize(glm::vec3(n)), 0.0f);
+    }
 }
