@@ -6,8 +6,8 @@
 RaytracerEngine::RaytracerEngine(const GLsizei height, const GLsizei width, Scene &sc)
     : _scene(sc)
     , _gpuParams()
-    , _compute(height, width, sc.mesh, raytraceTex)
-    , _preview(height, width, sc.mesh, _gpuParams, previewTex)
+    , _compute(height, width, sc, raytraceTex)
+    , _preview(height, width, sc, previewTex)
 {
 	// Init raytracing
 	GLuint computeShader = _compute.createComputeShader("shaders/compute.glsl");
@@ -70,8 +70,4 @@ void RaytracerEngine::onSceneChanged()
     // Update uniform params (camera/light etc.)
     _gpuParams.updateGpuSceneParams(_scene);
     uploadSceneParams();
-
-    // Re-upload mesh for both pipelines
-    _compute.updateMesh();
-    _preview.updateMesh();
 }

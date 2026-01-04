@@ -4,27 +4,7 @@
 #include <glad/glad.h>
 #include <string>
 
-void linearizeTriangles(const std::vector<Triangle> &triangles, std::vector<glm::vec4> &outPositions,
-                        std::vector<glm::vec4> &outColors)
-{
-	outPositions.clear();
-	outColors.clear();
-
-	for (const auto &tri : triangles)
-	{
-		// Vertex 1
-		outPositions.push_back(tri.v1);
-		outColors.push_back(tri.material.diffuseColor);
-
-		// Vertex 2
-		outPositions.push_back(tri.v2);
-		outColors.push_back(tri.material.diffuseColor);
-
-		// Vertex 3
-		outPositions.push_back(tri.v3);
-		outColors.push_back(tri.material.diffuseColor);
-	}
-}
+void linearizeTriangles(const std::vector<Triangle> &triangles, std::vector<glm::vec4> &outPositions, std::vector<glm::vec4> &outColors);
 
 /**
  * @class RenderProgram
@@ -52,7 +32,7 @@ struct RenderProgram
 	 * @param[in] gpuParams the GpuParams which are defined by the user, containing a fixed camera and light position.
 	 * @param[in] outTex The texture ID for the output image from the compute shader.
 	 */
-	RenderProgram(const GLsizei height, const GLsizei width, Scene &scene, GpuSceneParams &gpuParams, GLuint &tex);
+	RenderProgram(const GLsizei height, const GLsizei width, Scene &scene, GLuint &tex);
 
 	/**
 	 * @brief Creates and compiles a vertex shader.
@@ -111,9 +91,6 @@ private:
 	std::vector<glm::vec4> _positions; 
 
 	std::vector<glm::vec4> _colors; 
-
-	/** @brief The gpuParams containing user specifications for light and camera. */
-	GpuSceneParams _gpuParams;
 
 	/** @brief The fbo used for offscreen rendering of the preview */
 	GLuint _fbo = 0;

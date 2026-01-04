@@ -28,16 +28,10 @@ public:
 	GLuint workGroupY;
 
 	/** SSBO storing vertex data of mesh (binding = 1). */
-	GLuint verticesBuffer;
+	GLuint triangleBuffer;
 
-	/** SSBO storing index data of mesh (binding = 2). */
-	GLuint indicesBuffer;
-
-	/** SSBO storing material data of mesh (binding = 3). */
-	GLuint materialsBuffer;
-
-	/** SSBO storing material ids of mesh for every triangle (binding = 4) */
-	GLuint materialIdsBuffer;
+	/** SSBO storing mesh info. */
+	GLuint meshInfoBuffer;
 
 	/**
 	 * @brief Initializes compute shader resources (textures, SSBOs, work groups).
@@ -47,7 +41,7 @@ public:
 	 * @param[in] mesh The Mesh to upload to the shader.
 	 * @param[out] tex The output texture on which the shader will work on.
 	 */
-	ComputeProgram(const GLsizei height, const GLsizei width, Mesh &mesh, GLuint &tex);
+	ComputeProgram(const GLsizei height, const GLsizei width, Scene &scene, GLuint &tex);
 
 	/**
 	 * @brief Loads and compiles a compute shader from file.
@@ -79,14 +73,6 @@ public:
 	 */
 	void dispatchCompute() const;
 
-	/**
-	* @brief Re-uploads mesh data (vertices/indices/materials) to the GPU buffers.
-	*
-	* Use this after the scene/mesh was replaced to synchronize SSBO contents.
-	* The SSBO buffer handles remain the same; only their data is updated.
-	*/
-	void updateMesh();
-
 private:
 	/** Output height in pixels. */
 	GLsizei _height;
@@ -94,8 +80,7 @@ private:
 	/** Output width in pixels. */
 	GLsizei _width;
 
-	/* Mesh containing geometry and material data */
-	Mesh _mesh;
+	Scene _scene;
 
 	/**
 	 * @brief Creates textures, SSBOs, and calculates work group counts.

@@ -150,7 +150,7 @@ void RaytracerUI::drawTool()
 						// optional: extension check
 						if (std::filesystem::path(p).extension() == ".obj")
 						{
-							scene.mesh = ObjectLoader::loadMesh(p);
+							scene.addMesh(ObjectLoader::loadMesh(p));
 							patchActiveSceneJsonModelPath(p);
 							raytraceRequested = true;
 						}
@@ -279,7 +279,7 @@ void RaytracerUI::drawFileExplorerPopup()
 								{
 									std::string fullPath = entry.path().string();
 
-									scene.mesh = ObjectLoader::loadMesh(fullPath);
+									scene.addMesh(ObjectLoader::loadMesh(fullPath));
 
 									patchActiveSceneJsonModelPath(fullPath);
 									;
@@ -386,7 +386,7 @@ void RaytracerUI::drawSettings()
 			somethingChanged = true;
 		}
 
-		if (ImGui::SliderFloat("Intensity", &scene.light.intensity, 0.0f, 100.0f))
+		if (ImGui::SliderFloat("Intensity", &scene.light.intensity.x, 0.0f, 1000.0f))
 		{
 			somethingChanged = true;
 		}
@@ -592,7 +592,7 @@ void RaytracerUI::syncActiveSceneJsonFromScene()
 
 		jl0["color"] = { { "r", scene.light.color.x }, { "g", scene.light.color.y }, { "b", scene.light.color.z } };
 
-		jl0["luminosity"] = scene.light.intensity;
+		jl0["luminosity"] = scene.light.intensity.x;
 	}
 
 	// Camera block

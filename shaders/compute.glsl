@@ -2,7 +2,7 @@
 
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
-struct Material
+/*struct Material
 {
     vec4 diffuseColor;	// rgb = diffuseColor.xyz, w unused
 	vec4 specularColor; // rgb = specularColor.xyz, shininess(Ns) = w
@@ -28,9 +28,10 @@ struct GpuSceneParams
     GpuCameraParams camera;
     GpuLightParams light;
 };
+*/
 
 layout(binding = 0, rgba32f) uniform image2D outputImage;
-
+/*
 // Mesh data SSBO
 layout(std430, binding = 0) buffer VertexBuffer 
 {
@@ -129,8 +130,11 @@ bool isInShadow(vec3 hitPos, vec3 lightPos, uint ignoreTri)
     return false; // not in shadow
 }
 
+*/
+
 void main() 
 {
+
     ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
     ivec2 size  = imageSize(outputImage);
 
@@ -138,6 +142,8 @@ void main()
     {
         return;
     }
+
+    /*
 
     // Normalized uv in [0,1]
     vec2 uv = (vec2(pixel) + 0.5) / vec2(size);
@@ -236,4 +242,7 @@ void main()
     color = diffuse + specular + emission; 
   }
     imageStore(outputImage, pixel, vec4(color, 1.0));
+    */
+
+     imageStore(outputImage, pixel, vec4(0.5, 0.5, 0.5, 1.0));
 }

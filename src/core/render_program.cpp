@@ -3,10 +3,31 @@
 #include <fstream>
 #include <iostream>
 
-RenderProgram::RenderProgram(const GLsizei height, const GLsizei width, Scene &scene, GpuSceneParams &gpuParams, GLuint &tex)
+void linearizeTriangles(const std::vector<Triangle> &triangles, std::vector<glm::vec4> &outPositions,
+                        std::vector<glm::vec4> &outColors)
+{
+	outPositions.clear();
+	outColors.clear();
+
+	for (const auto &tri : triangles)
+	{
+		// Vertex 1
+		outPositions.push_back(tri.v1);
+		outColors.push_back(tri.material.diffuseColor);
+
+		// Vertex 2
+		outPositions.push_back(tri.v2);
+		outColors.push_back(tri.material.diffuseColor);
+
+		// Vertex 3
+		outPositions.push_back(tri.v3);
+		outColors.push_back(tri.material.diffuseColor);
+	}
+}
+
+RenderProgram::RenderProgram(const GLsizei height, const GLsizei width, Scene &scene, GLuint &tex)
     : _height(height)
     , _width(width) 
-	, _gpuParams(gpuParams)
 	, tex(tex)
 {
 	linearizeTriangles(scene.triangles, _positions, _colors);

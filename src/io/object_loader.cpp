@@ -7,7 +7,7 @@
 #include <vector>
 #include <algorithm>
 
-Material convertMaterial(const tinyobj::material_t &m)
+static Material convertMaterial(const tinyobj::material_t &m)
 {
 	Material mat;
 
@@ -98,6 +98,105 @@ Mesh ObjectLoader::loadMesh(const std::string &path)
 			{
 				tri.material = defaultMat;
 			}
+
+			mesh.addTriangle(tri);
+			index_offset += 3;
+		}
+	}
+
+	return mesh;
+}
+
+Mesh ObjectLoader::loadMeshFromMemory(const std::vector<uint8_t> &objBytes, const std::string &virtualName,
+                                      const std::vector<uint8_t> &mtlBytes) // MTL optional
+{
+	Mesh mesh;
+
+	if (objBytes.empty())
+	{
+		std::cerr << "OBJ bytes empty: " << virtualName << "\n";
+		return mesh;
+	}
+
+	// OBJ bytes -> String
+	std::string objText(reinterpret_cast<const char *>(objBytes.data()), objBytes.size());
+
+	// MTL bytes -> String (falls vorhanden)
+	std::string mtlText;
+	if (!mtlBytes.empty())
+		mtlText = std::string(reinterpret_cast<const char *>(mtlBytes.data()), mtlBytes.size());
+
+	tinyobj::ObjReader reader;
+	tinyobj::ObjReaderConfig cfg;
+	cfg.triangulate = true;
+
+	if (!reader.ParseFromString(objText, mtlText, cfg))
+	{
+		std::cerr << "Error while parsing OBJ from memory (" << virtualName << "): " << reader.Error() << "\n";
+		return mesh;
+	}
+
+	auto &attrib = reader.GetAttrib();
+	auto &shapes = reader.GetShapes();
+	auto &materials = reader.GetMaterials();
+
+	// Default-Material wie in der ersten Methode
+	Material defaultMat;
+	defaultMat.diffuseColor = glm::vec4(0.8f, 0.8f, 0.8f, 0.0);
+	defaultMat.specularColor = glm::vec4(0.0, 0.0, 0.0, 0.0);
+	defaultMat.emission = glm::vec4(glm::vec3(0.8f, 0.7f, 0.6f), 0.0);
+
+	// Iteriere über Shapes
+	for (size_t s = 0; s < shapes.size(); s++)
+	{
+		size_t index_offset = 0;
+
+		for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++)
+		{
+			Triangle tri;
+
+			// Wir gehen davon aus, dass triangulate = true gesetzt ist, also 3 Vertices pro Face
+			for (size_t v = 0; v < 3; v++)
+			{
+				tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
+
+				// Position
+				float vx = attrib.vertices[3 * size_t(idx.vertex_index) + 0];
+				float vy = attrib.vertices[3 * size_t(idx.vertex_index) + 1];
+				float vz = attrib.vertices[3 * size_t(idx.vertex_index) + 2];
+
+				if (v == 0)
+					tri.v1 = glm::vec4(vx, vy, vz, 0.0);
+				if (v == 1)
+					tri.v2 = glm::vec4(vx, vy, vz, 0.0);
+				if (v == 2)
+					tri.v3 = glm::vec4(vx, vy, vz, 0.0);
+
+				// Normalen
+				if (idx.normal_index >= 0)
+				{
+					float nx = attrib.normals[3 * size_t(idx.normal_index) + 0];
+					float ny = attrib.normals[3 * size_t(idx.normal_index) + 1];
+					float nz = attrib.normals[3 * size_t(idx.normal_index) + 2];
+
+					if (v == 0)
+						tri.NA = glm::vec4(nx, ny, nz, 0.0);
+					if (v == 1)
+						tri.NB = glm::vec4(nx, ny, nz, 0.0);
+					if (v == 2)
+						tri.NC = glm::vec4(nx, ny, nz, 0.0);
+				}
+			}
+
+			// Material-ID
+			int mat_id = -1;
+			if (f < shapes[s].mesh.material_ids.size())
+				mat_id = shapes[s].mesh.material_ids[f];
+
+			if (mat_id >= 0 && mat_id < materials.size())
+				tri.material = convertMaterial(materials[mat_id]);
+			else
+				tri.material = defaultMat;
 
 			mesh.addTriangle(tri);
 			index_offset += 3;

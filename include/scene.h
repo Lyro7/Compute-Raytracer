@@ -19,7 +19,7 @@ struct Light
 	glm::vec4 color;
 
 	/** Strength of the light source. */
-	float intensity;
+	glm::vec4 intensity;
 };
 
 /**

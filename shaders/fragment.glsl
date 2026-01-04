@@ -12,8 +12,9 @@ struct CameraParams {
 };
 
 struct LightParams {
-    vec4 intensity; //only .x used and its between [0,1]
+    vec4 position;
     vec4 color;
+    vec4 intensity; //only .x used and its between [0,1]
 };
 
 layout(std140, binding = 0) uniform SceneBlock
