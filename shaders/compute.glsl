@@ -2,21 +2,11 @@
 
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
-struct Vertex 
-{
-    vec4 pos;
-    vec4 normal;
-    vec2 uv;
-    vec2 padding;
-};
-
 struct Material
 {
-    vec4 albedo;
-    float roughness;
-    float metallic;
-    float emissionStrength;
-    vec4 emissionColor;
+    vec4 diffuseColor;	// rgb = diffuseColor.xyz, w unused
+	vec4 specularColor; // rgb = specularColor.xyz, shininess(Ns) = w
+	vec4 emission;      // emissionColor = emission.xyz, emissionStrength = w
 };
 
 struct GpuCameraParams{
@@ -30,7 +20,7 @@ struct GpuCameraParams{
 struct GpuLightParams{
 	vec4 position;
 	vec4 color;
-    float intensity;
+    vec4 intensity;
 };
 
 struct GpuSceneParams
@@ -212,7 +202,7 @@ void main()
     float distanceToLight = length(lightPos - hitPos);
     float attenuation = 1.0 / (1.0 + 0.02 * distanceToLight + 0.001 * distanceToLight * distanceToLight);
 
-    vec3 radiance = gpuSceneParams.light.color.rgb * gpuSceneParams.light.intensity * attenuation;
+    vec3 radiance = gpuSceneParams.light.color.rgb * gpuSceneParams.light.intensity.x * attenuation;
 
 
     float u = closestHitPoint.x;
@@ -232,8 +222,7 @@ void main()
     uint triId = hitTri / 3u;
     uint matId = materialIndices[triId];
     Material mat = materials[matId];
-
-    vec3 ambient = mat.albedo.rgb * 0.08;     
+    
     vec3 diffuse = mat.albedo.rgb * radiance * NdotL;
 
     vec3 V = normalize(origin - hitPos);
@@ -244,7 +233,7 @@ void main()
 
     vec3 emission = mat.emissionColor.rgb * mat.emissionStrength;
 
-    color = ambient + diffuse + specular + emission; 
+    color = diffuse + specular + emission; 
   }
     imageStore(outputImage, pixel, vec4(color, 1.0));
 }
