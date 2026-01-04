@@ -74,6 +74,7 @@ void RaytracerEngine::uploadSceneParams() const
 void RaytracerEngine::onSceneChanged()
 {
 	std::cout << "[Engine] Scene changed -> updating GPU buffers\n";
+	clearOutputTextures(0, 0, 0, 1);
 
 	// Update uniform params (camera/light etc.)
 	_gpuParams.updateGpuSceneParams(_scene);
