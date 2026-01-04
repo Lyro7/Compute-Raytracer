@@ -153,6 +153,9 @@ private:
 	/** * @brief Background color (RGB 0–1).*/
 	float bg[3] = { 0.0f, 0.0f, 0.0f }; 
 
+	/** * @brief Indicates whether the object transform UI has been initialized.*/
+	bool m_objUiInit = false;
+	
 	/** @brief Resets the environment to default state. */
 	void resetEnvironment();
 

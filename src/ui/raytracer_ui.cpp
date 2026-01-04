@@ -38,9 +38,6 @@ void RaytracerUI::beginFrame()
 
 void RaytracerUI::draw()
 {
-	engine.renderFrame(raytraceRequested);
-	raytraceRequested = false;
-
 	drawView();
 	drawTool();
 	drawSettings();
@@ -50,6 +47,8 @@ void RaytracerUI::draw()
 	{
 		drawFileExplorerPopup();
 	}
+	engine.renderFrame(raytraceRequested);
+	raytraceRequested = false;
 }
 
 void RaytracerUI::endFrame()
@@ -83,12 +82,12 @@ void RaytracerUI::drawView()
 	{
 		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 0.9f));
 		ImGui::SetCursorPosX(width * 0.5f - 40.0f);
-		ImGui::Text("Preview");
 		ImGui::PopStyleColor();
 		ImGui::Spacing();
 
 		ImVec2 avail = ImGui::GetContentRegionAvail();
 
+		ImGui::Text(showRaytraced ? "Raytraced" : "Preview");
 		GLuint texToShow = showRaytraced ? engine.raytraceTex : engine.previewTex;
 
 		ImGui::Image((ImTextureID)(intptr_t)texToShow, avail, ImVec2(0, 1), ImVec2(1, 0));
@@ -279,10 +278,11 @@ void RaytracerUI::drawFileExplorerPopup()
 								{
 									std::string fullPath = entry.path().string();
 
-									scene.mesh = ObjectLoader::loadMesh(fullPath);
+									//scene.mesh = ObjectLoader::loadMesh(fullPath);
+									scene.setMesh(ObjectLoader::loadMesh(fullPath));
+									scene.applyObjectTransformToMesh();
 
 									patchActiveSceneJsonModelPath(fullPath);
-									;
 
 									raytraceRequested = true;
 									m_showModelBrowser = false;
@@ -303,6 +303,7 @@ void RaytracerUI::drawFileExplorerPopup()
 
 									m_requestedZipPath = zipPath;
 									m_requestLoadZip = true;
+									raytraceRequested = true;
 
 									m_showModelBrowser = false;
 								}
@@ -356,22 +357,49 @@ void RaytracerUI::drawSettings()
 			somethingChanged = true;
 		}
 		ImGui::SeparatorText("Object");
+		ImGui::Text("ID 1");
 
-		// Hardcoded Test-Daten, damit man im UI etwas sieht
-		static float testObjectPos[3] = { 1.0f, 2.0f, 3.0f };
-		static float testObjectRot[3] = { 0.0f, 45.0f, 0.0f };
+		static float objPos[3];
+		static float objRot[3];
+		static float objScale[3];
+
+		if (!m_objUiInit)
+		{
+			objPos[0] = scene.obj.translation.x;
+			objPos[1] = scene.obj.translation.y;
+			objPos[2] = scene.obj.translation.z;
+
+			objRot[0] = scene.obj.rotationDeg.x;
+			objRot[1] = scene.obj.rotationDeg.y;
+			objRot[2] = scene.obj.rotationDeg.z;
+
+			objScale[0] = scene.obj.scale.x;
+			objScale[1] = scene.obj.scale.y;
+			objScale[2] = scene.obj.scale.z;
+
+			m_objUiInit = true;
+		}
 
 		// Position
-		ImGui::Text("ID 1");
-		ImGui::DragFloat3("##ObjectPos", testObjectPos, 0.1f, -100.0f, 100.0f, "%.2f");
-		ImGui::SameLine();
-		ImGui::Text("Position");
+		if (ImGui::DragFloat3("Position##Obj", objPos, 0.1f, -100.0f, 100.0f, "%.2f"))
+		{
+			scene.obj.translation = { objPos[0], objPos[1], objPos[2] };
+			somethingChanged = true;
+		}
 
-		// Rotation als Slider
+		// Rotation
+		if (ImGui::SliderFloat3("Rotation##Obj", objRot, -360.0f, 360.0f, "%.1f deg"))
+		{
+			scene.obj.rotationDeg = { objRot[0], objRot[1], objRot[2] };
+			somethingChanged = true;
+		}
 
-		ImGui::SliderFloat3("##ObjectRotSlider", testObjectRot, -360.0f, 360.0f, "%.1f°");
-		ImGui::SameLine();
-		ImGui::Text("Rotation");
+		// Scale
+		if (ImGui::DragFloat3("Scale##Obj", objScale, 0.01f, 0.001f, 100.0f, "%.3f"))
+		{
+			scene.obj.scale = { objScale[0], objScale[1], objScale[2] };
+			somethingChanged = true;
+		}
 
 		ImGui::SeparatorText("Light");
 		ImGui::Text("ID 1");
@@ -412,8 +440,10 @@ void RaytracerUI::drawSettings()
 
 		if (somethingChanged)
 		{
+			scene.applyObjectTransformToMesh();
+			engine.onSceneChanged();
+			raytraceRequested = showRaytraced;
 			syncActiveSceneJsonFromScene();
-			raytraceRequested = true;
 		}
 
 		ImGui::Spacing();
@@ -478,6 +508,7 @@ void RaytracerUI::onSceneChanged(const std::string &json)
 
 			scene.backgroundColor = glm::vec4(bg[0], bg[1], bg[2], 1.0f);
 		}
+		m_objUiInit = false;
 	}
 	catch (const std::exception &e)
 	{
@@ -588,7 +619,7 @@ void RaytracerUI::syncActiveSceneJsonFromScene()
 	{
 		auto &jl0 = m_activeSceneJsonObj["lights"][0];
 
-		setVec3(jl0, "position", scene.light.position);
+		setVec3(jl0, "position", glm::vec3(scene.light.position));
 
 		jl0["color"] = { { "r", scene.light.color.x }, { "g", scene.light.color.y }, { "b", scene.light.color.z } };
 
@@ -608,6 +639,17 @@ void RaytracerUI::syncActiveSceneJsonFromScene()
 	m_activeSceneJsonObj["background_color"] = { { "r", scene.backgroundColor.x },
 		                                         { "g", scene.backgroundColor.y },
 		                                         { "b", scene.backgroundColor.z } };
+
+	// Object block (first object)
+	if (m_activeSceneJsonObj.contains("objects") && m_activeSceneJsonObj["objects"].is_array() &&
+	    !m_activeSceneJsonObj["objects"].empty())
+	{
+		auto &jo0 = m_activeSceneJsonObj["objects"][0];
+
+		setVec3(jo0, "translation", scene.obj.translation);
+		setVec3(jo0, "rotation", scene.obj.rotationDeg);
+		setVec3(jo0, "scale", scene.obj.scale);
+	}
 
 	// Update the string shown in UI + used for export
 	m_activeSceneJson = m_activeSceneJsonObj.dump(2);
@@ -633,7 +675,7 @@ void RaytracerUI::resetEnvironment()
 	m_requestLoadZip = false;
 	m_requestedZipPath.clear();
 
+	raytraceRequested = false;
 	engine.onSceneChanged();
 	engine.clearOutputTextures(0, 0, 0, 1);
-	raytraceRequested = false;
 }
