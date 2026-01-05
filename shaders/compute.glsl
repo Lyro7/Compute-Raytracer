@@ -193,31 +193,16 @@ void main()
 
         float distanceToLight = length(lightPos - hitPos);
         float attenuation = 1.0 / (1.0 + 0.02 * distanceToLight + 0.001 * distanceToLight * distanceToLight);
-        vec3 radiance = gpuSceneParams.light.color.rgb * gpuSceneParams.light.intensity.x * attenuation;
 
         float u = closestHitPoint.x;
         float v = closestHitPoint.y;
         float w = 1.0 - u - v;
 
-        vec3 N = normalize(w * tri.NA.xyz + u * tri.NB.xyz + v * tri.NC.xyz);
-        if (dot(N, dir) > 0.0) N = -N;
-
-        vec3 L = normalize(lightPos - hitPos);
-        float NdotL = max(dot(N, L), 0.0);
-
         Material mat = tri.material;
 
-        vec3 diffuse = mat.diffuseColor.rgb * radiance * NdotL;
+        vec3 diffuse = mat.diffuseColor.rgb;
 
-        vec3 V = normalize(origin - hitPos);
-        vec3 H = normalize(L + V);
-        float specPow = mat.specularColor.w; // shininess
-        float spec = pow(max(dot(N, H), 0.0), specPow);
-        vec3 specular = mat.specularColor.rgb * radiance * spec;
-
-        vec3 emission = mat.emission.xyz * mat.emission.w;
-
-        color = diffuse + specular + emission;
+        color = diffuse * attenuation;
     }
 
     imageStore(outputImage, pixel, vec4(color, 1.0));
