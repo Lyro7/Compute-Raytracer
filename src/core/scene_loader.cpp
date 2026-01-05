@@ -504,6 +504,8 @@ Scene SceneLoader::loadScene(const std::string &jsonString)
 		scene.addMesh(extractMesh(root.asObj()->at("objects").asArr()->at(0)));
 	}
 
+	scene.fitCameraToMesh(16.0f / 9.0f);
+
 	return scene;
 }
 void SceneLoader::setSceneRoot(const std::filesystem::path& root)

@@ -2,6 +2,8 @@
 
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
+#define EPSILON 5e-3
+
 struct Material
 {
     vec4 diffuseColor;	// rgb = diffuseColor.xyz, w unused
@@ -67,73 +69,63 @@ layout(std140, binding = 0) uniform SceneParams
 //M�ller, T., & Trumbore, B. (1997). Fast, minimum storage ray-triangle intersection. Journal of Graphics Tools, 2(1), 21-28.
 bool intersectTriangle(vec3 orig, vec3 dir, vec3 v0, vec3 v1, vec3 v2, out float tHit, out vec2 hit)
 {
-    const float EPSILON = 1e-6;
-
     vec3 e1 = v1 - v0;
     vec3 e2 = v2 - v0;
 
-    vec3 p = cross(dir, e2);
-    float det = dot(e1, p);
+    vec3 p = cross(e1, e2);
+    float det = -dot(dir, p);
 
-    if (abs(det) < EPSILON)
+    if (det < EPSILON)
         return false;
 
     float invDet = 1.0 / det;
-    vec3 t = orig - v0;
+    vec3 ao = orig - v0;
+    vec3 dao = cross(ao, dir);
 
-    float u = dot(t, p) * invDet;
-    if (u < 0.0 || u > 1.0)
-        return false;
+    float t = dot(ao, p) * invDet;
+    float u = dot(e2, dao) * invDet;
+    float v = -dot(e1, dao) * invDet;
+    float w = 1.0 - u - v;
 
-    vec3 q = cross(t, e1);
-    float v = dot(dir, q) * invDet;
-    if (v < 0.0 || u + v > 1.0)
-        return false;
-
-    float tTemp = dot(e2, q) * invDet;
-    if (tTemp < EPSILON) {
+    if (t < 0 || u < 0.0 || v < 0.0 || w < 0.0)
+    {
         return false;
     }
 
     hit = vec2(u, v);
-    tHit = tTemp;
+    tHit = t;
     return true;
 }
 
-/*
 bool isInShadow(vec3 hitPos, vec3 lightPos, uint ignoreTri)
 {
     vec3 shadowDir = normalize(lightPos - hitPos);
     float maxDist = length(lightPos - hitPos);
 
-    uint indexCount = indices.length();
-
-    for (uint i = 0; i < indexCount; i += 3)
+    // Durch alle Dreiecke iterieren
+    for (uint i = 0u; i < triangles.length(); ++i)
     {
-        if (i == ignoreTri) continue;
-    
-        uint i0 = indices[i + 0];
-        uint i1 = indices[i + 1];
-        uint i2 = indices[i + 2];
+        if (i == ignoreTri) continue; 
 
-        vec3 v0 = vertices[i0].pos.xyz;
-        vec3 v1 = vertices[i1].pos.xyz;
-        vec3 v2 = vertices[i2].pos.xyz;
+        Triangle tri = triangles[i];
+        vec3 v0 = tri.v1.xyz;
+        vec3 v1 = tri.v2.xyz;
+        vec3 v2 = tri.v3.xyz;
 
         float tHitShadow;
         vec2 dummy;
 
-        //Send a ray from hitpoint to light source. Origin of the ray is moved a bit in the direction of the light source to prevent self-intersection.
-        if (intersectTriangle(hitPos + shadowDir * 1e-6, shadowDir, v0, v1, v2, tHitShadow, dummy))
+        // Verschiebe den Ursprung ein wenig, um Selbstüberschneidungen zu vermeiden
+        if (intersectTriangle(hitPos, shadowDir, v0, v1, v2, tHitShadow, dummy))
         {
-            if (tHitShadow > 0.0 && tHitShadow < maxDist)
+            if (tHitShadow < maxDist - 1e-4)
             {
-                return true; //in shadow
+                return true; // im Schatten
             }
         }
     }
-    return false; // not in shadow
-}*/
+    return false; // nicht im Schatten
+}
 
 void main() 
 {
@@ -183,27 +175,47 @@ void main()
         }
     }
 
-    vec3 color = vec3(0.0);
+    vec3 skyColor = vec3(0.429, 0.708, 0.822);
+    vec3 color = skyColor;
 
     if (isHit)
     {
         Triangle tri = triangles[hitTriIndex];
         vec3 hitPos   = origin + dir * distanceToClosestIntersection;
         vec3 lightPos = gpuSceneParams.light.position.xyz;
+        vec3 toLight  = normalize(lightPos - hitPos);
 
         float distanceToLight = length(lightPos - hitPos);
-        float attenuation = 1.0 / (1.0 + 0.02 * distanceToLight + 0.001 * distanceToLight * distanceToLight);
+        float attenuation = 1.0 / (1.0 + 0.02 * distanceToLight + 0.01 * distanceToLight * distanceToLight);
 
         float u = closestHitPoint.x;
         float v = closestHitPoint.y;
         float w = 1.0 - u - v;
 
+        vec3 v0 = tri.v1.xyz;
+        vec3 v1 = tri.v2.xyz;
+        vec3 v2 = tri.v3.xyz;
+
+        vec3 N = normalize(w * tri.NA.xyz + u * tri.NB.xyz + v * tri.NC.xyz);
+
         Material mat = tri.material;
 
         vec3 diffuse = mat.diffuseColor.rgb;
 
-        color = diffuse * attenuation;
+        // scales with light intensitiy
+        vec3 ambientLighting = diffuse * vec3(0.3,0.3,0.4) * (gpuSceneParams.light.intensity.x /100.0);
+        color = ambientLighting;
+        
+        if (!isInShadow(hitPos, lightPos, hitTriIndex))
+        { 
+            //Lambert -> Helligkeit abhängig vom Einfallswinkel
+            float NdotL = max(dot(N, toLight), 0.0);
+            color += diffuse * gpuSceneParams.light.color.xyz * NdotL * attenuation * gpuSceneParams.light.intensity.x;
+        }
+        
+        //imageStore(outputImage, pixel, vec4(N * 0.5 + 0.5, 1.0));
+        //return;
     }
-
+    
     imageStore(outputImage, pixel, vec4(color, 1.0));
 }
