@@ -24,8 +24,8 @@ Mesh ObjectLoader::loadMesh(const std::string &path)
 {
 	Mesh mesh;
 	Material defaultMat;
-	defaultMat.diffuseColor = glm::vec4(0.8f, 0.8f, 0.8f, 0.0);
-	defaultMat.specularColor = glm::vec4(0.0, 0.0, 0.0, 0.0);
+	defaultMat.diffuseColor = glm::vec4(0.8f, 0.4f, 0.4f, 0.0);
+	defaultMat.specularColor = glm::vec4(0.0, 0.7, 0.0, 0.0);
 	defaultMat.emission = glm::vec4(glm::vec3(0.8f, 0.7f, 0.6f), 0.0);
 
 	tinyobj::ObjReader reader;
@@ -66,11 +66,11 @@ Mesh ObjectLoader::loadMesh(const std::string &path)
 				float vz = attrib.vertices[3 * size_t(idx.vertex_index) + 2];
 
 				if (v == 0)
-					tri.v1 = glm::vec4(vx, vy, vz, 0.0);
+					tri.v1 = glm::vec4(vx, vy, vz, 1.0);
 				if (v == 1)
-					tri.v2 = glm::vec4(vx, vy, vz, 0.0);
+					tri.v2 = glm::vec4(vx, vy, vz, 1.0);
 				if (v == 2)
-					tri.v3 = glm::vec4(vx, vy, vz, 0.0);
+					tri.v3 = glm::vec4(vx, vy, vz, 1.0);
 
 				// --- Normalen ---
 				if (idx.normal_index >= 0)
@@ -142,8 +142,8 @@ Mesh ObjectLoader::loadMeshFromMemory(const std::vector<uint8_t> &objBytes, cons
 
 	// Default-Material wie in der ersten Methode
 	Material defaultMat;
-	defaultMat.diffuseColor = glm::vec4(0.8f, 0.8f, 0.8f, 0.0);
-	defaultMat.specularColor = glm::vec4(0.0, 0.0, 0.0, 0.0);
+	defaultMat.diffuseColor = glm::vec4(0.8f, 0.4f, 0.8f, 0.0);
+	defaultMat.specularColor = glm::vec4(0.0, 0.0, 0.7, 0.0);
 	defaultMat.emission = glm::vec4(glm::vec3(0.8f, 0.7f, 0.6f), 0.0);
 
 	// Iteriere über Shapes
@@ -166,11 +166,11 @@ Mesh ObjectLoader::loadMeshFromMemory(const std::vector<uint8_t> &objBytes, cons
 				float vz = attrib.vertices[3 * size_t(idx.vertex_index) + 2];
 
 				if (v == 0)
-					tri.v1 = glm::vec4(vx, vy, vz, 0.0);
+					tri.v1 = glm::vec4(vx, vy, vz, 1.0);
 				if (v == 1)
-					tri.v2 = glm::vec4(vx, vy, vz, 0.0);
+					tri.v2 = glm::vec4(vx, vy, vz, 1.0);
 				if (v == 2)
-					tri.v3 = glm::vec4(vx, vy, vz, 0.0);
+					tri.v3 = glm::vec4(vx, vy, vz, 1.0);
 
 				// Normalen
 				if (idx.normal_index >= 0)

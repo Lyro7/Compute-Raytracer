@@ -327,8 +327,8 @@ Mesh SceneLoader::extractMesh(const JsonValue &json)
 
 			// --- MTL suchen ---
 			std::vector<uint8_t> mtlBytes;
-			// Einfaches Parsen der OBJ-Textdatei nach "mtllib"
 			std::string objText(reinterpret_cast<const char *>(objBytes.data()), objBytes.size());
+
 			size_t mtllibPos = objText.find("mtllib ");
 			if (mtllibPos != std::string::npos)
 			{
@@ -337,16 +337,12 @@ Mesh SceneLoader::extractMesh(const JsonValue &json)
 				mtlFile.erase(0, mtlFile.find_first_not_of(" \t\r"));
 				mtlFile.erase(mtlFile.find_last_not_of(" \t\r") + 1);
 
-				// Pfad in ZIP korrigieren
-				std::string zipMtlPath = mtlFile;
-				if (!m_sceneRootZip.empty())
-				{
-					if (zipMtlPath.find(':') == std::string::npos && !zipMtlPath.empty() && zipMtlPath[0] != '/' &&
-					    zipMtlPath.rfind(m_sceneRootZip, 0) != 0)
-					{
-						zipMtlPath = m_sceneRootZip + zipMtlPath;
-					}
-				}
+				// MTL relativ zur OBJ auflösen
+				std::filesystem::path objPath(zipInner);
+				std::filesystem::path mtlPath = objPath.parent_path() / mtlFile;
+				mtlPath = mtlPath.lexically_normal();
+
+				std::string zipMtlPath = mtlPath.generic_string();
 
 				if (m_zip->has(zipMtlPath))
 				{
@@ -355,8 +351,12 @@ Mesh SceneLoader::extractMesh(const JsonValue &json)
 				}
 				else
 				{
-					std::cout << "  MTL missing in ZIP, using default materials\n";
+					std::cout << "  MTL referenced but NOT found in ZIP: " << zipMtlPath << "\n";
 				}
+			}
+			else
+			{
+				std::cout << "  OBJ has NO mtllib reference\n";
 			}
 
 			mesh = ObjectLoader::loadMeshFromMemory(objBytes, path, mtlBytes);
@@ -383,6 +383,7 @@ Mesh SceneLoader::extractMesh(const JsonValue &json)
 	std::cout << "mesh tris=" << mesh.getTriangles().size() << "\n";
 	return mesh;
 }
+
 
 
 

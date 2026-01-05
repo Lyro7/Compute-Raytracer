@@ -2,11 +2,21 @@
 
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
-/*struct Material
+struct Material
 {
     vec4 diffuseColor;	// rgb = diffuseColor.xyz, w unused
 	vec4 specularColor; // rgb = specularColor.xyz, shininess(Ns) = w
 	vec4 emission;      // emissionColor = emission.xyz, emissionStrength = w
+};
+
+struct Triangle {
+    vec4 v1;
+    vec4 v2;
+    vec4 v3;
+    vec4 NA;
+    vec4 NB;
+    vec4 NC;
+    Material material;
 };
 
 struct GpuCameraParams{
@@ -28,30 +38,24 @@ struct GpuSceneParams
     GpuCameraParams camera;
     GpuLightParams light;
 };
-*/
+
+struct MeshInfo {
+    int firstTriangleIndex;
+    int numTriangles;
+    vec2 padding;
+};
+
+layout(std430, binding = 0) buffer triangleBuffer 
+{
+    Triangle triangles[];
+};
+
+layout(std430, binding = 1) buffer meshInfoBuffer 
+{
+    MeshInfo meshInfos[];
+};
 
 layout(binding = 0, rgba32f) uniform image2D outputImage;
-/*
-// Mesh data SSBO
-layout(std430, binding = 0) buffer VertexBuffer 
-{
-    Vertex vertices[];
-};
-
-layout(std430, binding = 1) buffer IndexBuffer 
-{
-    uint indices[];
-};
-
-layout(std430, binding = 2) buffer MaterialBuffer 
-{
-    Material materials[];
-};
-
-layout(std430, binding = 3) buffer MaterialIndexBuffer 
-{
-    uint materialIndices[];
-};
 
 // Camera data UBO
 layout(std140, binding = 0) uniform SceneParams
@@ -96,6 +100,7 @@ bool intersectTriangle(vec3 orig, vec3 dir, vec3 v0, vec3 v1, vec3 v2, out float
     return true;
 }
 
+/*
 bool isInShadow(vec3 hitPos, vec3 lightPos, uint ignoreTri)
 {
     vec3 shadowDir = normalize(lightPos - hitPos);
@@ -128,22 +133,15 @@ bool isInShadow(vec3 hitPos, vec3 lightPos, uint ignoreTri)
         }
     }
     return false; // not in shadow
-}
-
-*/
+}*/
 
 void main() 
 {
-
     ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
     ivec2 size  = imageSize(outputImage);
 
     if (pixel.x < 0 || pixel.y < 0 || pixel.x >= size.x || pixel.y >= size.y)
-    {
         return;
-    }
-
-    /*
 
     // Normalized uv in [0,1]
     vec2 uv = (vec2(pixel) + 0.5) / vec2(size);
@@ -159,41 +157,28 @@ void main()
     // Trace
     bool isHit = false;
     float distanceToClosestIntersection = 1e30;
-    uint hitTri = uint(-1);
-
-    // store info for closest hit (IMPORTANT!)
+    uint hitTriIndex = 0u;
     vec2 closestHitPoint = vec2(0.0);
-    uint closestI0 = 0u, closestI1 = 0u, closestI2 = 0u;
-
-    uint indexCount = indices.length();
 
     // Iterate over triangles
-    for (uint i = 0; i < indexCount; i += 3)
+    for (uint i = 0u; i < triangles.length(); ++i)
     {
-        uint i0 = indices[i + 0];
-        uint i1 = indices[i + 1];
-        uint i2 = indices[i + 2];
+        Triangle tri = triangles[i];
+        vec3 v0 = tri.v1.xyz;
+        vec3 v1 = tri.v2.xyz;
+        vec3 v2 = tri.v3.xyz;
 
-        vec3 v0 = vertices[i0].pos.xyz;
-        vec3 v1 = vertices[i1].pos.xyz;
-        vec3 v2 = vertices[i2].pos.xyz;
+        float tHit;
+        vec2 hitUV;
 
-        float distanceToIntersection;
-        vec2 hitPoint;
-
-        if (intersectTriangle(origin, dir, v0, v1, v2, distanceToIntersection, hitPoint))
+        if (intersectTriangle(origin, dir, v0, v1, v2, tHit, hitUV))
         {
-            if (distanceToIntersection < distanceToClosestIntersection)
+            if (tHit < distanceToClosestIntersection)
             {
-                distanceToClosestIntersection = distanceToIntersection;
-                hitTri = i;
+                distanceToClosestIntersection = tHit;
                 isHit = true;
-
-                // save barycentric + indices for the closest triangle
-                closestHitPoint = hitPoint;
-                closestI0 = i0;
-                closestI1 = i1;
-                closestI2 = i2;
+                hitTriIndex = i;
+                closestHitPoint = hitUV;
             }
         }
     }
@@ -201,48 +186,39 @@ void main()
     vec3 color = vec3(0.0);
 
     if (isHit)
-  {
-    vec3 hitPos   = origin + dir * distanceToClosestIntersection;
-    vec3 lightPos = gpuSceneParams.light.position.xyz;
+    {
+        Triangle tri = triangles[hitTriIndex];
+        vec3 hitPos   = origin + dir * distanceToClosestIntersection;
+        vec3 lightPos = gpuSceneParams.light.position.xyz;
 
-    float distanceToLight = length(lightPos - hitPos);
-    float attenuation = 1.0 / (1.0 + 0.02 * distanceToLight + 0.001 * distanceToLight * distanceToLight);
+        float distanceToLight = length(lightPos - hitPos);
+        float attenuation = 1.0 / (1.0 + 0.02 * distanceToLight + 0.001 * distanceToLight * distanceToLight);
+        vec3 radiance = gpuSceneParams.light.color.rgb * gpuSceneParams.light.intensity.x * attenuation;
 
-    vec3 radiance = gpuSceneParams.light.color.rgb * gpuSceneParams.light.intensity.x * attenuation;
+        float u = closestHitPoint.x;
+        float v = closestHitPoint.y;
+        float w = 1.0 - u - v;
 
+        vec3 N = normalize(w * tri.NA.xyz + u * tri.NB.xyz + v * tri.NC.xyz);
+        if (dot(N, dir) > 0.0) N = -N;
 
-    float u = closestHitPoint.x;
-    float v = closestHitPoint.y;
-    float w = 1.0 - u - v;
+        vec3 L = normalize(lightPos - hitPos);
+        float NdotL = max(dot(N, L), 0.0);
 
-    vec3 n0 = vertices[closestI0].normal.xyz;
-    vec3 n1 = vertices[closestI1].normal.xyz;
-    vec3 n2 = vertices[closestI2].normal.xyz;
-    vec3 N  = normalize(w * n0 + u * n1 + v * n2);
+        Material mat = tri.material;
 
-    if (dot(N, dir) > 0.0) N = -N;
+        vec3 diffuse = mat.diffuseColor.rgb * radiance * NdotL;
 
-    vec3 L = normalize(lightPos - hitPos);
-    float NdotL = max(dot(N, L), 0.0);
+        vec3 V = normalize(origin - hitPos);
+        vec3 H = normalize(L + V);
+        float specPow = mat.specularColor.w; // shininess
+        float spec = pow(max(dot(N, H), 0.0), specPow);
+        vec3 specular = mat.specularColor.rgb * radiance * spec;
 
-    uint triId = hitTri / 3u;
-    uint matId = materialIndices[triId];
-    Material mat = materials[matId];
-    
-    vec3 diffuse = mat.albedo.rgb * radiance * NdotL;
+        vec3 emission = mat.emission.xyz * mat.emission.w;
 
-    vec3 V = normalize(origin - hitPos);
-    vec3 H = normalize(L + V);
-    float specPow = 64.0;
-    float spec = pow(max(dot(N, H), 0.0), specPow);
-    vec3 specular = radiance * spec * mat.metallic;
+        color = diffuse + specular + emission;
+    }
 
-    vec3 emission = mat.emissionColor.rgb * mat.emissionStrength;
-
-    color = diffuse + specular + emission; 
-  }
     imageStore(outputImage, pixel, vec4(color, 1.0));
-    */
-
-     imageStore(outputImage, pixel, vec4(0.5, 0.5, 0.5, 1.0));
 }
