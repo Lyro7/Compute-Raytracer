@@ -7,7 +7,6 @@ RaytracerEngine::RaytracerEngine(const GLsizei height, const GLsizei width, Scen
     : _scene(sc)
     , _gpuParams()
     , _compute(height, width, sc, raytraceTex)
-    , _preview(height, width, sc, previewTex)
 {
 	// Init raytracing
 	GLuint computeShader = _compute.createComputeShader("shaders/compute.glsl");
@@ -16,16 +15,6 @@ RaytracerEngine::RaytracerEngine(const GLsizei height, const GLsizei width, Scen
 	if (!computeSucess)
 	{
 		throw std::runtime_error("Error while trying to init compute.");
-	}
-
-	// Init preview
-	GLuint vertexShader = _preview.createVertexShader("shaders/vertex.glsl");
-	GLuint fragmentShader = _preview.createFragmentShader("shaders/fragment.glsl");
-	bool previewSucess = _preview.createRenderProgram(vertexShader, fragmentShader);
-
-	if (!previewSucess)
-	{
-		throw std::runtime_error("Error while trying to init preview.");
 	}
 
 	initSceneUbo();

@@ -2,7 +2,6 @@
 
 #include "gpu_scene_params.h"
 #include "compute_program.h"
-#include "render_program.h"
 #include "scene.h"
 #include <string>
 
@@ -70,9 +69,6 @@ private:
 
 	/** Compute program used for raytracing into the raytrace texture. */
 	ComputeProgram _compute;
-
-	/** Render program used for the rasterized 3D preview. */
-	RenderProgram _preview;
 
 	/**
      * @brief Initializes the uniform buffer object for scene parameters.
