@@ -39,6 +39,7 @@ struct GpuSceneParams
 {
     GpuCameraParams camera;
     GpuLightParams light;
+	vec4 isPreview; // only .x is used 1=true 0=false 
 };
 
 struct MeshInfo {
@@ -181,41 +182,51 @@ void main()
     if (isHit)
     {
         Triangle tri = triangles[hitTriIndex];
-        vec3 hitPos   = origin + dir * distanceToClosestIntersection;
-        vec3 lightPos = gpuSceneParams.light.position.xyz;
-        vec3 toLight  = normalize(lightPos - hitPos);
-
-        float distanceToLight = length(lightPos - hitPos);
-        float attenuation = 1.0 / (1.0 + 0.02 * distanceToLight + 0.01 * distanceToLight * distanceToLight);
-
-        float u = closestHitPoint.x;
-        float v = closestHitPoint.y;
-        float w = 1.0 - u - v;
-
-        vec3 v0 = tri.v1.xyz;
-        vec3 v1 = tri.v2.xyz;
-        vec3 v2 = tri.v3.xyz;
-
-        vec3 N = normalize(w * tri.NA.xyz + u * tri.NB.xyz + v * tri.NC.xyz);
-
         Material mat = tri.material;
 
-        vec3 diffuse = mat.diffuseColor.rgb;
-
-        // scales with light intensitiy
-        vec3 ambientLighting = diffuse * vec3(0.3,0.3,0.4) * (gpuSceneParams.light.intensity.x /100.0);
-        color = ambientLighting;
-        
-        if (!isInShadow(hitPos, lightPos, hitTriIndex))
-        { 
-            //Lambert -> Helligkeit abhängig vom Einfallswinkel
-            float NdotL = max(dot(N, toLight), 0.0);
-            color += diffuse * gpuSceneParams.light.color.xyz * NdotL * attenuation * gpuSceneParams.light.intensity.x;
+        if(gpuSceneParams.isPreview.x == 1)
+        {
+            vec3 diffuse = mat.diffuseColor.rgb;
+            color = (diffuse + gpuSceneParams.light.color.xyz * 0.2) * (gpuSceneParams.light.intensity.x / 250.0);
         }
+        else
+        {
+            vec3 hitPos   = origin + dir * distanceToClosestIntersection;
+            vec3 lightPos = gpuSceneParams.light.position.xyz;
+            vec3 toLight  = normalize(lightPos - hitPos);
+
+            float distanceToLight = length(lightPos - hitPos);
+            float attenuation = 1.0 / (1.0 + 0.02 * distanceToLight + 0.01 * distanceToLight * distanceToLight);
+
+            float u = closestHitPoint.x;
+            float v = closestHitPoint.y;
+            float w = 1.0 - u - v;
+
+            vec3 v0 = tri.v1.xyz;
+            vec3 v1 = tri.v2.xyz;
+            vec3 v2 = tri.v3.xyz;
+
+            vec3 N = normalize(w * tri.NA.xyz + u * tri.NB.xyz + v * tri.NC.xyz);
+
         
-        //imageStore(outputImage, pixel, vec4(N * 0.5 + 0.5, 1.0));
-        //return;
+
+            vec3 diffuse = mat.diffuseColor.rgb;
+
+            // scales with light intensitiy
+            vec3 ambientLighting = diffuse * vec3(0.3,0.3,0.4) * (gpuSceneParams.light.intensity.x /100.0);
+            color = ambientLighting;
+        
+            if (!isInShadow(hitPos, lightPos, hitTriIndex))
+            { 
+                //Lambert -> Helligkeit abhängig vom Einfallswinkel
+                float NdotL = max(dot(N, toLight), 0.0);
+                color += diffuse * gpuSceneParams.light.color.xyz * NdotL * attenuation * gpuSceneParams.light.intensity.x;
+            }
+        
+            //imageStore(outputImage, pixel, vec4(N * 0.5 + 0.5, 1.0));
+            //return;
+           }
     }
-    
+      
     imageStore(outputImage, pixel, vec4(color, 1.0));
 }

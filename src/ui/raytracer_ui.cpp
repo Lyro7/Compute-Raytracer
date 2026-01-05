@@ -1,7 +1,6 @@
 #include "raytracer_ui.h"
 #include "compute_program.h"
 #include "imgui.h"
-#include "render_program.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include <glad/glad.h>
@@ -13,9 +12,10 @@
 #include <fstream>
 #include <nlohmann/json.hpp>
 
-RaytracerUI::RaytracerUI(RaytracerEngine &engine, Scene &scene)
+RaytracerUI::RaytracerUI(RaytracerEngine &engine, Scene &scene, bool *showRayTraced)
     : engine(engine)
     , scene(scene)
+    , _showRayTraced(showRayTraced)
 {
 }
 
@@ -38,8 +38,7 @@ void RaytracerUI::beginFrame()
 
 void RaytracerUI::draw()
 {
-	engine.renderFrame(raytraceRequested);
-	raytraceRequested = false;
+	engine.renderFrame(*_showRayTraced);
 
 	drawView();
 	drawTool();
@@ -89,7 +88,7 @@ void RaytracerUI::drawView()
 
 		ImVec2 avail = ImGui::GetContentRegionAvail();
 
-		GLuint texToShow = showRaytraced ? engine.raytraceTex : engine.previewTex;
+		GLuint texToShow = engine.raytraceTex;
 
 		ImGui::Image((ImTextureID)(intptr_t)texToShow, avail, ImVec2(0, 1), ImVec2(1, 0));
 	}
@@ -138,7 +137,6 @@ void RaytracerUI::drawTool()
 						std::cout << "Selected ZIP scene: " << p << "\n";
 						m_requestedZipPath = p;
 						m_requestLoadZip = true;
-						raytraceRequested = true;
 					}
 				}
 
@@ -152,7 +150,6 @@ void RaytracerUI::drawTool()
 						{
 							scene.addMesh(ObjectLoader::loadMesh(p));
 							patchActiveSceneJsonModelPath(p);
-							raytraceRequested = true;
 						}
 						else
 						{
@@ -284,7 +281,6 @@ void RaytracerUI::drawFileExplorerPopup()
 									patchActiveSceneJsonModelPath(fullPath);
 									;
 
-									raytraceRequested = true;
 									m_showModelBrowser = false;
 
 									std::cout << "SUCCESS: Loaded mesh from: " << fullPath << std::endl;
@@ -413,7 +409,6 @@ void RaytracerUI::drawSettings()
 		if (somethingChanged)
 		{
 			syncActiveSceneJsonFromScene();
-			raytraceRequested = true;
 		}
 
 		ImGui::Spacing();
@@ -463,7 +458,6 @@ void RaytracerUI::drawSettings()
 }
 void RaytracerUI::onSceneChanged(const std::string &json)
 {
-	raytraceRequested = true;
 	m_activeSceneJson = json;
 
 	try
@@ -508,18 +502,17 @@ void RaytracerUI::drawBar()
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.30f, 0.30f, 0.30f, 1.0f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.35f, 0.35f, 0.35f, 1.0f));
 
-		const char *label = showRaytraced ? "Back to Preview" : "Raytrace";
+		const char *label = !*_showRayTraced ? "Back to Preview" : "Raytrace";
 
 		if (ImGui::Button(label, avail))
 		{
-			if (!showRaytraced)
+			if (*_showRayTraced)
 			{
-				raytraceRequested = true;
-				showRaytraced = true;
+				*_showRayTraced = false;
 			}
 			else
 			{
-				showRaytraced = false;
+				*_showRayTraced = true;
 			}
 		}
 

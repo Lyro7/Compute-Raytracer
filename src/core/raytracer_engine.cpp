@@ -20,20 +20,14 @@ RaytracerEngine::RaytracerEngine(const GLsizei height, const GLsizei width, Scen
 	initSceneUbo();
 }
 	
-void RaytracerEngine::renderFrame(bool raytraceRequested)
+void RaytracerEngine::renderFrame(bool showRayTraced)
 {
-	_gpuParams.updateGpuSceneParams(_scene);
+	_gpuParams.updateGpuSceneParams(_scene, showRayTraced);
 	uploadSceneParams();
 
-	if (raytraceRequested)
-	{
-		std::cout << "Running compute" << std::endl;
-		_compute.startComputeProgram();
-		_compute.dispatchCompute();
-	}
-
-	_preview.startRenderProgram();
-	_preview.render();
+	std::cout << "Running compute" << std::endl;
+	_compute.startComputeProgram();
+	_compute.dispatchCompute();
 }
 
 void RaytracerEngine::initSceneUbo()
@@ -52,11 +46,11 @@ void RaytracerEngine::uploadSceneParams() const
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
-void RaytracerEngine::onSceneChanged()
+void RaytracerEngine::onSceneChanged(bool showRayTraced)
 {
     std::cout << "[Engine] Scene changed -> updating GPU buffers\n";
 
     // Update uniform params (camera/light etc.)
-    _gpuParams.updateGpuSceneParams(_scene);
+	_gpuParams.updateGpuSceneParams(_scene, showRayTraced);
     uploadSceneParams();
 }

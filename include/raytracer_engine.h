@@ -17,9 +17,6 @@ struct RaytracerEngine
 	/** Output texture containing the raytraced image. */
 	GLuint raytraceTex = 0;
 
-	/** Output texture containing the 3D preview image. */
-	GLuint previewTex = 0;
-
 	/**
      * @brief Constructs the raytracer engine for a given resolution and scene.
      *
@@ -46,7 +43,7 @@ struct RaytracerEngine
      *
      * @param[in] raytraceRequested If true, runs the raytracing compute pass.
      */
-	void renderFrame(bool raytraceRequested);
+	void renderFrame(bool showRayTraced);
 
 	/**
     * @brief Notifies the engine that the referenced scene content has changed.
@@ -55,7 +52,7 @@ struct RaytracerEngine
     * (e.g. via assignment in main), GPU buffers and cached parameters must be
     * re-synchronized.
     */
-	void onSceneChanged();
+	void onSceneChanged(bool showRayTraced);
 
 private:
 	/** Reference to the CPU-side scene (mesh, camera, light). */

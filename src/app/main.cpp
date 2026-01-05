@@ -22,7 +22,8 @@ int main()
 		Window window(1920, 1080, "Raytracer");
 
 		RaytracerEngine engine(1920, 1080, scene);
-		RaytracerUI ui(engine, scene);
+		bool showRayTraced = true;
+		RaytracerUI ui(engine, scene, &showRayTraced);
 		ui.init(window);
 
 		ui.onSceneChanged(loaded.json);
@@ -42,7 +43,7 @@ int main()
 
 				scene = std::move(loadedZip.scene); // gleicher scene-Container, neue Daten
 
-				engine.onSceneChanged();
+				engine.onSceneChanged(showRayTraced);
 				ui.onSceneChanged(loadedZip.json);
 			}
 		}
