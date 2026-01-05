@@ -1,3 +1,4 @@
+
 #include "raytracer_ui.h"
 #include "compute_program.h"
 #include "imgui.h"
@@ -11,6 +12,11 @@
 #include "../utils/file_dialog.h"
 #include <fstream>
 #include <nlohmann/json.hpp>
+#include <vector>
+#include <algorithm>
+#include <cstdint>
+#include <cstring>
+#include "../utils/texture_export.h"
 
 RaytracerUI::RaytracerUI(RaytracerEngine &engine, Scene &scene, bool *showRayTraced)
     : engine(engine)
@@ -50,7 +56,6 @@ void RaytracerUI::draw()
 		drawFileExplorerPopup();
 	}
 }
-
 void RaytracerUI::endFrame()
 {
 	ImGui::Render();
@@ -192,6 +197,20 @@ void RaytracerUI::drawTool()
 						}
 					}
 				}
+				if (ImGui::MenuItem("Save Image (PNG/JPG)"))
+				{
+					GLuint texToSave = engine.raytraceTex; 
+
+					std::string outPath = SaveImageFileDialog();
+					if (!outPath.empty())
+					{
+						if (SaveTextureToImageFile(texToSave, outPath))
+							std::cout << "SUCCESS: Image saved to: " << outPath << "\n";
+						else
+							std::cout << "ERROR: Failed to save image.\n";
+					}
+				}
+
 				ImGui::EndMenu();
 			}
 			ImGui::EndMenuBar();
