@@ -58,6 +58,8 @@ struct RaytracerEngine
      * @brief Clears the output textures to a given color.*/
 	void clearOutputTextures(float r, float g, float b, float a);
 
+    void uploadMeshData() const;
+
 	/** @brief (Re)allocates the raytrace output texture with current _width/_height. */
 	void recreateRaytraceTexture();
 

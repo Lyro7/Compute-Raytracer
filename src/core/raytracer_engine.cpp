@@ -135,3 +135,14 @@ void RaytracerEngine::resize(const GLsizei width, const GLsizei height)
     std::cout << "[Engine] resized to: " << _width << "x" << _height << "\n";
 }
 
+
+void RaytracerEngine::uploadMeshData() const
+{
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, _compute.triangleBuffer);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, _scene.triangles.size() * sizeof(Triangle), _scene.triangles.data(),
+	             GL_DYNAMIC_DRAW);
+
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, _compute.meshInfoBuffer);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, _scene.meshInfos.size() * sizeof(MeshInfo), _scene.meshInfos.data(),
+	             GL_DYNAMIC_DRAW);
+}
