@@ -40,6 +40,7 @@ struct GpuSceneParams
     GpuCameraParams camera;
     GpuLightParams light;
 	vec4 isPreview; // only .x is used 1=true 0=false 
+    vec4 backgroundColor;
 };
 
 struct MeshInfo {
@@ -176,8 +177,7 @@ void main()
         }
     }
 
-    vec3 skyColor = vec3(0.429, 0.708, 0.822);
-    vec3 color = skyColor;
+    vec3 color = gpuSceneParams.backgroundColor.rgb;
 
     if (isHit)
     {
