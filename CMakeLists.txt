@@ -44,6 +44,9 @@ target_link_libraries(Raytracer PRIVATE nlohmann_json::nlohmann_json)
 # GLM
 add_subdirectory(${EXTERNAL_DIR}/glm)
 
+# STB
+target_include_directories(Raytracer PRIVATE ${CMAKE_SOURCE_DIR}/external/stb)
+
 # OpenGL
 find_package(OpenGL REQUIRED)
 

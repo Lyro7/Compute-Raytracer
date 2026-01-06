@@ -43,7 +43,7 @@ struct GpuLightParams
 	glm::vec4 color;
 
 	/** Light intensity. */
-	float intensity;
+	glm::vec4 intensity;
 };
 
 /**
@@ -60,6 +60,9 @@ struct GpuSceneParams
 	/** Active point light used for shading. */
 	GpuLightParams light;
 
+	/** only .x is used 1=true 0=false */
+	glm::vec4 isPreview;
+
 	/** Updates GPU parameters from the CPU-side scene. */
-	void updateGpuSceneParams(Scene &scene);
+	void updateGpuSceneParams(Scene &scene, bool raytraceRequested);
 };

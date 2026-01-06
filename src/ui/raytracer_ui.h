@@ -25,7 +25,7 @@ public:
 	/** @brief Destroys the RaytracerUI object. */
 	~RaytracerUI() = default;
 
-	RaytracerUI(RaytracerEngine &engine, Scene &scene);
+	RaytracerUI(RaytracerEngine &engine, Scene &scene, bool *showRayTraced);
 
 	/**
      * @brief Initializes ImGui (context + style) and connects it to the active GLFW/OpenGL window.
@@ -95,9 +95,6 @@ private:
 	/** @brief Reference to the shared scene. */
 	Scene &scene;
 
-	/** @brief raytraceRequested */
-	bool raytraceRequested = false;
-
 	/** @brief Flag to show/hide the separate asset browser popup. */
 	bool m_showFileExplorer = false;
 
@@ -114,7 +111,7 @@ private:
 	bool raytracer_active = false;
 
 	/** @brief Indicates whether the raytraced image should be shown instead of preview. */
-	bool showRaytraced = false;
+	bool* _showRayTraced;
 
 	/** @brief Keeps the path of the folder currently displayed in the browsers. */
 	std::filesystem::path m_currentDir = "C:\\";

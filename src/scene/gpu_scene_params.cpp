@@ -1,6 +1,6 @@
 #include "gpu_scene_params.h"
 
-void GpuSceneParams::updateGpuSceneParams(Scene &scene)
+void GpuSceneParams::updateGpuSceneParams(Scene &scene, bool raytraceRequested)
 {
 	camera.viewProj = scene.camera.getProjectionMatrix() * scene.camera.getViewMatrix();
 	camera.origin = scene.camera.getOrigin();
@@ -10,4 +10,5 @@ void GpuSceneParams::updateGpuSceneParams(Scene &scene)
 	light.position = scene.light.position;
 	light.color = scene.light.color;
 	light.intensity = scene.light.intensity;
+	isPreview.x = raytraceRequested;
 }

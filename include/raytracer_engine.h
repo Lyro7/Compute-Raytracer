@@ -2,7 +2,6 @@
 
 #include "gpu_scene_params.h"
 #include "compute_program.h"
-#include "render_program.h"
 #include "scene.h"
 #include <string>
 
@@ -17,9 +16,6 @@ struct RaytracerEngine
 {
 	/** Output texture containing the raytraced image. */
 	GLuint raytraceTex = 0;
-
-	/** Output texture containing the 3D preview image. */
-	GLuint previewTex = 0;
 
 	/**
      * @brief Constructs the raytracer engine for a given resolution and scene.
@@ -47,7 +43,7 @@ struct RaytracerEngine
      *
      * @param[in] raytraceRequested If true, runs the raytracing compute pass.
      */
-	void renderFrame(bool raytraceRequested);
+	void renderFrame(bool showRayTraced);
 
 	/**
     * @brief Notifies the engine that the referenced scene content has changed.
@@ -56,7 +52,7 @@ struct RaytracerEngine
     * (e.g. via assignment in main), GPU buffers and cached parameters must be
     * re-synchronized.
     */
-	void onSceneChanged();
+	void onSceneChanged(bool showRayTraced);
 
 	/**
      * @brief Clears the output textures to a given color.*/
@@ -72,14 +68,12 @@ private:
 	/** UBO handle for uploading GpuSceneParams to the GPU. */
 	GLuint _sceneUbo = 0;
 
-     GLsizei _height = 0;
-	GLsizei _width = 0;
-
 	/** Compute program used for raytracing into the raytrace texture. */
 	ComputeProgram _compute;
 
-	/** Render program used for the rasterized 3D preview. */
-	RenderProgram _preview;
+    GLsizei _height = 0;
+	GLsizei _width = 0;
+
 	/**
      * @brief Initializes the uniform buffer object for scene parameters.
      *

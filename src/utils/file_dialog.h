@@ -32,3 +32,21 @@ std::string OpenObjFileDialog();
  * @return Full file path chosen by the user, or empty string if canceled.
  */
 std::string SaveJsonFileDialog();
+
+/**
+ * @brief Opens a native "Save File" dialog for exporting a rendered image.
+ *
+ * This dialog allows the user to choose a target file path for saving the
+ * currently rendered output image (e.g. raytraced or preview image).
+ *
+ * Supported file formats:
+ * - PNG (*.png)
+ * - JPEG (*.jpg, *.jpeg)
+ *
+ * On Windows, a native file save dialog is used.
+ * On non-Windows platforms, a fallback path is returned.
+ *
+ * @return Absolute or relative file path chosen by the user,
+ *         or an empty string if the dialog was canceled.
+ */
+std::string SaveImageFileDialog();

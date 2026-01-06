@@ -1,7 +1,7 @@
+
 #include "raytracer_ui.h"
 #include "compute_program.h"
 #include "imgui.h"
-#include "render_program.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include <glad/glad.h>
@@ -12,10 +12,16 @@
 #include "../utils/file_dialog.h"
 #include <fstream>
 #include <nlohmann/json.hpp>
+#include <vector>
+#include <algorithm>
+#include <cstdint>
+#include <cstring>
+#include "../utils/texture_export.h"
 
-RaytracerUI::RaytracerUI(RaytracerEngine &engine, Scene &scene)
+RaytracerUI::RaytracerUI(RaytracerEngine &engine, Scene &scene, bool *showRayTraced)
     : engine(engine)
     , scene(scene)
+    , _showRayTraced(showRayTraced)
 {
 }
 
@@ -38,8 +44,7 @@ void RaytracerUI::beginFrame()
 
 void RaytracerUI::draw()
 {
-	engine.renderFrame(raytraceRequested);
-	raytraceRequested = false;
+	engine.renderFrame(*_showRayTraced);
 
 	drawView();
 	drawTool();
@@ -51,7 +56,6 @@ void RaytracerUI::draw()
 		drawFileExplorerPopup();
 	}
 }
-
 void RaytracerUI::endFrame()
 {
 	ImGui::Render();
@@ -89,7 +93,7 @@ void RaytracerUI::drawView()
 
 		ImVec2 avail = ImGui::GetContentRegionAvail();
 
-		GLuint texToShow = showRaytraced ? engine.raytraceTex : engine.previewTex;
+		GLuint texToShow = engine.raytraceTex;
 
 		ImGui::Image((ImTextureID)(intptr_t)texToShow, avail, ImVec2(0, 1), ImVec2(1, 0));
 	}
@@ -138,7 +142,6 @@ void RaytracerUI::drawTool()
 						std::cout << "Selected ZIP scene: " << p << "\n";
 						m_requestedZipPath = p;
 						m_requestLoadZip = true;
-						raytraceRequested = true;
 					}
 				}
 
@@ -150,9 +153,8 @@ void RaytracerUI::drawTool()
 						// optional: extension check
 						if (std::filesystem::path(p).extension() == ".obj")
 						{
-							scene.mesh = ObjectLoader::loadMesh(p);
+							scene.addMesh(ObjectLoader::loadMesh(p));
 							patchActiveSceneJsonModelPath(p);
-							raytraceRequested = true;
 						}
 						else
 						{
@@ -195,6 +197,20 @@ void RaytracerUI::drawTool()
 						}
 					}
 				}
+				if (ImGui::MenuItem("Save Image (PNG/JPG)"))
+				{
+					GLuint texToSave = engine.raytraceTex; 
+
+					std::string outPath = SaveImageFileDialog();
+					if (!outPath.empty())
+					{
+						if (SaveTextureToImageFile(texToSave, outPath))
+							std::cout << "SUCCESS: Image saved to: " << outPath << "\n";
+						else
+							std::cout << "ERROR: Failed to save image.\n";
+					}
+				}
+
 				ImGui::EndMenu();
 			}
 			ImGui::EndMenuBar();
@@ -279,12 +295,11 @@ void RaytracerUI::drawFileExplorerPopup()
 								{
 									std::string fullPath = entry.path().string();
 
-									scene.mesh = ObjectLoader::loadMesh(fullPath);
+									scene.addMesh(ObjectLoader::loadMesh(fullPath));
 
 									patchActiveSceneJsonModelPath(fullPath);
 									;
 
-									raytraceRequested = true;
 									m_showModelBrowser = false;
 
 									std::cout << "SUCCESS: Loaded mesh from: " << fullPath << std::endl;
@@ -386,7 +401,7 @@ void RaytracerUI::drawSettings()
 			somethingChanged = true;
 		}
 
-		if (ImGui::SliderFloat("Intensity", &scene.light.intensity, 0.0f, 100.0f))
+		if (ImGui::SliderFloat("Intensity", &scene.light.intensity.x, 0.0f, 1000.0f))
 		{
 			somethingChanged = true;
 		}
@@ -413,7 +428,6 @@ void RaytracerUI::drawSettings()
 		if (somethingChanged)
 		{
 			syncActiveSceneJsonFromScene();
-			raytraceRequested = true;
 		}
 
 		ImGui::Spacing();
@@ -463,7 +477,6 @@ void RaytracerUI::drawSettings()
 }
 void RaytracerUI::onSceneChanged(const std::string &json)
 {
-	raytraceRequested = true;
 	m_activeSceneJson = json;
 
 	try
@@ -508,18 +521,17 @@ void RaytracerUI::drawBar()
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.30f, 0.30f, 0.30f, 1.0f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.35f, 0.35f, 0.35f, 1.0f));
 
-		const char *label = showRaytraced ? "Back to Preview" : "Raytrace";
+		const char *label = !*_showRayTraced ? "Back to Preview" : "Raytrace";
 
 		if (ImGui::Button(label, avail))
 		{
-			if (!showRaytraced)
+			if (*_showRayTraced)
 			{
-				raytraceRequested = true;
-				showRaytraced = true;
+				*_showRayTraced = false;
 			}
 			else
 			{
-				showRaytraced = false;
+				*_showRayTraced = true;
 			}
 		}
 
@@ -592,7 +604,7 @@ void RaytracerUI::syncActiveSceneJsonFromScene()
 
 		jl0["color"] = { { "r", scene.light.color.x }, { "g", scene.light.color.y }, { "b", scene.light.color.z } };
 
-		jl0["luminosity"] = scene.light.intensity;
+		jl0["luminosity"] = scene.light.intensity.x;
 	}
 
 	// Camera block
@@ -623,7 +635,7 @@ void RaytracerUI::resetEnvironment()
 	bg[1] = 0.0f;
 	bg[2] = 0.0f;
 
-	showRaytraced = false;
+	*_showRayTraced = false;
 
 	// 3) Active JSON reset
 	m_activeSceneJson.clear();
@@ -633,7 +645,6 @@ void RaytracerUI::resetEnvironment()
 	m_requestLoadZip = false;
 	m_requestedZipPath.clear();
 
-	engine.onSceneChanged();
+	engine.onSceneChanged(*_showRayTraced);
 	engine.clearOutputTextures(0, 0, 0, 1);
-	raytraceRequested = false;
 }

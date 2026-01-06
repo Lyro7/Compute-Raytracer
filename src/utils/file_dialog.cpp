@@ -79,3 +79,37 @@ std::string SaveJsonFileDialog()
     return "assets/exported_scene.json";
 #endif
 }
+
+
+std::string SaveImageFileDialog()
+{
+#ifdef _WIN32
+    char fileName[MAX_PATH] = { 0 };
+
+    OPENFILENAMEA ofn{};
+    ofn.lStructSize = sizeof(ofn);
+    ofn.lpstrFile = fileName;
+    ofn.nMaxFile = MAX_PATH;
+
+    // Filter string must be double-null-terminated
+    ofn.lpstrFilter =
+        "PNG Image (*.png)\0*.png\0"
+        "JPEG Image (*.jpg;*.jpeg)\0*.jpg;*.jpeg\0";
+
+    ofn.nFilterIndex = 1;
+    ofn.Flags = OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT;
+
+    // Default extension if user does not specify one
+    ofn.lpstrDefExt = "png";
+
+    if (GetSaveFileNameA(&ofn))
+    {
+        return std::string(fileName);
+    }
+
+    return "";
+#else
+    // Fallback for Linux / macOS (no native dialog implemented yet)
+    return "assets/exported_image.png";
+#endif
+}

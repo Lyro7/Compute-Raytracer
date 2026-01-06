@@ -6,10 +6,7 @@
 RaytracerEngine::RaytracerEngine(const GLsizei height, const GLsizei width, Scene &sc)
     : _scene(sc)
     , _gpuParams()
-    , _height(height)
-    , _width(width)
-    , _compute(height, width, sc.mesh, raytraceTex)
-    , _preview(height, width, sc.mesh, _gpuParams, previewTex)
+    , _compute(height, width, sc, raytraceTex)
 {
 	// Init raytracing
 	GLuint computeShader = _compute.createComputeShader("shaders/compute.glsl");
@@ -20,39 +17,17 @@ RaytracerEngine::RaytracerEngine(const GLsizei height, const GLsizei width, Scen
 		throw std::runtime_error("Error while trying to init compute.");
 	}
 
-	// Init preview
-	GLuint vertexShader = _preview.createVertexShader("shaders/vertex.glsl");
-	GLuint fragmentShader = _preview.createFragmentShader("shaders/fragment.glsl");
-	bool previewSucess = _preview.createRenderProgram(vertexShader, fragmentShader);
-
-	if (!previewSucess)
-	{
-		throw std::runtime_error("Error while trying to init preview.");
-	}
-
 	initSceneUbo();
 }
-
-void RaytracerEngine::renderFrame(bool raytraceRequested)
+	
+void RaytracerEngine::renderFrame(bool showRayTraced)
 {
-	const bool hasMesh = !_scene.mesh.vertices.empty() && !_scene.mesh.indices.empty();
-
-	_gpuParams.updateGpuSceneParams(_scene);
+	_gpuParams.updateGpuSceneParams(_scene, showRayTraced);
 	uploadSceneParams();
-	if (!hasMesh)
-	{
-		raytraceRequested = false;
-	}
 
-	if (raytraceRequested)
-	{
-		std::cout << "Running compute" << std::endl;
-		_compute.startComputeProgram();
-		_compute.dispatchCompute();
-	}
-
-	_preview.startRenderProgram();
-	_preview.render();
+	std::cout << "Running compute" << std::endl;
+	_compute.startComputeProgram();
+	_compute.dispatchCompute();
 }
 
 void RaytracerEngine::initSceneUbo()
@@ -71,17 +46,13 @@ void RaytracerEngine::uploadSceneParams() const
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
-void RaytracerEngine::onSceneChanged()
+void RaytracerEngine::onSceneChanged(bool showRayTraced)
 {
 	std::cout << "[Engine] Scene changed -> updating GPU buffers\n";
 
-	// Update uniform params (camera/light etc.)
-	_gpuParams.updateGpuSceneParams(_scene);
-	uploadSceneParams();
-
-	// Re-upload mesh for both pipelines
-	_compute.updateMesh();
-	_preview.updateMesh();
+    // Update uniform params (camera/light etc.)
+	_gpuParams.updateGpuSceneParams(_scene, showRayTraced);
+    uploadSceneParams();
 }
 
 static void printTexFormat(GLuint tex, const char *name)
@@ -112,6 +83,5 @@ void RaytracerEngine::clearOutputTextures(float r, float g, float b, float a)
 		glDeleteFramebuffers(1, &fbo);
 	};
 
-	clearTex(previewTex);
 	clearTex(raytraceTex);
 }

@@ -5,13 +5,22 @@
 
 
 Scene::Scene()
-    : mesh{}
-    , camera(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 60.0f, 16.0f / 9.0f,
-             0.1f, 100.0f)
-    , light{ glm::vec4(0.0f, 1.0f, 5.0f, 1.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 100.0f }
+    : camera(
+        glm::vec3(0.0f, 0.0f, 5.0f),
+        glm::vec3(0.0f, 0.0f, 0.0f),
+        glm::vec3(0.0f, 1.0f, 0.0f),
+        60.0f,
+        16.0f/9.0f,
+        0.1f,
+        100.0f
+    )
+    , light{
+        glm::vec4(0.0f, 1.0f, 5.0f, 1.0f),
+        glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),
+		glm::vec4(1.0, 1.0, 1.0, 1.0)
+    }
+	, backgroundColor(0, 0, 0, 1)
 {
-	std::cout << "[Scene] ctor default\n";
-	std::cout << "verts=" << mesh.vertices.size() << " idx=" << mesh.indices.size() << "\n";
 }
 
 void Scene::fitCameraToMesh(float aspectRatio)
@@ -19,11 +28,19 @@ void Scene::fitCameraToMesh(float aspectRatio)
 	glm::vec3 minP(FLT_MAX);
 	glm::vec3 maxP(-FLT_MAX);
 
-	for (const auto &v : mesh.vertices)
+	for (const auto &tri : triangles)
 	{
-		glm::vec3 p = glm::vec3(v.pos);
-		minP = glm::min(minP, p);
-		maxP = glm::max(maxP, p);
+		glm::vec3 p1 = glm::vec3(tri.v1);
+		glm::vec3 p2 = glm::vec3(tri.v2);
+		glm::vec3 p3 = glm::vec3(tri.v3);
+
+		minP = glm::min(minP, p1);
+		minP = glm::min(minP, p2);
+		minP = glm::min(minP, p3);
+
+		maxP = glm::max(maxP, p1);
+		maxP = glm::max(maxP, p2);
+		maxP = glm::max(maxP, p3);
 	}
 
 	glm::vec3 center = (minP + maxP) * 0.5f;
@@ -43,13 +60,30 @@ void Scene::fitCameraToMesh(float aspectRatio)
 	camera = Camera(lookFrom, lookAt, up, fov, aspectRatio, 0.1f, dist * 10.0f);
 
 	light.position = glm::vec4(center + glm::vec3(0, radius, radius * 2.0f), 1.0f);
-	light.intensity = 20.0f;
+	light.intensity = glm::vec4(20.0f, 0.0, 0.0, 0.0);
 	light.color = glm::vec4(1, 1, 1, 1);
+}
+
+void Scene::addMesh(const Mesh &mesh)
+{
+	MeshInfo info;
+
+	info.firstTriangleIndex = triangles.size();
+	info.numTriangles = mesh.getTriangles().size();
+
+	for (const Triangle &tri : mesh.getTriangles())
+	{
+		triangles.push_back(tri);
+	}
+
+	meshInfos.push_back(info);
+	numMeshes++;
+
 }
 
 void Scene::reset()
 {
-    std::cout << "[Scene] reset\n";
 	*this = Scene();
-	backgroundColor = glm::vec4(0, 0, 0, 1);
+
+	std::cout << "[Scene] reset\n";
 }

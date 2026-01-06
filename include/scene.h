@@ -19,7 +19,7 @@ struct Light
 	glm::vec4 color;
 
 	/** Strength of the light source. */
-	float intensity;
+	glm::vec4 intensity;
 };
 
 /**
@@ -30,8 +30,9 @@ struct Light
  */
 struct Scene
 {
-	/** The mesh geometry of the scene (vertices, indices, materials). */
-	Mesh mesh;
+	int numMeshes = 0;
+	std::vector<Triangle> triangles;
+	std::vector<MeshInfo> meshInfos;
 
 	/** The active camera used to view the scene. */
 	Camera camera;
@@ -49,5 +50,7 @@ struct Scene
 	void reset();
 
 	void fitCameraToMesh(float aspectRatio);
+
+	void addMesh(const Mesh &mesh);
 };
 

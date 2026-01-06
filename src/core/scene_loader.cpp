@@ -218,13 +218,13 @@ Light SceneLoader::extractLight(const JsonValue &json)
 	Light light;
 
 	// Defaults
-	light.intensity = 1.0f;
+	light.intensity = glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
 	light.position = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 	light.color = glm::vec4(1.0f);
 
 	// Einlesen
 	if (json.has("luminosity"))
-		light.intensity = json.asObj()->at("luminosity").asFloat();
+		light.intensity = glm::vec4(json.asObj()->at("luminosity").asFloat(), 0.0, 0.0, 0.0);
 
 	if (json.has("position"))
 	{
@@ -292,63 +292,98 @@ Camera SceneLoader::extractCamera(const JsonValue &json)
 	return Camera(lookFrom, lookAt, up, fovDeg, aspectRatio, nearPlane, farPlane);
 }
 
-Mesh SceneLoader::extractMesh(const JsonValue& json)
+Mesh SceneLoader::extractMesh(const JsonValue &json)
 {
-    std::string path;
-    if (json.has("path"))
-        path = json.asObj()->at("path").asString();
+	std::string path;
+	if (json.has("path"))
+		path = json.asObj()->at("path").asString();
 
-    std::cout << "Loading OBJ: " << path << "\n";
+	std::cout << "Loading OBJ: " << path << "\n";
 
-    Mesh mesh;
+	Mesh mesh;
 
-    if (m_zip)
-    {
-        std::string zipInner = path;
+	// --- ZIP-Fall ---
+	if (m_zip)
+	{
+		std::string zipInner = path;
 
-        if (!m_sceneRootZip.empty())
-        {
-            if (zipInner.find(':') == std::string::npos &&
-                !zipInner.empty() && zipInner[0] != '/' &&
-                zipInner.rfind(m_sceneRootZip, 0) != 0)
-            {
-                zipInner = m_sceneRootZip + zipInner;
-            }
-        }
+		if (!m_sceneRootZip.empty())
+		{
+			if (zipInner.find(':') == std::string::npos && !zipInner.empty() && zipInner[0] != '/' &&
+			    zipInner.rfind(m_sceneRootZip, 0) != 0)
+			{
+				zipInner = m_sceneRootZip + zipInner;
+			}
+		}
 
-        std::cout << "ZIP lookup: " << zipInner << "\n";
+		std::cout << "ZIP lookup: " << zipInner << "\n";
 
-        if (m_zip->has(zipInner))
-        {
-            std::cout << "  source: ZIP\n";
-            auto bytes = m_zip->readBytes(zipInner);
-            mesh = ObjectLoader::loadMeshFromMemory(bytes, path);
-            std::cout << "mesh verts=" << mesh.vertices.size() << " idx=" << mesh.indices.size() << "\n";
-            return mesh;
-        }
+		if (m_zip->has(zipInner))
+		{
+			std::cout << "  source: ZIP\n";
 
-        std::cout << "  ZIP missing -> fallback to DISK\n";
-    }
+			// OBJ Bytes
+			auto objBytes = m_zip->readBytes(zipInner);
 
-    std::filesystem::path fullPath = std::filesystem::path(path);
+			// --- MTL suchen ---
+			std::vector<uint8_t> mtlBytes;
+			std::string objText(reinterpret_cast<const char *>(objBytes.data()), objBytes.size());
 
-    if (!m_sceneRootDisk.empty())
-    {
-        if (!fullPath.is_absolute())
-            fullPath = m_sceneRootDisk / fullPath;
-    }
+			size_t mtllibPos = objText.find("mtllib ");
+			if (mtllibPos != std::string::npos)
+			{
+				size_t lineEnd = objText.find('\n', mtllibPos);
+				std::string mtlFile = objText.substr(mtllibPos + 7, lineEnd - (mtllibPos + 7));
+				mtlFile.erase(0, mtlFile.find_first_not_of(" \t\r"));
+				mtlFile.erase(mtlFile.find_last_not_of(" \t\r") + 1);
 
-    fullPath = fullPath.lexically_normal();
-    fullPath.make_preferred();
+				// MTL relativ zur OBJ auflösen
+				std::filesystem::path objPath(zipInner);
+				std::filesystem::path mtlPath = objPath.parent_path() / mtlFile;
+				mtlPath = mtlPath.lexically_normal();
 
-    std::cout << "DISK lookup: " << fullPath.string() << "\n";
-    std::cout << "  CWD: " << std::filesystem::current_path() << "\n";
-    std::cout << "  exists: " << std::filesystem::exists(fullPath) << "\n";
+				std::string zipMtlPath = mtlPath.generic_string();
 
-    mesh = ObjectLoader::loadMesh(fullPath.string());
-    std::cout << "mesh verts=" << mesh.vertices.size() << " idx=" << mesh.indices.size() << "\n";
-    return mesh;
+				if (m_zip->has(zipMtlPath))
+				{
+					std::cout << "  found MTL in ZIP: " << zipMtlPath << "\n";
+					mtlBytes = m_zip->readBytes(zipMtlPath);
+				}
+				else
+				{
+					std::cout << "  MTL referenced but NOT found in ZIP: " << zipMtlPath << "\n";
+				}
+			}
+			else
+			{
+				std::cout << "  OBJ has NO mtllib reference\n";
+			}
+
+			mesh = ObjectLoader::loadMeshFromMemory(objBytes, path, mtlBytes);
+			std::cout << "mesh tris=" << mesh.getTriangles().size() << "\n";
+			return mesh;
+		}
+
+		std::cout << "  ZIP missing -> fallback to DISK\n";
+	}
+
+	// --- Disk-Fall ---
+	std::filesystem::path fullPath = std::filesystem::path(path);
+	if (!m_sceneRootDisk.empty() && !fullPath.is_absolute())
+		fullPath = m_sceneRootDisk / fullPath;
+
+	fullPath = fullPath.lexically_normal();
+	fullPath.make_preferred();
+
+	std::cout << "DISK lookup: " << fullPath.string() << "\n";
+	std::cout << "  CWD: " << std::filesystem::current_path() << "\n";
+	std::cout << "  exists: " << std::filesystem::exists(fullPath) << "\n";
+
+	mesh = ObjectLoader::loadMesh(fullPath.string());
+	std::cout << "mesh tris=" << mesh.getTriangles().size() << "\n";
+	return mesh;
 }
+
 
 
 
@@ -466,8 +501,10 @@ Scene SceneLoader::loadScene(const std::string &jsonString)
 
 	if (root.has("objects") && !root.asObj()->at("objects").asArr()->empty())
 	{
-		scene.mesh = extractMesh(root.asObj()->at("objects").asArr()->at(0));
+		scene.addMesh(extractMesh(root.asObj()->at("objects").asArr()->at(0)));
 	}
+
+	scene.fitCameraToMesh(16.0f / 9.0f);
 
 	return scene;
 }
