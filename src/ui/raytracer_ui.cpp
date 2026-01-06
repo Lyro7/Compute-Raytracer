@@ -121,7 +121,7 @@ void RaytracerUI::drawTool()
 			{
 				if (ImGui::MenuItem("Reset Environment"))
 				{
-					// TODO: reset to default
+					resetEnvironment();
 				}
 
 				if (ImGui::MenuItem("Exit"))
@@ -623,4 +623,28 @@ void RaytracerUI::syncActiveSceneJsonFromScene()
 
 	// Update the string shown in UI + used for export
 	m_activeSceneJson = m_activeSceneJsonObj.dump(2);
+}
+
+void RaytracerUI::resetEnvironment()
+{
+	// mesh & camera & light reset
+	scene.reset();
+
+	// 2) UI state reset
+	bg[0] = 0.0f;
+	bg[1] = 0.0f;
+	bg[2] = 0.0f;
+
+	_showRayTraced = false;
+
+	// 3) Active JSON reset
+	m_activeSceneJson.clear();
+	m_activeSceneJsonObj = nlohmann::json{};
+
+	// 4) Zip-Request cleanup
+	m_requestLoadZip = false;
+	m_requestedZipPath.clear();
+
+	engine.onSceneChanged(_showRayTraced);
+	engine.clearOutputTextures(0, 0, 0, 1);
 }

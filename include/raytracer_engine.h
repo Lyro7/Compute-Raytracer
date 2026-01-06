@@ -54,6 +54,10 @@ struct RaytracerEngine
     */
 	void onSceneChanged(bool showRayTraced);
 
+	/**
+     * @brief Clears the output textures to a given color.*/
+	void clearOutputTextures(float r, float g, float b, float a);
+
 private:
 	/** Reference to the CPU-side scene (mesh, camera, light). */
 	Scene &_scene;
@@ -66,6 +70,9 @@ private:
 
 	/** Compute program used for raytracing into the raytrace texture. */
 	ComputeProgram _compute;
+
+    GLsizei _height = 0;
+	GLsizei _width = 0;
 
 	/**
      * @brief Initializes the uniform buffer object for scene parameters.

@@ -48,9 +48,40 @@ void RaytracerEngine::uploadSceneParams() const
 
 void RaytracerEngine::onSceneChanged(bool showRayTraced)
 {
-    std::cout << "[Engine] Scene changed -> updating GPU buffers\n";
+	std::cout << "[Engine] Scene changed -> updating GPU buffers\n";
 
     // Update uniform params (camera/light etc.)
 	_gpuParams.updateGpuSceneParams(_scene, showRayTraced);
     uploadSceneParams();
+}
+
+static void printTexFormat(GLuint tex, const char *name)
+{
+	GLint internalFmt = 0;
+	glBindTexture(GL_TEXTURE_2D, tex);
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &internalFmt);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	std::cout << name << " internal format = 0x" << std::hex << internalFmt << std::dec << "\n";
+}
+
+void RaytracerEngine::clearOutputTextures(float r, float g, float b, float a)
+{
+	auto clearTex = [&](GLuint tex)
+	{
+		if (tex == 0)
+			return;
+		GLuint fbo = 0;
+		glGenFramebuffers(1, &fbo);
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0);
+
+		glViewport(0, 0, _width, _height);
+		glClearColor(r, g, b, a);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glDeleteFramebuffers(1, &fbo);
+	};
+
+	clearTex(raytraceTex);
 }

@@ -1,6 +1,8 @@
 #include "scene.h"
 #include <cfloat>
 #include <glm/glm.hpp>
+#include <iostream>
+
 
 Scene::Scene()
     : camera(
@@ -75,4 +77,28 @@ void Scene::addMesh(const Mesh &mesh)
 
 	meshInfos.push_back(info);
 	numMeshes++;
+}
+
+void Scene::reset()
+{
+	Camera camera(glm::vec3(0.0f, 0.0f, 3.0f), 
+	              glm::vec3(0.0f, 0.0f, 0.0f), 
+	              glm::vec3(0.0f, 1.0f, 0.0f), 
+	              45.0f, 1.7778,
+	              0.1f, 
+	              100.0f 
+	);
+
+	Light light;
+	light.position = glm::vec4(0.0, 0.0, 0.0, 1.0f);
+	light.intensity = glm::vec4(20.0f, 0.0, 0.0, 0.0);
+	light.color = glm::vec4(1, 1, 1, 1);
+
+	Scene emptyScene;
+	emptyScene.camera = camera;
+	emptyScene.light = light;
+
+    std::cout << "[Scene] reset\n";
+	*this = Scene();
+	backgroundColor = glm::vec4(0, 0, 0, 1);
 }
