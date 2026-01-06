@@ -43,6 +43,7 @@ int main()
 
 				scene = std::move(loadedZip.scene); // gleicher scene-Container, neue Daten
 
+				engine.uploadMeshData();
 				engine.onSceneChanged(showRayTraced);
 				ui.onSceneChanged(loadedZip.json);
 			}

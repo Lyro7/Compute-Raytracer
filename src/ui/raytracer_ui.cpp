@@ -155,6 +155,8 @@ void RaytracerUI::drawTool()
 						{
 							scene.addMesh(ObjectLoader::loadMesh(p));
 							patchActiveSceneJsonModelPath(p);
+							engine.uploadMeshData();
+							scene.fitCameraToMesh(cameraAspect);
 						}
 						else
 						{
