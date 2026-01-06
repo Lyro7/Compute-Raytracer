@@ -19,9 +19,9 @@ int main()
 		auto loaded = bootstrap.loadInitial("" /* optional zip */, "assets/scenes/example.scene.json");
 		Scene scene = std::move(loaded.scene);
 
-		Window window(1920, 1080, "Raytracer");
+		Window window(1280, 360, "Raytracer");
 
-		RaytracerEngine engine(1920, 1080, scene);
+		RaytracerEngine engine(640, 360, scene);
 		bool showRayTraced = true;
 		RaytracerUI ui(engine, scene, &showRayTraced);
 		ui.init(window);
