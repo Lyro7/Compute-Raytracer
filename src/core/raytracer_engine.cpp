@@ -26,12 +26,17 @@ RaytracerEngine::RaytracerEngine(const GLsizei width, const GLsizei height, Scen
 
 void RaytracerEngine::renderFrame(bool showRayTraced)
 {
-	_gpuParams.updateGpuSceneParams(_scene, showRayTraced);
-	uploadSceneParams();
+	if (debugFrameCount % 20 == 0)
+	{
+		std::cout << "[Engine] Render frame " << debugFrameCount << "\n";
+		_gpuParams.updateGpuSceneParams(_scene, showRayTraced);
+		uploadSceneParams();
 
-	std::cout << "Running compute" << std::endl;
-	_compute.startComputeProgram();
-	_compute.dispatchCompute();
+		std::cout << "Running compute" << std::endl;
+		_compute.startComputeProgram();
+		_compute.dispatchCompute();
+	}
+	debugFrameCount++;
 }
 
 void RaytracerEngine::initSceneUbo()
@@ -116,23 +121,25 @@ void RaytracerEngine::recreateRaytraceTexture()
 	std::cout << "[Engine] raytraceTex allocated: " << _width << "x" << _height << "\n";
 }
 
-void RaytracerEngine::resize(const GLsizei width, const GLsizei height)
+void RaytracerEngine::resize(GLsizei width, GLsizei height)
 {
-    if (width <= 0 || height <= 0)
-        return;
-
-    if (width == _width && height == _height)
-        return;
+    std::cout << "[Engine::resize] request " << width << "x" << height << "\n";
 
     _width = width;
     _height = height;
 
     recreateRaytraceTexture();
 
- 
-    _compute.resize(_width, _height);
+    // >>> HARTE PRÜFUNG: echte GL-Texture-Size auslesen
+    glBindTexture(GL_TEXTURE_2D, raytraceTex);
+    GLint tw=0, th=0;
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &tw);
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &th);
+    glBindTexture(GL_TEXTURE_2D, 0);
 
-    std::cout << "[Engine] resized to: " << _width << "x" << _height << "\n";
+    std::cout << "[Engine::resize] raytraceTex is now " << tw << "x" << th << "\n";
+
+    _compute.resize(_width, _height); // falls vorhanden
 }
 
 

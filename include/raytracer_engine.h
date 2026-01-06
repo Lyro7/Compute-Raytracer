@@ -98,6 +98,9 @@ private:
 	GLsizei _height = 0;
 	GLsizei _width = 0;
 
+     // For debugging purposes
+     int debugFrameCount = 0;
+
 	/**
      * @brief Initializes the uniform buffer object for scene parameters.
      *
