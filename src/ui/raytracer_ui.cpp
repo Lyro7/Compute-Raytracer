@@ -629,6 +629,7 @@ void RaytracerUI::resetEnvironment()
 {
 	// mesh & camera & light reset
 	scene.reset();
+	engine.uploadMeshData();
 
 	// 2) UI state reset
 	bg[0] = 0.0f;

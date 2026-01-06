@@ -58,6 +58,8 @@ struct RaytracerEngine
      * @brief Clears the output textures to a given color.*/
 	void clearOutputTextures(float r, float g, float b, float a);
 
+    void uploadMeshData() const;
+
 private:
 	/** Reference to the CPU-side scene (mesh, camera, light). */
 	Scene &_scene;
