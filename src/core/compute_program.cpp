@@ -122,3 +122,9 @@ void ComputeProgram::dispatchCompute() const
 	glDispatchCompute(workGroupX, workGroupY, 1);
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
 }
+
+void ComputeProgram::resize(GLsizei width, GLsizei height)
+{
+    _width = width;
+    _height = height;
+}

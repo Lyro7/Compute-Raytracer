@@ -73,6 +73,15 @@ public:
 	 */
 	void dispatchCompute() const;
 
+	/**
+	 * @brief Resizes the compute program output dimensions.
+	 * 
+	 * @param[in] width New output width in pixels.
+	 * @param[in] height New output height in pixels.
+	 */
+	void resize(GLsizei width, GLsizei height);
+
+
 private:
 	/** Output height in pixels. */
 	GLsizei _height;
