@@ -63,6 +63,9 @@ struct GpuSceneParams
 	/** only .x is used 1=true 0=false */
 	glm::vec4 isPreview;
 
+	/** only .rgb .a is not used */
+	glm::vec4 backgroundColor;
+
 	/** Updates GPU parameters from the CPU-side scene. */
 	void updateGpuSceneParams(Scene &scene, bool raytraceRequested);
 };

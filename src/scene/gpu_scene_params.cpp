@@ -11,4 +11,5 @@ void GpuSceneParams::updateGpuSceneParams(Scene &scene, bool raytraceRequested)
 	light.color = scene.light.color;
 	light.intensity = scene.light.intensity;
 	isPreview.x = raytraceRequested;
+	backgroundColor = scene.backgroundColor;
 }
