@@ -199,7 +199,7 @@ void RaytracerUI::drawTool()
 				}
 				if (ImGui::MenuItem("Save Image (PNG/JPG)"))
 				{
-					GLuint texToSave = engine.raytraceTex; 
+					GLuint texToSave = engine.raytraceTex;
 
 					std::string outPath = SaveImageFileDialog();
 					if (!outPath.empty())
@@ -436,29 +436,38 @@ void RaytracerUI::drawSettings()
 
 		ImGui::SliderInt("SPP", &samplesPerPixel, 64, 1000);
 
-		const char *resolutions[] = { "1280 x 720", "1920 x 1080", "2560 x 1440", "3840 x 2160", "Custom" };
+		const char *resolutions[] = { "320 x 180",   "640 x 360 (FAST)", "1280 x 720", "1920 x 1080",
+			                          "2560 x 1440", "3840 x 2160",      "Custom" };
 
 		if (ImGui::Combo("Resolution Preset", &currentPreset, resolutions, IM_ARRAYSIZE(resolutions)))
 		{
 			switch (currentPreset)
 			{
 			case 0:
+				renderResolution[0] = 320;
+				renderResolution[1] = 180;
+				break;
+			case 1:
+				renderResolution[0] = 640;
+				renderResolution[1] = 360;
+				break;
+			case 2:
 				renderResolution[0] = 1280;
 				renderResolution[1] = 720;
 				break;
-			case 1:
+			case 3:
 				renderResolution[0] = 1920;
 				renderResolution[1] = 1080;
 				break;
-			case 2:
+			case 4:
 				renderResolution[0] = 2560;
 				renderResolution[1] = 1440;
 				break;
-			case 3:
+			case 5:
 				renderResolution[0] = 3840;
 				renderResolution[1] = 2160;
 				break;
-			case 4:
+			case 6:
 				break;
 			}
 		}
@@ -471,6 +480,10 @@ void RaytracerUI::drawSettings()
 				renderResolution[0] = 1;
 			if (renderResolution[1] < 1)
 				renderResolution[1] = 1;
+		}
+		if (ImGui::Button("Apply Resolution"))
+		{
+			engine.resize((GLsizei)renderResolution[0], (GLsizei)renderResolution[1]);
 		}
 	}
 	ImGui::End();
