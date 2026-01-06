@@ -635,7 +635,7 @@ void RaytracerUI::resetEnvironment()
 	bg[1] = 0.0f;
 	bg[2] = 0.0f;
 
-	_showRayTraced = false;
+	*_showRayTraced = false;
 
 	// 3) Active JSON reset
 	m_activeSceneJson.clear();
@@ -645,6 +645,6 @@ void RaytracerUI::resetEnvironment()
 	m_requestLoadZip = false;
 	m_requestedZipPath.clear();
 
-	engine.onSceneChanged(_showRayTraced);
+	engine.onSceneChanged(*_showRayTraced);
 	engine.clearOutputTextures(0, 0, 0, 1);
 }
