@@ -3,11 +3,15 @@
 #include "raytracer_engine.h"
 #include <iostream>
 
-RaytracerEngine::RaytracerEngine(const GLsizei height, const GLsizei width, Scene &sc)
+RaytracerEngine::RaytracerEngine(const GLsizei width, const GLsizei height, Scene &sc)
     : _scene(sc)
     , _gpuParams()
-    , _compute(height, width, sc, raytraceTex)
+    , _compute(width, height, sc, raytraceTex)
+    , _height(height)
+    , _width(width)
 {
+	recreateRaytraceTexture();
+
 	// Init raytracing
 	GLuint computeShader = _compute.createComputeShader("shaders/compute.glsl");
 	bool computeSucess = _compute.createComputeProgram(computeShader);
@@ -19,15 +23,20 @@ RaytracerEngine::RaytracerEngine(const GLsizei height, const GLsizei width, Scen
 
 	initSceneUbo();
 }
-	
+
 void RaytracerEngine::renderFrame(bool showRayTraced)
 {
-	_gpuParams.updateGpuSceneParams(_scene, showRayTraced);
-	uploadSceneParams();
+	if (debugFrameCount % 20 == 0)
+	{
+		std::cout << "[Engine] Render frame " << debugFrameCount << "\n";
+		_gpuParams.updateGpuSceneParams(_scene, showRayTraced);
+		uploadSceneParams();
 
-	std::cout << "Running compute" << std::endl;
-	_compute.startComputeProgram();
-	_compute.dispatchCompute();
+		std::cout << "Running compute" << std::endl;
+		_compute.startComputeProgram();
+		_compute.dispatchCompute();
+	}
+	debugFrameCount++;
 }
 
 void RaytracerEngine::initSceneUbo()
@@ -50,9 +59,9 @@ void RaytracerEngine::onSceneChanged(bool showRayTraced)
 {
 	std::cout << "[Engine] Scene changed -> updating GPU buffers\n";
 
-    // Update uniform params (camera/light etc.)
+	// Update uniform params (camera/light etc.)
 	_gpuParams.updateGpuSceneParams(_scene, showRayTraced);
-    uploadSceneParams();
+	uploadSceneParams();
 }
 
 static void printTexFormat(GLuint tex, const char *name)
@@ -85,6 +94,54 @@ void RaytracerEngine::clearOutputTextures(float r, float g, float b, float a)
 
 	clearTex(raytraceTex);
 }
+
+void RaytracerEngine::recreateRaytraceTexture()
+{
+	if (_width <= 0 || _height <= 0)
+	{
+		return;
+	}
+
+	if (raytraceTex == 0)
+	{
+		glGenTextures(1, &raytraceTex);
+	}
+
+	glBindTexture(GL_TEXTURE_2D, raytraceTex);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, _width, _height, 0, GL_RGBA, GL_FLOAT, nullptr);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	std::cout << "[Engine] raytraceTex allocated: " << _width << "x" << _height << "\n";
+}
+
+void RaytracerEngine::resize(GLsizei width, GLsizei height)
+{
+    std::cout << "[Engine::resize] request " << width << "x" << height << "\n";
+
+    _width = width;
+    _height = height;
+
+    recreateRaytraceTexture();
+
+    // >>> HARTE PRÜFUNG: echte GL-Texture-Size auslesen
+    glBindTexture(GL_TEXTURE_2D, raytraceTex);
+    GLint tw=0, th=0;
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &tw);
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &th);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    std::cout << "[Engine::resize] raytraceTex is now " << tw << "x" << th << "\n";
+
+    _compute.resize(_width, _height); // falls vorhanden
+}
+
 
 void RaytracerEngine::uploadMeshData() const
 {

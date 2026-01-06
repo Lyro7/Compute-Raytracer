@@ -183,6 +183,7 @@ void RaytracerUI::drawTool()
 						{
 							try
 							{
+								syncActiveSceneJsonFromScene();
 								std::ofstream out(outPath, std::ios::binary);
 								if (!out)
 									throw std::runtime_error("Cannot open output file: " + outPath);
@@ -201,7 +202,7 @@ void RaytracerUI::drawTool()
 				}
 				if (ImGui::MenuItem("Save Image (PNG/JPG)"))
 				{
-					GLuint texToSave = engine.raytraceTex; 
+					GLuint texToSave = engine.raytraceTex;
 
 					std::string outPath = SaveImageFileDialog();
 					if (!outPath.empty())
@@ -347,6 +348,22 @@ void RaytracerUI::drawFileExplorerPopup()
 	}
 	ImGui::End();
 }
+static int presetIndexForResolution(int w, int h)
+{
+	if (w == 320 && h == 180)
+		return 0;
+	if (w == 640 && h == 360)
+		return 1;
+	if (w == 1280 && h == 720)
+		return 2;
+	if (w == 1920 && h == 1080)
+		return 3;
+	if (w == 2560 && h == 1440)
+		return 4;
+	if (w == 3840 && h == 2160)
+		return 5;
+	return 6; 
+}
 
 void RaytracerUI::drawSettings()
 {
@@ -436,36 +453,43 @@ void RaytracerUI::drawSettings()
 
 		ImGui::SeparatorText("Render");
 
-		ImGui::SliderInt("SPP", &samplesPerPixel, 64, 1000);
-
-		const char *resolutions[] = { "1280 x 720", "1920 x 1080", "2560 x 1440", "3840 x 2160", "Custom" };
+		const char *resolutions[] = { "320 x 180",   "640 x 360 (FAST)", "1280 x 720", "1920 x 1080",
+			                          "2560 x 1440", "3840 x 2160",      "Custom" };
 
 		if (ImGui::Combo("Resolution Preset", &currentPreset, resolutions, IM_ARRAYSIZE(resolutions)))
 		{
 			switch (currentPreset)
 			{
 			case 0:
+				renderResolution[0] = 320;
+				renderResolution[1] = 180;
+				break;
+			case 1:
+				renderResolution[0] = 640;
+				renderResolution[1] = 360;
+				break;
+			case 2:
 				renderResolution[0] = 1280;
 				renderResolution[1] = 720;
 				break;
-			case 1:
+			case 3:
 				renderResolution[0] = 1920;
 				renderResolution[1] = 1080;
 				break;
-			case 2:
+			case 4:
 				renderResolution[0] = 2560;
 				renderResolution[1] = 1440;
 				break;
-			case 3:
+			case 5:
 				renderResolution[0] = 3840;
 				renderResolution[1] = 2160;
 				break;
-			case 4:
+			case 6:
 				break;
 			}
 		}
 
-		if (currentPreset == 4)
+		if (currentPreset == 6)
 		{
 			ImGui::InputInt2("Custom Resolution", renderResolution);
 
@@ -473,6 +497,11 @@ void RaytracerUI::drawSettings()
 				renderResolution[0] = 1;
 			if (renderResolution[1] < 1)
 				renderResolution[1] = 1;
+		}
+		if (ImGui::Button("Apply Resolution"))
+		{
+			engine.resize((GLsizei)renderResolution[0], (GLsizei)renderResolution[1]);
+			syncActiveSceneJsonFromScene();
 		}
 	}
 	ImGui::End();
@@ -484,6 +513,22 @@ void RaytracerUI::onSceneChanged(const std::string &json)
 	try
 	{
 		m_activeSceneJsonObj = nlohmann::json::parse(json);
+		if (m_activeSceneJsonObj.contains("camera") && m_activeSceneJsonObj["camera"].contains("resolution"))
+		{
+			auto &res = m_activeSceneJsonObj["camera"]["resolution"];
+			int w = res.value("x", (int)engine.getWidth());
+			int h = res.value("y", (int)engine.getHeight());
+
+			w = std::max(1, w);
+			h = std::max(1, h);
+			engine.resize((GLsizei)w, (GLsizei)h);
+			renderResolution[0] = w;
+			renderResolution[1] = h;
+			currentPreset = presetIndexForResolution(w, h);
+
+			std::cout << "[UI] Applied resolution from JSON: " << w << "x" << h << "\n";
+		}
+
 		if (m_activeSceneJsonObj.contains("background_color"))
 		{
 			auto &bc = m_activeSceneJsonObj["background_color"];
@@ -493,6 +538,16 @@ void RaytracerUI::onSceneChanged(const std::string &json)
 
 			scene.backgroundColor = glm::vec4(bg[0], bg[1], bg[2], 1.0f);
 		}
+
+		if(m_activeSceneJsonObj.contains("lights") && m_activeSceneJsonObj["lights"].is_array() &&
+		   !m_activeSceneJsonObj["lights"].empty())
+		{
+			auto &jl0 = m_activeSceneJsonObj["lights"][0];
+			float lum = jl0.value("luminosity", scene.light.intensity.x);
+			scene.light.intensity.x = lum;
+		
+		}
+
 	}
 	catch (const std::exception &e)
 	{
@@ -616,6 +671,8 @@ void RaytracerUI::syncActiveSceneJsonFromScene()
 
 		setVec3(jc, "position", glm::vec3(scene.camera.getOrigin()));
 		jc["fov"] = scene.camera.getFov();
+
+		jc["resolution"] = { { "x", engine.getWidth() }, { "y", engine.getHeight() } };
 	}
 
 	// background color (always write / create)

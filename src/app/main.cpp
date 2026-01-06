@@ -21,7 +21,8 @@ int main()
 
 		Window window(1920, 1080, "Raytracer");
 
-		RaytracerEngine engine(1920, 1080, scene);
+		// width and height are updated when loading a scene from the json. 1 is just a placeholder.
+		RaytracerEngine engine(1, 1, scene);
 		bool showRayTraced = true;
 		RaytracerUI ui(engine, scene, &showRayTraced);
 		ui.init(window);

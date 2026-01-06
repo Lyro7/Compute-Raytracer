@@ -122,3 +122,39 @@ void ComputeProgram::dispatchCompute() const
 	glDispatchCompute(workGroupX, workGroupY, 1);
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
 }
+
+void ComputeProgram::resize(GLsizei width, GLsizei height)
+{
+    if (width <= 0 || height <= 0)
+        return;
+
+    if (width == _width && height == _height)
+        return;
+
+    _width = width;
+    _height = height;
+
+    // 1) update workgroups
+    auto wg = calculateWorkGroups();
+    workGroupX = wg[0];
+    workGroupY = wg[1];
+
+    // 2) recreate/resize output texture storage
+    glBindTexture(GL_TEXTURE_2D, tex);
+
+    // IMPORTANT: glTexStorage2D cannot be "resized" without re-allocating.
+    // easiest: delete and recreate texture
+    glDeleteTextures(1, &tex);
+    glGenTextures(1, &tex);
+    glBindTexture(GL_TEXTURE_2D, tex);
+
+    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, _width, _height);
+
+    // 3) rebind as image (compute writes into it)
+    glBindImageTexture(0, tex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    std::cout << "[Compute] resized output to " << _width << "x" << _height
+              << " (dispatch " << workGroupX << "x" << workGroupY << ")\n";
+}

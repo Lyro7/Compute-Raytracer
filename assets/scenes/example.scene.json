@@ -16,15 +16,15 @@
     "up": { "x": 5.0, "y": -10.0, "z": 0.0 },
     "pane_distance": 50.0,
     "pane_width": 100.0,
-    "resolution": { "x": 320, "y": 180 }
+    "resolution": { "x": 600, "y": 300 }
   },
   "lights": [
     {
       "name": "light 1",
       "type": "point",
-      "luminosity": 1000.0,
+      "luminosity": 300.0,
       "position": { "x": 0.0, "y": 64.0, "z": -20.0 },
-      "color": { "r": 1.0, "g": 1.0, "b": 1.0 }
+      "color": { "r": 1.0, "g": 1.0, "b": 0 }
     }
   ]
 }

@@ -26,7 +26,7 @@ struct RaytracerEngine
      * @param[in] width  The output texture width in pixels.
      * @param[in] sc     The scene containing mesh, camera and light.
      */
-	RaytracerEngine(const GLsizei height, const GLsizei width, Scene &sc);
+	RaytracerEngine(const GLsizei width, const GLsizei height, Scene &sc);
 
 	/**
      * @brief Loads a mesh from file and updates the scene.
@@ -60,6 +60,28 @@ struct RaytracerEngine
 
     void uploadMeshData() const;
 
+	/** @brief (Re)allocates the raytrace output texture with current _width/_height. */
+	void recreateRaytraceTexture();
+
+	/**
+     * @brief Resizes the raytracing output to a new resolution.
+     *
+     * Recreates the output texture and updates compute configuration.
+     */
+	void resize(const GLsizei width, const GLsizei height);
+
+	/** @brief Returns current output width. */
+	GLsizei getWidth() const
+	{
+		return _width;
+	}
+
+	/** @brief Returns current output height. */
+	GLsizei getHeight() const
+	{
+		return _height;
+	}
+
 private:
 	/** Reference to the CPU-side scene (mesh, camera, light). */
 	Scene &_scene;
@@ -73,8 +95,11 @@ private:
 	/** Compute program used for raytracing into the raytrace texture. */
 	ComputeProgram _compute;
 
-    GLsizei _height = 0;
+	GLsizei _height = 0;
 	GLsizei _width = 0;
+
+     // For debugging purposes
+     int debugFrameCount = 0;
 
 	/**
      * @brief Initializes the uniform buffer object for scene parameters.
