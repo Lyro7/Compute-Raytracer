@@ -3,6 +3,10 @@
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 #define EPSILON 5e-3
+#define FLOOR_Y -20.0
+#define floorPoint vec3(0.0, FLOOR_Y, 0.0)
+#define floorNormal vec3(0.0, 1.0, 0.0)
+#define TILE_SIZE 6.0
 
 struct Material
 {
@@ -129,6 +133,23 @@ bool isInShadow(vec3 hitPos, vec3 lightPos, uint ignoreTri)
     return false; // nicht im Schatten
 }
 
+bool intersectPlane(
+    vec3 orig,
+    vec3 dir,
+    vec3 planePoint,
+    vec3 planeNormal,
+    out float tHit
+)
+{
+    float denom = dot(planeNormal, dir);
+
+    if (abs(denom) < EPSILON)
+        return false; // Ray parallel zur Ebene
+
+    tHit = dot(planePoint - orig, planeNormal) / denom;
+    return tHit > EPSILON;
+}
+
 void main() 
 {
     ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
@@ -177,9 +198,75 @@ void main()
         }
     }
 
+    bool hitFloor = false;
+    float floorTHit = 1e30;
+
+    if (intersectPlane(origin, dir, floorPoint, floorNormal, floorTHit))
+    {
+        if (floorTHit < distanceToClosestIntersection)
+        {
+            hitFloor = true;
+            distanceToClosestIntersection = floorTHit;
+        }
+    }
+
     vec3 color = gpuSceneParams.backgroundColor.rgb;
 
-    if (isHit)
+    if (hitFloor)
+    {
+        vec3 hitPos   = origin + dir * distanceToClosestIntersection;
+        vec3 lightPos = gpuSceneParams.light.position.xyz;
+        vec3 toLight  = normalize(lightPos - hitPos);
+
+        int cx = int(floor(hitPos.x / TILE_SIZE));
+        int cz = int(floor(hitPos.z / TILE_SIZE));
+        int checker = (cx + cz) & 1;
+
+        vec3 floorDiffuse = (checker == 0)
+            ? vec3(0.85)
+            : vec3(0.15);
+
+        // Licht
+        float dist = length(lightPos - hitPos);
+        float attenuation = 1.0 / (1.0 + 0.02 * dist + 0.01 * dist * dist);
+
+        float NdotL = max(dot(floorNormal, toLight), 0.0);
+
+        if(gpuSceneParams.isPreview.x == 1)
+        {
+            vec3 colorOut = floorDiffuse * 0.2;
+            /*
+            colorOut += floorDiffuse
+                    * gpuSceneParams.light.color.xyz
+                    * NdotL
+                    * attenuation
+                    * gpuSceneParams.light.intensity.x;
+
+            */
+            color = colorOut;
+            
+        }
+        else
+        {
+            // Ambient
+            vec3 colorOut = floorDiffuse * 0.2;
+
+            // Schatten-Test
+            if (!isInShadow(hitPos + floorNormal * 1e-3, lightPos, uint(-1)))
+            {
+                colorOut += floorDiffuse
+                    * gpuSceneParams.light.color.xyz
+                    * NdotL
+                    * attenuation
+                    * gpuSceneParams.light.intensity.x;
+            }
+
+            color = colorOut;
+        }
+
+        
+    }
+    else if (isHit)
     {
         Triangle tri = triangles[hitTriIndex];
         Material mat = tri.material;
