@@ -12,6 +12,8 @@
  */
 struct Light
 {
+	unsigned int ID;
+
 	/** Position of the light in world space (xyz) with optional w component. */
 	glm::vec4 position;
 
@@ -49,11 +51,13 @@ struct Scene
 	 */
 	std::vector<MeshInfo> meshInfos;
 
+	std::vector<MeshMeta> meshMetas;
+
 	/** The active camera used to view the scene. */
 	Camera camera;
 
 	/** The main light source used for shading the scene. */
-	Light light;
+	std::vector<Light> lights;
 
 	/** Background color of the scene. */
 	glm::vec4 backgroundColor{ 0.0f, 0.0f, 0.0f, 1.0f };
@@ -93,5 +97,11 @@ struct Scene
 	 * @note The mesh data is copied; ownership of the original mesh remains
 	 *       with the caller.
 	 */
-	void addMesh(const Mesh &mesh);
+	void addMesh(const Mesh &mesh, const std::string &path);
+
+	void addLight(const Light &light);
+
+	void addDefaultLight();
+
+	std::string makeUniqueName(const std::vector<std::string> &existingNames, const std::string &base);
 };

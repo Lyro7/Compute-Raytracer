@@ -43,7 +43,7 @@ void RaytracerEngine::initSceneUbo()
 {
 	glGenBuffers(1, &_sceneUbo);
 	glBindBuffer(GL_UNIFORM_BUFFER, _sceneUbo);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(_gpuParams), nullptr, GL_DYNAMIC_DRAW);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(GpuSceneParams), nullptr, GL_DYNAMIC_DRAW);
 	glBindBufferBase(GL_UNIFORM_BUFFER, 0, _sceneUbo);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }

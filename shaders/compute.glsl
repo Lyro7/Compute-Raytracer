@@ -7,6 +7,7 @@ layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 #define floorPoint vec3(0.0, FLOOR_Y, 0.0)
 #define floorNormal vec3(0.0, 1.0, 0.0)
 #define TILE_SIZE 6.0
+#define MAX_LIGHTS 64
 
 struct Material
 {
@@ -42,7 +43,10 @@ struct GpuLightParams{
 struct GpuSceneParams
 {
     GpuCameraParams camera;
-    GpuLightParams light;
+
+    ivec4 lightMeta;
+
+    GpuLightParams lights[MAX_LIGHTS];
 	vec4 isPreview; // Only .x is used 1=true 0=false 
     vec4 backgroundColor;
 };
@@ -210,12 +214,12 @@ void main()
     }
 
     vec3 color = gpuSceneParams.backgroundColor.rgb;
+    int lightCount = gpuSceneParams.lightMeta.x;
+    lightCount = clamp(lightCount, 0, MAX_LIGHTS);
 
     if (hitFloor)
     {
         vec3 hitPos   = origin + dir * distanceToClosestIntersection;
-        vec3 lightPos = gpuSceneParams.light.position.xyz;
-        vec3 toLight  = normalize(lightPos - hitPos);
 
         int cx = int(floor(hitPos.x / TILE_SIZE));
         int cz = int(floor(hitPos.z / TILE_SIZE));
@@ -225,44 +229,43 @@ void main()
             ? vec3(0.85)
             : vec3(0.15);
 
-        float dist = length(lightPos - hitPos);
-        float attenuation = 1.0 / (1.0 + 0.02 * dist + 0.01 * dist * dist);
+        vec3 colorOut = floorDiffuse * 0.2;
 
-        float NdotL = max(dot(floorNormal, toLight), 0.0);
-
-        if(gpuSceneParams.isPreview.x == 1)
+        for (int li = 0; li < lightCount; ++li) 
         {
-            vec3 colorOut = floorDiffuse * 0.2;
-            /*
-            colorOut += floorDiffuse
-                    * gpuSceneParams.light.color.xyz
-                    * NdotL
-                    * attenuation
-                    * gpuSceneParams.light.intensity.x;
+            vec3 lightPos = gpuSceneParams.lights[li].position.xyz;
+            vec3 lightCol = gpuSceneParams.lights[li].color.xyz;
+            float intensity = gpuSceneParams.lights[li].intensity.x;
 
-            */
-            color = colorOut;
-            
-        }
-        else
-        {
-            //Ambient
-            vec3 colorOut = floorDiffuse * 0.2;
+            vec3 toLight = normalize(lightPos - hitPos);
 
-            //Shadow-test
-            if (!isInShadow(hitPos + floorNormal * 1e-3, lightPos, uint(-1)))
+            float dist = length(lightPos - hitPos);
+            float attenuation = 1.0 / (1.0 + 0.02 * dist + 0.01 * dist * dist);
+
+            float NdotL = max(dot(floorNormal, toLight), 0.0);
+
+            if(gpuSceneParams.isPreview.x == 1)
             {
                 colorOut += floorDiffuse
-                    * gpuSceneParams.light.color.xyz
-                    * NdotL
-                    * attenuation
-                    * gpuSceneParams.light.intensity.x;
+                        * lightCol
+                        * NdotL
+                        * attenuation
+                        * intensity;
             }
-
-            color = colorOut;
-        }
-
-        
+            else
+            {
+                //Shadow-test
+                if (!isInShadow(hitPos + floorNormal * 1e-3, lightPos, uint(-1)))
+                {
+                    colorOut += floorDiffuse
+                        * lightCol
+                        * NdotL
+                        * attenuation
+                        * intensity;
+                }
+            }
+       }
+       color = colorOut;
     }
     else if (isHit)
     {
@@ -272,16 +275,19 @@ void main()
         if(gpuSceneParams.isPreview.x == 1)
         {
             vec3 diffuse = mat.diffuseColor.rgb;
-            color = (diffuse + gpuSceneParams.light.color.xyz * 0.2) * (gpuSceneParams.light.intensity.x / 250.0);
+            vec3 c = diffuse;
+
+            for (int li = 0; li < lightCount; ++li) 
+            {
+                vec3 lightCol = gpuSceneParams.lights[li].color.xyz;
+                float intensity = gpuSceneParams.lights[li].intensity.x;
+                c += lightCol * 0.2 * (intensity / 250.0);
+            }
+            color = c;
         }
         else
         {
-            vec3 hitPos   = origin + dir * distanceToClosestIntersection;
-            vec3 lightPos = gpuSceneParams.light.position.xyz;
-            vec3 toLight  = normalize(lightPos - hitPos);
-
-            float distanceToLight = length(lightPos - hitPos);
-            float attenuation = 1.0 / (1.0 + 0.02 * distanceToLight + 0.01 * distanceToLight * distanceToLight);
+            vec3 hitPos = origin + dir * distanceToClosestIntersection;
 
             float u = closestHitPoint.x;
             float v = closestHitPoint.y;
@@ -293,21 +299,28 @@ void main()
 
             vec3 N = normalize(w * tri.NA.xyz + u * tri.NB.xyz + v * tri.NC.xyz);
 
-        
-
             vec3 diffuse = mat.diffuseColor.rgb;
 
-            // Scales with light intensitiy
-            vec3 ambientLighting = diffuse * vec3(0.3,0.3,0.4) * (gpuSceneParams.light.intensity.x /100.0);
+            vec3 ambientLighting = diffuse * vec3(0.3,0.3,0.4);
             color = ambientLighting;
-        
-            if (!isInShadow(hitPos, lightPos, hitTriIndex))
-            { 
-                // Lambert -> Light intensity depends on angle of incidence
-                float NdotL = max(dot(N, toLight), 0.0);
-                color += diffuse * gpuSceneParams.light.color.xyz * NdotL * attenuation * gpuSceneParams.light.intensity.x;
+            
+            for (int li = 0; li < lightCount; ++li) 
+            {
+                vec3 lightPos = gpuSceneParams.lights[li].position.xyz;
+                vec3 lightCol = gpuSceneParams.lights[li].color.xyz;
+                float intensity = gpuSceneParams.lights[li].intensity.x;
+
+                vec3 toLight = normalize(lightPos - hitPos);
+
+                float d = length(lightPos - hitPos);
+                float attenuation = 1.0 / (1.0 + 0.02 * d + 0.01 * d * d);
+
+                if (!isInShadow(hitPos + N * 1e-3, lightPos, hitTriIndex))
+                {
+                    float NdotL = max(dot(N, toLight), 0.0);
+                    color += diffuse * lightCol * NdotL * attenuation * intensity;
+                }
             }
-        
             // imageStore(outputImage, pixel, vec4(N * 0.5 + 0.5, 1.0));
             // return;
            }

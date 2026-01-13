@@ -161,6 +161,10 @@ private:
 	/** * @brief Background color (RGB 0–1).*/
 	float bg[3] = { 0.0f, 0.0f, 0.0f };
 
+	int activeLightIndex = 0;
+
+	int activeMeshIndex = 0;
+
 	/** @brief Resets the environment to default state. */
 	void resetEnvironment();
 
