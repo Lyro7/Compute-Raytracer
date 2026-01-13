@@ -2,7 +2,9 @@
 
 #include <vector>
 #include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
+#include <glm/glm.hpp>
 #include <string>
 
 /**
@@ -95,6 +97,8 @@ struct MeshMeta
 	glm::vec3 position{ 0.0f, 0.0f, 0.0f };
 	glm::vec3 rotation{ 0.0f, 0.0f, 0.0f };
 	glm::vec3 scale{ 1.0f, 1.0f, 1.0f };
+
+	glm::mat4 buildModelMatrix() const;
 };
 
 /**

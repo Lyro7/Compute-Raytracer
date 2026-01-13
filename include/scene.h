@@ -53,6 +53,8 @@ struct Scene
 
 	std::vector<MeshMeta> meshMetas;
 
+	std::vector<std::vector<Triangle>> localMeshes;
+
 	/** The active camera used to view the scene. */
 	Camera camera;
 
@@ -98,6 +100,8 @@ struct Scene
 	 *       with the caller.
 	 */
 	void addMesh(const Mesh &mesh, const std::string &path);
+
+	void applyMeshTransform(int meshIndex);
 
 	void addLight(const Light &light);
 

@@ -1,4 +1,3 @@
-
 #include "raytracer_ui.h"
 #include "compute_program.h"
 #include "imgui.h"
@@ -241,7 +240,7 @@ void RaytracerUI::drawTool()
 		ImGui::Separator();
 
 		ImGui::BeginChild("##ActiveElements", ImVec2(0, 0), true, ImGuiWindowFlags_HorizontalScrollbar);
-		ImGui::TextUnformatted("Models");
+		ImGui::TextUnformatted("Objects");
 		ImGui::Indent();
 
 		for (int i = 0; i < (int)scene.meshMetas.size(); ++i)
@@ -393,6 +392,7 @@ void RaytracerUI::drawFileExplorerPopup()
 	}
 	ImGui::End();
 }
+
 static int presetIndexForResolution(int w, int h)
 {
 	if (w == 320 && h == 180)
@@ -437,9 +437,7 @@ void RaytracerUI::drawSettings()
 		ImGui::SeparatorText("Object");
 
 		// Hardcoded test-data ???
-		static float testObjectPos[3] = { 1.0f, 2.0f, 3.0f };
-		static float testObjectRot[3] = { 0.0f, 45.0f, 0.0f };
-
+		
 		// OBJECT-SECTION
 		std::string name = scene.meshMetas.at(activeMeshIndex).name;
 		if (!name.empty())
@@ -448,13 +446,38 @@ void RaytracerUI::drawSettings()
 		}
 		ImGui::TextUnformatted(name.c_str());
 
-		ImGui::DragFloat3("##ObjectPos", testObjectPos, 0.1f, -100.0f, 100.0f, "%.2f");
+
+		MeshMeta &meta = scene.meshMetas[activeMeshIndex];
+
+		if (ImGui::DragFloat3("##ObjectPos", &meta.position.x, 0.1f, -100.0f, 100.0f, "%.2f"))
+		{
+			somethingChanged = true;
+			scene.applyMeshTransform(activeMeshIndex);
+			engine.uploadMeshData();
+		};
+
 		ImGui::SameLine();
 		ImGui::Text("Position");
 
-		ImGui::SliderFloat3("##ObjectRotSlider", testObjectRot, -360.0f, 360.0f, "%.1f°");
+		if (ImGui::SliderFloat3("##ObjectRotSlider", &meta.rotation.x, -360.0f, 360.0f, "%.1f°"))
+		{
+			somethingChanged = true;
+			scene.applyMeshTransform(activeMeshIndex);
+			engine.uploadMeshData();
+		};
+
 		ImGui::SameLine();
 		ImGui::Text("Rotation");
+
+		if (ImGui::SliderFloat3("##ObjectScaleSlider", &meta.scale.x, -360.0f, 360.0f, "%.1f°"))
+		{
+			somethingChanged = true;
+			scene.applyMeshTransform(activeMeshIndex);
+			engine.uploadMeshData();
+		};
+
+		ImGui::SameLine();
+		ImGui::Text("Scale");
 
 		// LIGHT-SECTION
 		if (scene.lights.empty())

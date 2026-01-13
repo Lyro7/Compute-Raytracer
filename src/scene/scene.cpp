@@ -75,10 +75,14 @@ std::string Scene::makeUniqueName(const std::vector<std::string> &existingNames,
 
 void Scene::addMesh(const Mesh &mesh, const std::string &path)
 {
+	const unsigned int id = static_cast<unsigned int>(meshInfos.size());
+
 	MeshInfo info;
 
 	info.firstTriangleIndex = triangles.size();
 	info.numTriangles = mesh.getTriangles().size();
+
+	localMeshes.push_back(mesh.getTriangles());
 
 	for (const Triangle &tri : mesh.getTriangles())
 	{
@@ -89,7 +93,7 @@ void Scene::addMesh(const Mesh &mesh, const std::string &path)
 
 	// Collect metadatas
 	MeshMeta meta;
-	meta.ID = static_cast<unsigned int>(meshInfos.size());
+	meta.ID = id;
 	meta.path = path;
 
 	// Extract names from meta datas
@@ -107,6 +111,30 @@ void Scene::addMesh(const Mesh &mesh, const std::string &path)
 	meshMetas.push_back(std::move(meta));
 
 	numMeshes = (int)meshInfos.size();
+}
+
+void Scene::applyMeshTransform(int meshIndex)
+{
+	const MeshInfo &info = meshInfos[meshIndex];
+	const MeshMeta &meta = meshMetas[meshIndex];
+
+	glm::mat4 M = meta.buildModelMatrix();
+	glm::mat3 N = glm::transpose(glm::inverse(glm::mat3(M)));
+
+	for (int i = 0; i < info.numTriangles; ++i)
+	{
+		const Triangle &src = localMeshes[meshIndex][i];
+		Triangle &dst = triangles[info.firstTriangleIndex + i];
+
+		dst = src;
+		dst.v1 = M * src.v1;
+		dst.v2 = M * src.v2;
+		dst.v3 = M * src.v3;
+
+		dst.NA = glm::vec4(glm::normalize(N * glm::vec3(src.NA)), 0.0f);
+		dst.NB = glm::vec4(glm::normalize(N * glm::vec3(src.NB)), 0.0f);
+		dst.NC = glm::vec4(glm::normalize(N * glm::vec3(src.NC)), 0.0f);
+	}
 }
 
 void Scene::addLight(const Light &light)
