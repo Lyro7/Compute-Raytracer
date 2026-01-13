@@ -46,21 +46,30 @@ struct RaytracerEngine
 	void renderFrame(bool showRayTraced);
 
 	/**
-    * @brief Notifies the engine that the referenced scene content has changed.
-    *
-    * The engine stores a reference to a Scene. When the Scene is replaced
-    * (e.g. via assignment in main), GPU buffers and cached parameters must be
-    * re-synchronized.
+     * @brief Notifies the engine that the referenced scene content has changed.
+     *
+     * The engine stores a reference to a Scene. When the Scene is replaced
+     * (e.g. via assignment in main), GPU buffers and cached parameters must be
+     * re-synchronized.
     */
 	void onSceneChanged(bool showRayTraced);
 
-	/**
-     * @brief Clears the output textures to a given color.*/
+	/** 
+	 * @brief Clears the output textures to a given color. 
+	 */
 	void clearOutputTextures(float r, float g, float b, float a);
 
-    void uploadMeshData() const;
+	/**
+	 * @brief Uploads scene mesh data to GPU shader storage buffers.
+	 *
+	 * Transfers triangle and mesh info data to SSBOs for use in compute shaders.
+	 * Requires a valid OpenGL context.
+	 */
+	void uploadMeshData() const;
 
-	/** @brief (Re)allocates the raytrace output texture with current _width/_height. */
+	/** 
+	 * @brief (Re)allocates the raytrace output texture with current _width/_height. 
+	 */
 	void recreateRaytraceTexture();
 
 	/**
@@ -70,13 +79,17 @@ struct RaytracerEngine
      */
 	void resize(const GLsizei width, const GLsizei height);
 
-	/** @brief Returns current output width. */
+	/**
+	 * @brief Returns current output width. 
+	 */
 	GLsizei getWidth() const
 	{
 		return _width;
 	}
 
-	/** @brief Returns current output height. */
+	/**
+	 * @brief Returns current output height. 
+	 */
 	GLsizei getHeight() const
 	{
 		return _height;
@@ -95,11 +108,14 @@ private:
 	/** Compute program used for raytracing into the raytrace texture. */
 	ComputeProgram _compute;
 
+	/** Output height in pixels. */
 	GLsizei _height = 0;
+
+	/** Output width in pixels. */
 	GLsizei _width = 0;
 
-     // For debugging purposes
-     int debugFrameCount = 0;
+	/** Frame count for debugging purposes. */
+	int debugFrameCount = 0;
 
 	/**
      * @brief Initializes the uniform buffer object for scene parameters.

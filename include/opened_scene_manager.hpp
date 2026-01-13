@@ -13,16 +13,16 @@ namespace fs = std::filesystem;
  */
 struct OpenedScenePaths
 {
-    /// Root directory of the opened scene
-    /// Example: assets/opened_scenes/20251231_182945_4831/
-    fs::path root;
+	/// Root directory of the opened scene
+	/// Example: assets/opened_scenes/20251231_182945_4831/
+	fs::path root;
 
-    /// Directory containing extracted OBJ/MTL files
-    /// Example: assets/opened_scenes/<id>/obj/
-    fs::path objDir;
+	/// Directory containing extracted OBJ/MTL files
+	/// Example: assets/opened_scenes/<id>/obj/
+	fs::path objDir;
 
-    /// Path to the scene description file (JSON / .rscn)
-    fs::path sceneFile;
+	/// Path to the scene description file (JSON / .rscn)
+	fs::path sceneFile;
 };
 
 /**
@@ -36,7 +36,7 @@ struct OpenedScenePaths
 class OpenedSceneManager
 {
 public:
-    /**
+	/**
      * @brief Creates a new directory for an opened scene.
      *
      * A unique subdirectory (timestamp + random suffix) is created inside
@@ -48,9 +48,9 @@ public:
      *
      * @return OpenedScenePaths containing all relevant filesystem paths
      */
-    static OpenedScenePaths CreateNewOpenedSceneDir(const fs::path& baseDir);
+	static OpenedScenePaths CreateNewOpenedSceneDir(const fs::path &baseDir);
 
-    /**
+	/**
      * @brief Generates a unique, filesystem-safe timestamp identifier.
      *
      * Format:
@@ -61,5 +61,5 @@ public:
      *
      * @return Timestamp identifier as string
      */
-    static std::string MakeTimestampId();
+	static std::string MakeTimestampId();
 };

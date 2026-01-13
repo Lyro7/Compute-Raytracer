@@ -8,15 +8,15 @@
 #include <filesystem>
 #include <iostream>
 #include "object_loader.h"
-#include "../include/scene.h"
-#include "../utils/file_dialog.h"
+#include "scene.h"
+#include "file_dialog.h"
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include <vector>
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
-#include "../utils/texture_export.h"
+#include "texture_export.h"
 
 RaytracerUI::RaytracerUI(RaytracerEngine &engine, Scene &scene, bool *showRayTraced)
     : engine(engine)
@@ -362,7 +362,7 @@ static int presetIndexForResolution(int w, int h)
 		return 4;
 	if (w == 3840 && h == 2160)
 		return 5;
-	return 6; 
+	return 6;
 }
 
 void RaytracerUI::drawSettings()
@@ -391,7 +391,7 @@ void RaytracerUI::drawSettings()
 		}
 		ImGui::SeparatorText("Object");
 
-		// Hardcoded Test-Daten, damit man im UI etwas sieht
+		// Hardcoded test-data
 		static float testObjectPos[3] = { 1.0f, 2.0f, 3.0f };
 		static float testObjectRot[3] = { 0.0f, 45.0f, 0.0f };
 
@@ -401,7 +401,7 @@ void RaytracerUI::drawSettings()
 		ImGui::SameLine();
 		ImGui::Text("Position");
 
-		// Rotation als Slider
+		// Rotation via slider
 
 		ImGui::SliderFloat3("##ObjectRotSlider", testObjectRot, -360.0f, 360.0f, "%.1f°");
 		ImGui::SameLine();
@@ -539,15 +539,13 @@ void RaytracerUI::onSceneChanged(const std::string &json)
 			scene.backgroundColor = glm::vec4(bg[0], bg[1], bg[2], 1.0f);
 		}
 
-		if(m_activeSceneJsonObj.contains("lights") && m_activeSceneJsonObj["lights"].is_array() &&
-		   !m_activeSceneJsonObj["lights"].empty())
+		if (m_activeSceneJsonObj.contains("lights") && m_activeSceneJsonObj["lights"].is_array() &&
+		    !m_activeSceneJsonObj["lights"].empty())
 		{
 			auto &jl0 = m_activeSceneJsonObj["lights"][0];
 			float lum = jl0.value("luminosity", scene.light.intensity.x);
 			scene.light.intensity.x = lum;
-		
 		}
-
 	}
 	catch (const std::exception &e)
 	{

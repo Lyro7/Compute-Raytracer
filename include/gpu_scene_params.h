@@ -60,10 +60,16 @@ struct GpuSceneParams
 	/** Active point light used for shading. */
 	GpuLightParams light;
 
-	/** only .x is used 1=true 0=false */
+	/** 
+	 * Flag indicating wether the texture to be calculated is the preview or the raytraced image. 
+	 * Only .x is used. (1=true 0=false) 
+	 */
 	glm::vec4 isPreview;
 
-	/** only .rgb .a is not used */
+	/** 
+	 * The background color as set via the UI. Default color is black.
+	 * Only .rgb is used.
+	 */
 	glm::vec4 backgroundColor;
 
 	/** Updates GPU parameters from the CPU-side scene. */

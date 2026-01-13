@@ -13,7 +13,6 @@
  */
 std::string OpenZipFileDialog(); // returns "" if canceled
 
-
 /**
  * @brief Opens a native file dialog to select a Wavefront OBJ model file.
  *

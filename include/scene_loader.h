@@ -114,8 +114,8 @@ private:
 	// --- Extraction / Mapping Methods ---
 	ZipReader *m_zip = nullptr;
 
-	std::filesystem::path m_sceneRootDisk; 
-    std::string m_sceneRootZip;
+	std::filesystem::path m_sceneRootDisk;
+	std::string m_sceneRootZip;
 
 	/** @brief Extracts light properties (position, color, intensity). */
 	Light extractLight(const JsonValue &json);

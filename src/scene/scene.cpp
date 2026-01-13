@@ -3,23 +3,11 @@
 #include <glm/glm.hpp>
 #include <iostream>
 
-
 Scene::Scene()
-    : camera(
-        glm::vec3(0.0f, 0.0f, 5.0f),
-        glm::vec3(0.0f, 0.0f, 0.0f),
-        glm::vec3(0.0f, 1.0f, 0.0f),
-        60.0f,
-        16.0f/9.0f,
-        0.1f,
-        100.0f
-    )
-    , light{
-        glm::vec4(0.0f, 1.0f, 5.0f, 1.0f),
-        glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),
-		glm::vec4(1.0, 1.0, 1.0, 1.0)
-    }
-	, backgroundColor(0, 0, 0, 1)
+    : camera(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 60.0f, 16.0f / 9.0f,
+             0.1f, 100.0f)
+    , light{ glm::vec4(0.0f, 1.0f, 5.0f, 1.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), glm::vec4(1.0, 1.0, 1.0, 1.0) }
+    , backgroundColor(0, 0, 0, 1)
 {
 }
 
@@ -78,7 +66,6 @@ void Scene::addMesh(const Mesh &mesh)
 
 	meshInfos.push_back(info);
 	numMeshes++;
-
 }
 
 void Scene::reset()

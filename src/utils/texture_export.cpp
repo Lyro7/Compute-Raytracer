@@ -48,7 +48,7 @@ bool SaveTextureToImageFile(GLuint tex, std::string path)
 		return false;
 	}
 
-    // float RGBA readback from GPU to CPU
+	// float RGBA readback from GPU to CPU
 	std::vector<float> rgbaF(size_t(w) * size_t(h) * 4);
 	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, rgbaF.data());
 
@@ -63,7 +63,7 @@ bool SaveTextureToImageFile(GLuint tex, std::string path)
 	std::vector<std::uint8_t> rgba8(size_t(w) * size_t(h) * 4);
 	for (size_t i = 0; i < rgbaF.size(); i += 4)
 	{
-        // Clamp and convert to 8-bit bc jpg/png writers expect that
+		// Clamp and convert to 8-bit bc jpg/png writers expect that
 		float r = std::clamp(rgbaF[i + 0], 0.0f, 1.0f);
 		float g = std::clamp(rgbaF[i + 1], 0.0f, 1.0f);
 		float b = std::clamp(rgbaF[i + 2], 0.0f, 1.0f);
@@ -82,7 +82,7 @@ bool SaveTextureToImageFile(GLuint tex, std::string path)
 		std::memcpy(&flipped[size_t(y) * stride], &rgba8[size_t(h - 1 - y) * stride], stride);
 	}
 
-    // Write image file as PNG or JPG
+	// Write image file as PNG or JPG
 	if (ext == ".png")
 	{
 		return stbi_write_png(path.c_str(), w, h, 4, flipped.data(), stride) != 0;

@@ -2,8 +2,8 @@
 #include <iostream>
 #include <string>
 
-#include "core/window.h"
-#include "../ui/raytracer_ui.h"
+#include "window.h"
+#include "raytracer_ui.h"
 #include "scene_loader.h"
 #include "zip_reader.h"
 #include "../include/scene_bootstrap.hpp"
@@ -42,7 +42,7 @@ int main()
 			{
 				auto loadedZip = bootstrap.loadFromZipOrFallback(zip, "assets/scenes/example.scene.json");
 
-				scene = std::move(loadedZip.scene); // gleicher scene-Container, neue Daten
+				scene = std::move(loadedZip.scene); // same scene-container, new data
 
 				engine.uploadMeshData();
 				engine.onSceneChanged(showRayTraced);

@@ -43,7 +43,7 @@ struct GpuSceneParams
 {
     GpuCameraParams camera;
     GpuLightParams light;
-	vec4 isPreview; // only .x is used 1=true 0=false 
+	vec4 isPreview; // Only .x is used 1=true 0=false 
     vec4 backgroundColor;
 };
 
@@ -71,8 +71,8 @@ layout(std140, binding = 0) uniform SceneParams
     GpuSceneParams gpuSceneParams;
 };
 
-//Reimplementation of the algorithm of M�ller and Trumbore
-//M�ller, T., & Trumbore, B. (1997). Fast, minimum storage ray-triangle intersection. Journal of Graphics Tools, 2(1), 21-28.
+// Reimplementation of the algorithm of M�ller and Trumbore
+// M�ller, T., & Trumbore, B. (1997). Fast, minimum storage ray-triangle intersection. Journal of Graphics Tools, 2(1), 21-28.
 bool intersectTriangle(vec3 orig, vec3 dir, vec3 v0, vec3 v1, vec3 v2, out float tHit, out vec2 hit)
 {
     vec3 e1 = v1 - v0;
@@ -108,7 +108,7 @@ bool isInShadow(vec3 hitPos, vec3 lightPos, uint ignoreTri)
     vec3 shadowDir = normalize(lightPos - hitPos);
     float maxDist = length(lightPos - hitPos);
 
-    // Durch alle Dreiecke iterieren
+    // Iterate over all triangles
     for (uint i = 0u; i < triangles.length(); ++i)
     {
         if (i == ignoreTri) continue; 
@@ -121,16 +121,15 @@ bool isInShadow(vec3 hitPos, vec3 lightPos, uint ignoreTri)
         float tHitShadow;
         vec2 dummy;
 
-        // Verschiebe den Ursprung ein wenig, um Selbstüberschneidungen zu vermeiden
         if (intersectTriangle(hitPos, shadowDir, v0, v1, v2, tHitShadow, dummy))
         {
             if (tHitShadow < maxDist - 1e-4)
             {
-                return true; // im Schatten
+                return true;// In shadow
             }
         }
     }
-    return false; // nicht im Schatten
+    return false; // Not in shadow
 }
 
 bool intersectPlane(
@@ -144,7 +143,7 @@ bool intersectPlane(
     float denom = dot(planeNormal, dir);
 
     if (abs(denom) < EPSILON)
-        return false; // Ray parallel zur Ebene
+        return false; // Ray parallel to plane
 
     tHit = dot(planePoint - orig, planeNormal) / denom;
     return tHit > EPSILON;
@@ -175,7 +174,7 @@ void main()
     uint hitTriIndex = 0u;
     vec2 closestHitPoint = vec2(0.0);
 
-    // Iterate over triangles
+    // Iterate over all triangles
     for (uint i = 0u; i < triangles.length(); ++i)
     {
         Triangle tri = triangles[i];
@@ -226,7 +225,6 @@ void main()
             ? vec3(0.85)
             : vec3(0.15);
 
-        // Licht
         float dist = length(lightPos - hitPos);
         float attenuation = 1.0 / (1.0 + 0.02 * dist + 0.01 * dist * dist);
 
@@ -248,10 +246,10 @@ void main()
         }
         else
         {
-            // Ambient
+            //Ambient
             vec3 colorOut = floorDiffuse * 0.2;
 
-            // Schatten-Test
+            //Shadow-test
             if (!isInShadow(hitPos + floorNormal * 1e-3, lightPos, uint(-1)))
             {
                 colorOut += floorDiffuse
@@ -299,19 +297,19 @@ void main()
 
             vec3 diffuse = mat.diffuseColor.rgb;
 
-            // scales with light intensitiy
+            // Scales with light intensitiy
             vec3 ambientLighting = diffuse * vec3(0.3,0.3,0.4) * (gpuSceneParams.light.intensity.x /100.0);
             color = ambientLighting;
         
             if (!isInShadow(hitPos, lightPos, hitTriIndex))
             { 
-                //Lambert -> Helligkeit abhängig vom Einfallswinkel
+                // Lambert -> Light intensity depends on angle of incidence
                 float NdotL = max(dot(N, toLight), 0.0);
                 color += diffuse * gpuSceneParams.light.color.xyz * NdotL * attenuation * gpuSceneParams.light.intensity.x;
             }
         
-            //imageStore(outputImage, pixel, vec4(N * 0.5 + 0.5, 1.0));
-            //return;
+            // imageStore(outputImage, pixel, vec4(N * 0.5 + 0.5, 1.0));
+            // return;
            }
     }
       
