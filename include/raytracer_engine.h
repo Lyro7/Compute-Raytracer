@@ -114,7 +114,7 @@ private:
 	/** Output width in pixels. */
 	GLsizei _width = 0;
 
-	/** Frame count for debugging purposes */
+	/** Frame count for debugging purposes. */
 	int debugFrameCount = 0;
 
 	/**

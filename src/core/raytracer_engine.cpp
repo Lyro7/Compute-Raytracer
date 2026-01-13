@@ -130,7 +130,6 @@ void RaytracerEngine::resize(GLsizei width, GLsizei height)
 
 	recreateRaytraceTexture();
 
-	// >>> HARTE PRÜFUNG: echte GL-Texture-Size auslesen
 	glBindTexture(GL_TEXTURE_2D, raytraceTex);
 	GLint tw = 0, th = 0;
 	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &tw);
@@ -139,7 +138,7 @@ void RaytracerEngine::resize(GLsizei width, GLsizei height)
 
 	std::cout << "[Engine::resize] raytraceTex is now " << tw << "x" << th << "\n";
 
-	_compute.resize(_width, _height); // falls vorhanden
+	_compute.resize(_width, _height);
 }
 
 void RaytracerEngine::uploadMeshData() const

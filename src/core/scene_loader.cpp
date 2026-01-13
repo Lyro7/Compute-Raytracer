@@ -222,7 +222,7 @@ Light SceneLoader::extractLight(const JsonValue &json)
 	light.position = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 	light.color = glm::vec4(1.0f);
 
-	// Einlesen
+	// Read in
 	if (json.has("luminosity"))
 		light.intensity = glm::vec4(json.asObj()->at("luminosity").asFloat(), 0.0, 0.0, 0.0);
 
@@ -256,7 +256,7 @@ Camera SceneLoader::extractCamera(const JsonValue &json)
 	if (json.has("up"))
 		up = parseVec3(json.asObj()->at("up"));
 
-	// Resolution lesen (f�r Aspect Ratio)
+	// read resolution (for Aspect Ratio)
 	if (json.has("resolution"))
 	{
 		float w = 1920.0f, h = 1080.0f;
@@ -302,7 +302,6 @@ Mesh SceneLoader::extractMesh(const JsonValue &json)
 
 	Mesh mesh;
 
-	// --- ZIP-Fall ---
 	if (m_zip)
 	{
 		std::string zipInner = path;
@@ -325,7 +324,6 @@ Mesh SceneLoader::extractMesh(const JsonValue &json)
 			// OBJ Bytes
 			auto objBytes = m_zip->readBytes(zipInner);
 
-			// --- MTL suchen ---
 			std::vector<uint8_t> mtlBytes;
 			std::string objText(reinterpret_cast<const char *>(objBytes.data()), objBytes.size());
 
@@ -337,7 +335,7 @@ Mesh SceneLoader::extractMesh(const JsonValue &json)
 				mtlFile.erase(0, mtlFile.find_first_not_of(" \t\r"));
 				mtlFile.erase(mtlFile.find_last_not_of(" \t\r") + 1);
 
-				// MTL relativ zur OBJ auflösen
+				// MTL relative to OBJ 
 				std::filesystem::path objPath(zipInner);
 				std::filesystem::path mtlPath = objPath.parent_path() / mtlFile;
 				mtlPath = mtlPath.lexically_normal();
@@ -367,7 +365,6 @@ Mesh SceneLoader::extractMesh(const JsonValue &json)
 		std::cout << "  ZIP missing -> fallback to DISK\n";
 	}
 
-	// --- Disk-Fall ---
 	std::filesystem::path fullPath = std::filesystem::path(path);
 	if (!m_sceneRootDisk.empty() && !fullPath.is_absolute())
 		fullPath = m_sceneRootDisk / fullPath;

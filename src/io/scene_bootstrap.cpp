@@ -90,8 +90,8 @@ SceneBootstrap::LoadedScene SceneBootstrap::loadFromZipOrFallback(const std::str
 		std::cout << "[Fallback] Loaded: " << fallbackFile << "\n";
 	}
 	LoadedScene out;
-	out.json = sceneJsonContent; // <- DAS ist der JSON Text für die UI
-	out.scene = m_loader.loadScene(sceneJsonContent); // <- parsed Scene für Engine/Renderer
+	out.json = sceneJsonContent; // Json text for the UI
+	out.scene = m_loader.loadScene(sceneJsonContent); // parse scene
 	return out;
 }
 

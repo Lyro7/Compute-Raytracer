@@ -43,3 +43,7 @@ Thumbs.db
 # Local stuff
 .cache/
 compile_commands.json
+
+# Opened scenes
+opened_scenes/*
+!opened_scenes/.gitkeep

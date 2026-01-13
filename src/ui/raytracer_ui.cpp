@@ -391,7 +391,7 @@ void RaytracerUI::drawSettings()
 		}
 		ImGui::SeparatorText("Object");
 
-		// Hardcoded Test-Daten, damit man im UI etwas sieht
+		// Hardcoded test-data
 		static float testObjectPos[3] = { 1.0f, 2.0f, 3.0f };
 		static float testObjectRot[3] = { 0.0f, 45.0f, 0.0f };
 
@@ -401,7 +401,7 @@ void RaytracerUI::drawSettings()
 		ImGui::SameLine();
 		ImGui::Text("Position");
 
-		// Rotation als Slider
+		// Rotation via slider
 
 		ImGui::SliderFloat3("##ObjectRotSlider", testObjectRot, -360.0f, 360.0f, "%.1f°");
 		ImGui::SameLine();

@@ -42,7 +42,7 @@ int main()
 			{
 				auto loadedZip = bootstrap.loadFromZipOrFallback(zip, "assets/scenes/example.scene.json");
 
-				scene = std::move(loadedZip.scene); // gleicher scene-Container, neue Daten
+				scene = std::move(loadedZip.scene); // same scene-container, new data
 
 				engine.uploadMeshData();
 				engine.onSceneChanged(showRayTraced);
