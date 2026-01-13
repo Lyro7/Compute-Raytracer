@@ -1,5 +1,5 @@
 #pragma once
-#include "core/window.h"
+#include "window.h"
 #include "imgui.h"
 #include "raytracer_engine.h"
 #include <glad/glad.h>

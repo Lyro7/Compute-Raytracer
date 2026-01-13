@@ -8,15 +8,15 @@
 #include <filesystem>
 #include <iostream>
 #include "object_loader.h"
-#include "../include/scene.h"
-#include "../utils/file_dialog.h"
+#include "scene.h"
+#include "file_dialog.h"
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include <vector>
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
-#include "../utils/texture_export.h"
+#include "texture_export.h"
 
 RaytracerUI::RaytracerUI(RaytracerEngine &engine, Scene &scene, bool *showRayTraced)
     : engine(engine)

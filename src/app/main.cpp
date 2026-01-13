@@ -2,8 +2,8 @@
 #include <iostream>
 #include <string>
 
-#include "core/window.h"
-#include "../ui/raytracer_ui.h"
+#include "window.h"
+#include "raytracer_ui.h"
 #include "scene_loader.h"
 #include "zip_reader.h"
 #include "../include/scene_bootstrap.hpp"
