@@ -13,9 +13,9 @@ static Material convertMaterial(const tinyobj::material_t &m)
 
 	mat.diffuseColor = glm::vec4(m.diffuse[0], m.diffuse[1], m.diffuse[2], 0.0f);
 
-	mat.specularColor = glm::vec4(m.specular[0], m.specular[1], m.specular[2], m.shininess );
+	mat.specularColor = glm::vec4(m.specular[0], m.specular[1], m.specular[2], m.shininess);
 
-	mat.emission = glm::vec4(0.0f); 
+	mat.emission = glm::vec4(0.0f);
 
 	return mat;
 }

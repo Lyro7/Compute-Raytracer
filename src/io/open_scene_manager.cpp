@@ -40,7 +40,7 @@ OpenedScenePaths OpenedSceneManager::CreateNewOpenedSceneDir(const fs::path &bas
 	out.objDir = out.root / "obj";
 
 	fs::create_directories(out.objDir);
-    
+
 	out.sceneFile = out.root / "scene.json";
 
 	return out;

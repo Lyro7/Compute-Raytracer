@@ -7,109 +7,108 @@
 
 std::string OpenZipFileDialog()
 {
-    char filename[MAX_PATH] = {0};
+	char filename[MAX_PATH] = { 0 };
 
-    OPENFILENAMEA ofn;
-    ZeroMemory(&ofn, sizeof(ofn));
-    ofn.lStructSize = sizeof(ofn);
-    ofn.hwndOwner   = nullptr;
-    ofn.lpstrFile   = filename;
-    ofn.nMaxFile    = MAX_PATH;
+	OPENFILENAMEA ofn;
+	ZeroMemory(&ofn, sizeof(ofn));
+	ofn.lStructSize = sizeof(ofn);
+	ofn.hwndOwner = nullptr;
+	ofn.lpstrFile = filename;
+	ofn.nMaxFile = MAX_PATH;
 
-    // Filter string is double-null-terminated
-    ofn.lpstrFilter = "Zip Files (*.zip)\0*.zip\0All Files (*.*)\0*.*\0";
-    ofn.nFilterIndex = 1;
+	// Filter string is double-null-terminated
+	ofn.lpstrFilter = "Zip Files (*.zip)\0*.zip\0All Files (*.*)\0*.*\0";
+	ofn.nFilterIndex = 1;
 
-    ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
+	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
 
-    if (GetOpenFileNameA(&ofn))
-        return std::string(filename);
+	if (GetOpenFileNameA(&ofn))
+		return std::string(filename);
 
-    return "";
+	return "";
 }
 #else
-std::string OpenZipFileDialog()  { return ""; }
+std::string OpenZipFileDialog()
+{
+	return "";
+}
 #endif
-
 
 std::string OpenObjFileDialog()
 {
-    char filename[MAX_PATH] = {0};
+	char filename[MAX_PATH] = { 0 };
 
-    OPENFILENAMEA ofn;
-    ZeroMemory(&ofn, sizeof(ofn));
-    ofn.lStructSize = sizeof(ofn);
-    ofn.hwndOwner   = nullptr;
-    ofn.lpstrFile   = filename;
-    ofn.nMaxFile    = MAX_PATH;
+	OPENFILENAMEA ofn;
+	ZeroMemory(&ofn, sizeof(ofn));
+	ofn.lStructSize = sizeof(ofn);
+	ofn.hwndOwner = nullptr;
+	ofn.lpstrFile = filename;
+	ofn.nMaxFile = MAX_PATH;
 
-    ofn.lpstrFilter = "Wavefront OBJ (*.obj)\0*.obj\0All Files (*.*)\0*.*\0";
-    ofn.nFilterIndex = 1;
+	ofn.lpstrFilter = "Wavefront OBJ (*.obj)\0*.obj\0All Files (*.*)\0*.*\0";
+	ofn.nFilterIndex = 1;
 
-    ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
+	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
 
-    if (GetOpenFileNameA(&ofn))
-        return std::string(filename);
+	if (GetOpenFileNameA(&ofn))
+		return std::string(filename);
 
-    return "";
+	return "";
 }
-
 
 std::string SaveJsonFileDialog()
 {
 #ifdef _WIN32
-    char fileName[MAX_PATH] = { 0 };
+	char fileName[MAX_PATH] = { 0 };
 
-    OPENFILENAMEA ofn{};
-    ofn.lStructSize = sizeof(ofn);
-    ofn.lpstrFilter = "Scene JSON (*.json)\0*.json\0";
-    ofn.lpstrFile = fileName;
-    ofn.nMaxFile = MAX_PATH;
-    ofn.Flags = OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT;
-    ofn.lpstrDefExt = "json";
+	OPENFILENAMEA ofn{};
+	ofn.lStructSize = sizeof(ofn);
+	ofn.lpstrFilter = "Scene JSON (*.json)\0*.json\0";
+	ofn.lpstrFile = fileName;
+	ofn.nMaxFile = MAX_PATH;
+	ofn.Flags = OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT;
+	ofn.lpstrDefExt = "json";
 
-    if (GetSaveFileNameA(&ofn))
-    {
-        return std::string(fileName);
-    }
+	if (GetSaveFileNameA(&ofn))
+	{
+		return std::string(fileName);
+	}
 
-    return "";
+	return "";
 #else
-    // Fallback for Linux / macOS (no native dialog yet)
-    return "assets/exported_scene.json";
+	// Fallback for Linux / macOS (no native dialog yet)
+	return "assets/exported_scene.json";
 #endif
 }
-
 
 std::string SaveImageFileDialog()
 {
 #ifdef _WIN32
-    char fileName[MAX_PATH] = { 0 };
+	char fileName[MAX_PATH] = { 0 };
 
-    OPENFILENAMEA ofn{};
-    ofn.lStructSize = sizeof(ofn);
-    ofn.lpstrFile = fileName;
-    ofn.nMaxFile = MAX_PATH;
+	OPENFILENAMEA ofn{};
+	ofn.lStructSize = sizeof(ofn);
+	ofn.lpstrFile = fileName;
+	ofn.nMaxFile = MAX_PATH;
 
-    // Filter string must be double-null-terminated
-    ofn.lpstrFilter =
-        "PNG Image (*.png)\0*.png\0"
-        "JPEG Image (*.jpg;*.jpeg)\0*.jpg;*.jpeg\0";
+	// Filter string must be double-null-terminated
+	ofn.lpstrFilter = "PNG Image (*.png)\0*.png\0"
+	                  "JPEG Image (*.jpg;*.jpeg)\0*.jpg;*.jpeg\0";
 
-    ofn.nFilterIndex = 1;
-    ofn.Flags = OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT;
+	ofn.nFilterIndex = 1;
+	ofn.Flags = OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT;
 
-    // Default extension if user does not specify one
-    ofn.lpstrDefExt = "png";
+	// Default extension if user does not specify one
+	ofn.lpstrDefExt = "png";
 
-    if (GetSaveFileNameA(&ofn))
-    {
-        return std::string(fileName);
-    }
+	if (GetSaveFileNameA(&ofn))
+	{
+		return std::string(fileName);
+	}
 
-    return "";
+	return "";
 #else
-    // Fallback for Linux / macOS (no native dialog implemented yet)
-    return "assets/exported_image.png";
+	// Fallback for Linux / macOS (no native dialog implemented yet)
+	return "assets/exported_image.png";
 #endif
 }

@@ -248,7 +248,7 @@ Camera SceneLoader::extractCamera(const JsonValue &json)
 	float nearPlane = 0.1f;
 	float farPlane = 100.0f;
 
-	// read values	
+	// read values
 	if (json.has("position"))
 		lookFrom = parseVec3(json.asObj()->at("position"));
 	if (json.has("look_at"))
@@ -384,9 +384,6 @@ Mesh SceneLoader::extractMesh(const JsonValue &json)
 	return mesh;
 }
 
-
-
-
 // -----------------------------------------------------------------------------
 // PRINT & LOAD METHODS
 // -----------------------------------------------------------------------------
@@ -508,19 +505,22 @@ Scene SceneLoader::loadScene(const std::string &jsonString)
 
 	return scene;
 }
-void SceneLoader::setSceneRoot(const std::filesystem::path& root)
+void SceneLoader::setSceneRoot(const std::filesystem::path &root)
 {
-    m_sceneRootDisk = root;
+	m_sceneRootDisk = root;
 }
 
 static std::string normalizeZipRoot(std::string r)
 {
-    for (auto& c : r) if (c == '\\') c = '/';
-    if (!r.empty() && r.back() != '/') r += '/';
-    return r;
+	for (auto &c : r)
+		if (c == '\\')
+			c = '/';
+	if (!r.empty() && r.back() != '/')
+		r += '/';
+	return r;
 }
 
-void SceneLoader::setSceneZipRoot(const std::string& root)
+void SceneLoader::setSceneZipRoot(const std::string &root)
 {
-    m_sceneRootZip = normalizeZipRoot(root);
+	m_sceneRootZip = normalizeZipRoot(root);
 }

@@ -123,25 +123,24 @@ void RaytracerEngine::recreateRaytraceTexture()
 
 void RaytracerEngine::resize(GLsizei width, GLsizei height)
 {
-    std::cout << "[Engine::resize] request " << width << "x" << height << "\n";
+	std::cout << "[Engine::resize] request " << width << "x" << height << "\n";
 
-    _width = width;
-    _height = height;
+	_width = width;
+	_height = height;
 
-    recreateRaytraceTexture();
+	recreateRaytraceTexture();
 
-    // >>> HARTE PRÜFUNG: echte GL-Texture-Size auslesen
-    glBindTexture(GL_TEXTURE_2D, raytraceTex);
-    GLint tw=0, th=0;
-    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &tw);
-    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &th);
-    glBindTexture(GL_TEXTURE_2D, 0);
+	// >>> HARTE PRÜFUNG: echte GL-Texture-Size auslesen
+	glBindTexture(GL_TEXTURE_2D, raytraceTex);
+	GLint tw = 0, th = 0;
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &tw);
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &th);
+	glBindTexture(GL_TEXTURE_2D, 0);
 
-    std::cout << "[Engine::resize] raytraceTex is now " << tw << "x" << th << "\n";
+	std::cout << "[Engine::resize] raytraceTex is now " << tw << "x" << th << "\n";
 
-    _compute.resize(_width, _height); // falls vorhanden
+	_compute.resize(_width, _height); // falls vorhanden
 }
-
 
 void RaytracerEngine::uploadMeshData() const
 {

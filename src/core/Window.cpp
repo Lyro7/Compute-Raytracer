@@ -46,11 +46,11 @@ Window::Window(int width, int height, const char *title)
 
 Window::~Window()
 {
-	if (window) 
+	if (window)
 	{
-        glfwDestroyWindow(window);
-        window = nullptr;
-    }
+		glfwDestroyWindow(window);
+		window = nullptr;
+	}
 	glfwTerminate();
 }
 
@@ -79,8 +79,7 @@ const GLFWwindow *Window::get() const
 	return window;
 }
 
-void Window::requestClose() 
+void Window::requestClose()
 {
-glfwSetWindowShouldClose(window, GLFW_TRUE);
+	glfwSetWindowShouldClose(window, GLFW_TRUE);
 }
-

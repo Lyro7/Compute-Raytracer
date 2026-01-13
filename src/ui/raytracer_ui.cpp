@@ -362,7 +362,7 @@ static int presetIndexForResolution(int w, int h)
 		return 4;
 	if (w == 3840 && h == 2160)
 		return 5;
-	return 6; 
+	return 6;
 }
 
 void RaytracerUI::drawSettings()
@@ -539,15 +539,13 @@ void RaytracerUI::onSceneChanged(const std::string &json)
 			scene.backgroundColor = glm::vec4(bg[0], bg[1], bg[2], 1.0f);
 		}
 
-		if(m_activeSceneJsonObj.contains("lights") && m_activeSceneJsonObj["lights"].is_array() &&
-		   !m_activeSceneJsonObj["lights"].empty())
+		if (m_activeSceneJsonObj.contains("lights") && m_activeSceneJsonObj["lights"].is_array() &&
+		    !m_activeSceneJsonObj["lights"].empty())
 		{
 			auto &jl0 = m_activeSceneJsonObj["lights"][0];
 			float lum = jl0.value("luminosity", scene.light.intensity.x);
 			scene.light.intensity.x = lum;
-		
 		}
-
 	}
 	catch (const std::exception &e)
 	{
