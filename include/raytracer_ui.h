@@ -115,6 +115,9 @@ private:
 	bool opened_fm = true;
 	bool opened_camera = true;
 
+	/** @brief Folder that paths in the scene JSON are relative to (disk scenes) */
+	std::filesystem::path m_sceneRootDisk;
+
 	/* @brief Indicates whether the raytracing window is active. **/
 	bool opened_raytrace_window = false;
 

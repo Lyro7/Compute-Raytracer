@@ -99,6 +99,38 @@ void RaytracerUI::drawView()
 	ImGui::End();
 }
 
+static std::string copyModelIntoAssets(const std::string &srcPath,
+                                       const std::filesystem::path &sceneRootDisk)
+{
+	namespace fs = std::filesystem;
+
+	fs::path src(srcPath);
+	if (!fs::exists(src))
+	{
+		return srcPath;
+	}
+
+	fs::path dstDir = fs::path("assets") / "models";
+	fs::create_directories(dstDir);
+
+	fs::path dst = dstDir / src.filename();
+
+	if (fs::exists(dst))
+	{
+		fs::path stem = dst.stem();
+		fs::path ext = dst.extension();
+		int i = 2;
+		while (fs::exists(dstDir / fs::path(stem.string() + "_" + std::to_string(i) + ext.string())))
+			++i;
+		dst = dstDir / fs::path(stem.string() + "_" + std::to_string(i) + ext.string());
+	}
+
+	fs::copy_file(src, dst, fs::copy_options::overwrite_existing);
+
+	fs::path rel = fs::relative(dst, sceneRootDisk);
+	return rel.generic_string();
+}
+
 void RaytracerUI::drawTool()
 {
 	ImVec2 screen = ImGui::GetIO().DisplaySize;
@@ -153,7 +185,7 @@ void RaytracerUI::drawTool()
 					std::string p = OpenZipFileDialog();
 					if (!p.empty())
 					{
-						std::cout << "Selected ZIP scene: " << p << "\n";
+						m_sceneRootDisk = std::filesystem::path(p).parent_path();
 						m_requestedZipPath = p;
 						m_requestLoadZip = true;
 					}
@@ -164,11 +196,19 @@ void RaytracerUI::drawTool()
 					std::string p = OpenObjFileDialog();
 					if (!p.empty())
 					{
+
 						// optional: extension check
 						if (std::filesystem::path(p).extension() == ".obj")
 						{
-							scene.addMesh(ObjectLoader::loadMesh(p), p);
-							//patchActiveSceneJsonModelPath(p);
+							if (m_sceneRootDisk.empty())
+								m_sceneRootDisk = std::filesystem::current_path(); 
+
+							std::string localRelPath = copyModelIntoAssets(p, m_sceneRootDisk);
+
+							// Wichtig: Mesh aus dem kopierten Ziel laden (nicht aus p!)
+							scene.addMesh(ObjectLoader::loadMesh((m_sceneRootDisk / localRelPath).string()),
+							              localRelPath);
+
 							syncActiveSceneJsonFromScene();
 							engine.uploadMeshData();
 							scene.fitCameraToMesh(cameraAspect);
@@ -774,10 +814,8 @@ void RaytracerUI::syncActiveSceneJsonFromScene()
 		const auto &L = scene.lights[i];
 		auto &jL = jLights[i];
 
-		if (!jL.contains("name"))
-			jL["name"] = "Light " + std::to_string(i);
-		if (!jL.contains("type"))
-			jL["type"] = "point";
+		jL["name"] = "Light " + std::to_string(i);
+		jL["type"] = "point";
 
 		jL["position"] = { { "x", L.position.x }, { "y", L.position.y }, { "z", L.position.z } };
 		jL["color"] = { { "r", L.color.x }, { "g", L.color.y }, { "b", L.color.z } };
@@ -812,12 +850,16 @@ void RaytracerUI::syncActiveSceneJsonFromScene()
 		const auto &M = scene.meshMetas[i];
 		auto &jO = jObjs[i];
 
-		// name
-		if (!jO.contains("name"))
-			jO["name"] = M.name.empty() ? ("Object " + std::to_string(i)) : M.name;
+		jO["name"] = M.name;
 
-		if (!jO.contains("path"))
-			jO["path"] = "";
+		std::filesystem::path p = std::filesystem::path(M.path).lexically_normal();
+
+		if (p.is_absolute() && !m_sceneRootDisk.empty())
+		{
+			p = std::filesystem::relative(p, m_sceneRootDisk);
+		}
+
+		jO["path"] = p.generic_string();
 
 		// transforms
 		jO["translation"] = { { "x", M.position.x }, { "y", M.position.y }, { "z", M.position.z } };
