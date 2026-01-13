@@ -30,8 +30,23 @@ struct Light
  */
 struct Scene
 {
+	/** @brief Number of meshes currently stored in the scene. */
 	int numMeshes = 0;
+
+	/**
+	 * @brief Flat list of all triangles belonging to all meshes in the scene.
+	 *
+	 * Triangles from different meshes are stored contiguously.
+	 * Use @ref meshInfos to determine which triangles belong to which mesh.
+	 */
 	std::vector<Triangle> triangles;
+
+	/**
+	 * @brief Metadata describing how meshes map into the triangle array.
+	 *
+	 * Each entry stores the starting triangle index and triangle count
+	 * for a single mesh inside the @ref triangles array.
+	 */
 	std::vector<MeshInfo> meshInfos;
 
 	/** The active camera used to view the scene. */
@@ -46,10 +61,37 @@ struct Scene
 	/** Default constructor initializing the scene with sensible defaults. */
 	Scene();
 
-	//** Resets the scene to default state. */
+	/** Resets the scene to default state. */
 	void reset();
 
+	/**
+	 * @brief Positions and configures the camera to fully frame all scene geometry.
+	 *
+	 * Computes an axis-aligned bounding box (AABB) over all triangles in the scene,
+	 * derives a bounding sphere, and places the camera so the entire mesh fits
+	 * within the view frustum. The camera is positioned along the +Z axis, looking
+	 * toward the center of the scene.
+	 *
+	 * The function also configures a default light positioned above and in front
+	 * of the scene center.
+	 *
+	 * @param aspectRatio Aspect ratio of the viewport (width / height).
+	 *
+	 * @note Assumes that the scene contains at least one triangle.
+	 */
 	void fitCameraToMesh(float aspectRatio);
 
+	/**
+	 * @brief Adds a mesh to the scene and appends its triangles to the global list.
+	 *
+	 * Copies all triangles from the given mesh into the scene's triangle array
+	 * and records bookkeeping information (start index and triangle count)
+	 * so the mesh can be identified later.
+	 *
+	 * @param mesh Mesh to be added to the scene.
+	 *
+	 * @note The mesh data is copied; ownership of the original mesh remains
+	 *       with the caller.
+	 */
 	void addMesh(const Mesh &mesh);
 };

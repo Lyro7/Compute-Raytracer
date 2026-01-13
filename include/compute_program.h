@@ -27,7 +27,7 @@ public:
 	/** Number of work groups along the Y axis. */
 	GLuint workGroupY;
 
-	/** SSBO storing vertex data of mesh (binding = 1). */
+	/** SSBO storing vertex data of mesh. */
 	GLuint triangleBuffer;
 
 	/** SSBO storing mesh info. */
@@ -88,6 +88,7 @@ private:
 	/** Output width in pixels. */
 	GLsizei _width;
 
+	/** Stores scene containing the mesh. */
 	Scene _scene;
 
 	/**
