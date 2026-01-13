@@ -37,11 +37,11 @@ struct Scene
 	/** The active camera used to view the scene. */
 	Camera camera;
 
-	 /** The main light source used for shading the scene. */
+	/** The main light source used for shading the scene. */
 	Light light;
-	
+
 	/** Background color of the scene. */
-	glm::vec4 backgroundColor{0.0f, 0.0f, 0.0f, 1.0f};
+	glm::vec4 backgroundColor{ 0.0f, 0.0f, 0.0f, 1.0f };
 
 	/** Default constructor initializing the scene with sensible defaults. */
 	Scene();
@@ -53,4 +53,3 @@ struct Scene
 
 	void addMesh(const Mesh &mesh);
 };
-

@@ -1,5 +1,5 @@
-#include "../include/scene_bootstrap.hpp"
-#include "../include/opened_scene_manager.hpp"
+#include "scene_bootstrap.hpp"
+#include "opened_scene_manager.hpp"
 #include <fstream>
 #include <sstream>
 #include <iostream>

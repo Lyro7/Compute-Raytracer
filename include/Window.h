@@ -70,9 +70,9 @@ public:
      *
      * @return A pointer to the internal GLFWwindow structure.
      */
-    GLFWwindow* get();
+	GLFWwindow *get();
 
-    /**
+	/**
      * @brief Returns a const pointer to the underlying GLFWwindow object.
      *
      * This function provides read-only access to the internal GLFW window handle.
@@ -81,14 +81,14 @@ public:
      *
      * @return A const pointer to the internal GLFWwindow structure.
      */
-    const GLFWwindow* get() const;
+	const GLFWwindow *get() const;
 
-     /**
+	/**
      * @brief Close Window when the user press Quit.
      *
      * This method should be called if the user want to close the window by using the quit button.
      */
-    void requestClose();
+	void requestClose();
 
 private:
 	/** @brief Pointer to the internal GLFWwindow instance managed by this class. */

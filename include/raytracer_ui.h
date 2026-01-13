@@ -111,7 +111,7 @@ private:
 	bool raytracer_active = false;
 
 	/** @brief Indicates whether the raytraced image should be shown instead of preview. */
-	bool* _showRayTraced;
+	bool *_showRayTraced;
 
 	/** @brief Keeps the path of the folder currently displayed in the browsers. */
 	std::filesystem::path m_currentDir = "C:\\";
@@ -148,7 +148,7 @@ private:
 	int currentPreset = 1;
 
 	/** * @brief Background color (RGB 0–1).*/
-	float bg[3] = { 0.0f, 0.0f, 0.0f }; 
+	float bg[3] = { 0.0f, 0.0f, 0.0f };
 
 	/** @brief Resets the environment to default state. */
 	void resetEnvironment();

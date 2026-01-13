@@ -81,7 +81,6 @@ public:
 	 */
 	void resize(GLsizei width, GLsizei height);
 
-
 private:
 	/** Output height in pixels. */
 	GLsizei _height;

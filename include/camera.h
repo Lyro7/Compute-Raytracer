@@ -112,59 +112,56 @@ struct Camera
 		return projectionMatrix;
 	}
 
-     /**
+	/**
      * @brief Sets the new camera position.
      * * Updates the internal origin vector and recalculates the view matrix immediately.
      * * @param[in] newOrigin The new position in 3D space.
      */
-    void setOrigin(const glm::vec3 &newOrigin)
-    {
-        origin = glm::vec4(newOrigin, 1.0f);
-        updateViewMatrix();
-    }
+	void setOrigin(const glm::vec3 &newOrigin)
+	{
+		origin = glm::vec4(newOrigin, 1.0f);
+		updateViewMatrix();
+	}
 
-
-    /**
+	/**
      * @brief Sets the vertical field of view.
      * * Updates the FOV and recalculates the projection matrix immediately.
      * * @param[in] newFov The new vertical FOV in degrees.
      */
-    void setFov(float newFov)
-    {
-        fov = newFov;
-        updateProjectionMatrix();
-    }
+	void setFov(float newFov)
+	{
+		fov = newFov;
+		updateProjectionMatrix();
+	}
 
-
-    /**
+	/**
      * @brief Gets the current vertical field of view.
      * * @return The vertical FOV in degrees.
      */
-    float getFov() const
-    {
-        return fov;
-    }
+	float getFov() const
+	{
+		return fov;
+	}
 
-    /**
+	/**
      * @brief Sets the aspect ratio.
      * * Updates the aspect ratio and recalculates the projection matrix immediately.
      * * @param[in] newAspectRatio The new aspect ratio (width / height).
      */
-    void setAspectRatio(float newAspectRatio)
-    {
-        aspectRatio = newAspectRatio;
-        updateProjectionMatrix();
-    }
+	void setAspectRatio(float newAspectRatio)
+	{
+		aspectRatio = newAspectRatio;
+		updateProjectionMatrix();
+	}
 
-    /**
+	/**
      * @brief Gets the current aspect ratio.
      * * @return The aspect ratio.
      */
-    float getAspectRatio() const
-    {
-        return aspectRatio;
-    }
-
+	float getAspectRatio() const
+	{
+		return aspectRatio;
+	}
 
 private:
 	/** @brief The position of the camera in world space. */

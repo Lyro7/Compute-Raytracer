@@ -4,12 +4,11 @@
 #include <glm/vec2.hpp>
 #include <glm/vec4.hpp>
 
-
 struct Material
 {
-	glm::vec4 diffuseColor;	 // rgb = diffuseColor.xyz, w unused
+	glm::vec4 diffuseColor; // rgb = diffuseColor.xyz, w unused
 	glm::vec4 specularColor; // rgb = specularColor.xyz, shininess(Ns) = w
-	glm::vec4 emission;      // emissionColor = emission.xyz, emissionStrength = w
+	glm::vec4 emission; // emissionColor = emission.xyz, emissionStrength = w
 
 	Material() = default;
 

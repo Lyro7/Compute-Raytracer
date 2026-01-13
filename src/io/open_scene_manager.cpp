@@ -1,4 +1,4 @@
-#include "../include/opened_scene_manager.hpp"
+#include "opened_scene_manager.hpp"
 #include <chrono>
 #include <iomanip>
 #include <random>
