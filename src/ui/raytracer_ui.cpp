@@ -146,7 +146,6 @@ void RaytracerUI::drawTool()
 				ImGui::EndMenu();
 			}
 
-
 			if (ImGui::BeginMenu("Import"))
 			{
 				if (ImGui::MenuItem("Open Scene"))
@@ -169,7 +168,8 @@ void RaytracerUI::drawTool()
 						if (std::filesystem::path(p).extension() == ".obj")
 						{
 							scene.addMesh(ObjectLoader::loadMesh(p), p);
-							patchActiveSceneJsonModelPath(p);
+							//patchActiveSceneJsonModelPath(p);
+							syncActiveSceneJsonFromScene();
 							engine.uploadMeshData();
 							scene.fitCameraToMesh(cameraAspect);
 						}
@@ -435,54 +435,48 @@ void RaytracerUI::drawSettings()
 			somethingChanged = true;
 		}
 		ImGui::SeparatorText("Object");
-		
+
+		// Hardcoded test-data ???
+
 		// OBJECT-SECTION
-		if (scene.meshMetas.empty() || activeMeshIndex < 0)
+		std::string name = scene.meshMetas.at(activeMeshIndex).name;
+		if (!name.empty())
 		{
-			ImGui::TextDisabled("No object selected");
+			name[0] = static_cast<char>(std::toupper(static_cast<unsigned char>(name[0])));
 		}
-		else
+		ImGui::TextUnformatted(name.c_str());
+
+		MeshMeta &meta = scene.meshMetas[activeMeshIndex];
+
+		if (ImGui::DragFloat3("##ObjectPos", &meta.position.x, 0.1f, -100.0f, 100.0f, "%.2f"))
 		{
-			std::string name = scene.meshMetas.at(activeMeshIndex).name;
-			if (!name.empty())
-			{
-				name[0] = static_cast<char>(std::toupper(static_cast<unsigned char>(name[0])));
-			}
-			ImGui::TextUnformatted(name.c_str());
+			somethingChanged = true;
+			scene.applyMeshTransform(activeMeshIndex);
+			engine.uploadMeshData();
+		};
 
-			MeshMeta &meta = scene.meshMetas[activeMeshIndex];
+		ImGui::SameLine();
+		ImGui::Text("Position");
 
-			if (ImGui::DragFloat3("##ObjectPos", &meta.position.x, 0.1f, -100.0f, 100.0f, "%.2f"))
-			{
-				somethingChanged = true;
-				scene.applyMeshTransform(activeMeshIndex);
-				engine.uploadMeshData();
-			};
+		if (ImGui::SliderFloat3("##ObjectRotSlider", &meta.rotation.x, -360.0f, 360.0f, "%.1f°"))
+		{
+			somethingChanged = true;
+			scene.applyMeshTransform(activeMeshIndex);
+			engine.uploadMeshData();
+		};
 
-			ImGui::SameLine();
-			ImGui::Text("Position");
+		ImGui::SameLine();
+		ImGui::Text("Rotation");
 
-			if (ImGui::SliderFloat3("##ObjectRotSlider", &meta.rotation.x, -360.0f, 360.0f, "%.1f°"))
-			{
-				somethingChanged = true;
-				scene.applyMeshTransform(activeMeshIndex);
-				engine.uploadMeshData();
-			};
+		if (ImGui::SliderFloat3("##ObjectScaleSlider", &meta.scale.x, -360.0f, 360.0f, "%.1f°"))
+		{
+			somethingChanged = true;
+			scene.applyMeshTransform(activeMeshIndex);
+			engine.uploadMeshData();
+		};
 
-			ImGui::SameLine();
-			ImGui::Text("Rotation");
-
-			if (ImGui::SliderFloat3("##ObjectScaleSlider", &meta.scale.x, -360.0f, 360.0f, "%.1f°"))
-			{
-				somethingChanged = true;
-				scene.applyMeshTransform(activeMeshIndex);
-				engine.uploadMeshData();
-			};
-
-			ImGui::SameLine();
-			ImGui::Text("Scale");
-	
-		}
+		ImGui::SameLine();
+		ImGui::Text("Scale");
 
 		// LIGHT-SECTION
 		if (scene.lights.empty())
@@ -801,6 +795,36 @@ void RaytracerUI::syncActiveSceneJsonFromScene()
 		jc["resolution"] = { { "x", engine.getWidth() }, { "y", engine.getHeight() } };
 	}
 
+	// obj block
+	if (!m_activeSceneJsonObj.contains("objects") || !m_activeSceneJsonObj["objects"].is_array())
+		m_activeSceneJsonObj["objects"] = nlohmann::json::array();
+
+	auto &jObjs = m_activeSceneJsonObj["objects"];
+
+	// resize array to match scene.meshMetas size
+	while (jObjs.size() < scene.meshMetas.size())
+		jObjs.push_back(nlohmann::json::object());
+	while (jObjs.size() > scene.meshMetas.size())
+		jObjs.erase(jObjs.end() - 1);
+
+	for (size_t i = 0; i < scene.meshMetas.size(); ++i)
+	{
+		const auto &M = scene.meshMetas[i];
+		auto &jO = jObjs[i];
+
+		// name
+		if (!jO.contains("name"))
+			jO["name"] = M.name.empty() ? ("Object " + std::to_string(i)) : M.name;
+
+		if (!jO.contains("path"))
+			jO["path"] = "";
+
+		// transforms
+		jO["translation"] = { { "x", M.position.x }, { "y", M.position.y }, { "z", M.position.z } };
+		jO["rotation"] = { { "x", M.rotation.x }, { "y", M.rotation.y }, { "z", M.rotation.z } };
+		jO["scale"] = { { "x", M.scale.x }, { "y", M.scale.y }, { "z", M.scale.z } };
+	}
+
 	// background color (always write / create)
 	m_activeSceneJsonObj["background_color"] = { { "r", scene.backgroundColor.x },
 		                                         { "g", scene.backgroundColor.y },
@@ -811,12 +835,8 @@ void RaytracerUI::syncActiveSceneJsonFromScene()
 
 void RaytracerUI::resetEnvironment()
 {
-	activeLightIndex = 0;
-	activeMeshIndex = -1;
-
 	// mesh & camera & light reset
 	scene.reset();
-
 	engine.uploadMeshData();
 
 	// 2) UI state reset
