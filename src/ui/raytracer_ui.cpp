@@ -435,49 +435,54 @@ void RaytracerUI::drawSettings()
 			somethingChanged = true;
 		}
 		ImGui::SeparatorText("Object");
-
-		// Hardcoded test-data ???
 		
 		// OBJECT-SECTION
-		std::string name = scene.meshMetas.at(activeMeshIndex).name;
-		if (!name.empty())
+		if (scene.meshMetas.empty() || activeMeshIndex < 0)
 		{
-			name[0] = static_cast<char>(std::toupper(static_cast<unsigned char>(name[0])));
+			ImGui::TextDisabled("No object selected");
 		}
-		ImGui::TextUnformatted(name.c_str());
-
-
-		MeshMeta &meta = scene.meshMetas[activeMeshIndex];
-
-		if (ImGui::DragFloat3("##ObjectPos", &meta.position.x, 0.1f, -100.0f, 100.0f, "%.2f"))
+		else
 		{
-			somethingChanged = true;
-			scene.applyMeshTransform(activeMeshIndex);
-			engine.uploadMeshData();
-		};
+			std::string name = scene.meshMetas.at(activeMeshIndex).name;
+			if (!name.empty())
+			{
+				name[0] = static_cast<char>(std::toupper(static_cast<unsigned char>(name[0])));
+			}
+			ImGui::TextUnformatted(name.c_str());
 
-		ImGui::SameLine();
-		ImGui::Text("Position");
+			MeshMeta &meta = scene.meshMetas[activeMeshIndex];
 
-		if (ImGui::SliderFloat3("##ObjectRotSlider", &meta.rotation.x, -360.0f, 360.0f, "%.1f°"))
-		{
-			somethingChanged = true;
-			scene.applyMeshTransform(activeMeshIndex);
-			engine.uploadMeshData();
-		};
+			if (ImGui::DragFloat3("##ObjectPos", &meta.position.x, 0.1f, -100.0f, 100.0f, "%.2f"))
+			{
+				somethingChanged = true;
+				scene.applyMeshTransform(activeMeshIndex);
+				engine.uploadMeshData();
+			};
 
-		ImGui::SameLine();
-		ImGui::Text("Rotation");
+			ImGui::SameLine();
+			ImGui::Text("Position");
 
-		if (ImGui::SliderFloat3("##ObjectScaleSlider", &meta.scale.x, -360.0f, 360.0f, "%.1f°"))
-		{
-			somethingChanged = true;
-			scene.applyMeshTransform(activeMeshIndex);
-			engine.uploadMeshData();
-		};
+			if (ImGui::SliderFloat3("##ObjectRotSlider", &meta.rotation.x, -360.0f, 360.0f, "%.1f°"))
+			{
+				somethingChanged = true;
+				scene.applyMeshTransform(activeMeshIndex);
+				engine.uploadMeshData();
+			};
 
-		ImGui::SameLine();
-		ImGui::Text("Scale");
+			ImGui::SameLine();
+			ImGui::Text("Rotation");
+
+			if (ImGui::SliderFloat3("##ObjectScaleSlider", &meta.scale.x, -360.0f, 360.0f, "%.1f°"))
+			{
+				somethingChanged = true;
+				scene.applyMeshTransform(activeMeshIndex);
+				engine.uploadMeshData();
+			};
+
+			ImGui::SameLine();
+			ImGui::Text("Scale");
+	
+		}
 
 		// LIGHT-SECTION
 		if (scene.lights.empty())
@@ -806,8 +811,12 @@ void RaytracerUI::syncActiveSceneJsonFromScene()
 
 void RaytracerUI::resetEnvironment()
 {
+	activeLightIndex = 0;
+	activeMeshIndex = -1;
+
 	// mesh & camera & light reset
 	scene.reset();
+
 	engine.uploadMeshData();
 
 	// 2) UI state reset
