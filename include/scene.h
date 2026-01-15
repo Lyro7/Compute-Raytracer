@@ -108,4 +108,8 @@ struct Scene
 	void addDefaultLight();
 
 	std::string makeUniqueName(const std::vector<std::string> &existingNames, const std::string &base);
+
+	void deleteLight(int lightIndex);
+
+	void deleteMesh(int meshIndex);
 };
