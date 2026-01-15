@@ -27,7 +27,6 @@ struct Triangle {
 };
 
 struct GpuCameraParams{
-	mat4 viewProj;
 	vec4 origin;
 	vec4 lowerLeft;
 	vec4 horizontal;

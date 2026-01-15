@@ -4,7 +4,6 @@
 void GpuSceneParams::updateGpuSceneParams(Scene &scene, bool raytraceRequested)
 {
 	// Update camera
-	camera.viewProj = scene.camera.getProjectionMatrix() * scene.camera.getViewMatrix();
 	camera.origin = scene.camera.getOrigin();
 	camera.vertical = scene.camera.getVertical();
 	camera.horizontal = scene.camera.getHorizontal();

@@ -13,8 +13,6 @@ Camera::Camera(const glm::vec3 &lookFrom, const glm::vec3 &lookAt, const glm::ve
     , nearPlane(nearPlane)
     , farPlane(farPlane)
 {
-	//normalize --> vec with length 1
-	//cross --> cross product
 	glm::vec3 w3 = glm::normalize(lookFrom - lookAt);
 	glm::vec3 u3 = glm::normalize(glm::cross(up, w3));
 	glm::vec3 v3 = glm::cross(w3, u3);
@@ -37,16 +35,38 @@ Camera::Camera(const glm::vec3 &lookFrom, const glm::vec3 &lookAt, const glm::ve
 	verticalViewPlane = glm::vec4(vertical, 0.0f);
 	lowerLeftCornerViewPlane = glm::vec4(lowerLeft, 0.0f);
 
-	updateViewMatrix();
-	updateProjectionMatrix();
 }
 
-void Camera::updateViewMatrix()
+void Camera::rebuildViewPlane()
 {
-	viewMatrix = glm::lookAt(glm::vec3(origin), glm::vec3(origin) - glm::vec3(w), glm::vec3(v));
+	glm::vec3 w3 = glm::normalize(glm::vec3(w));
+	glm::vec3 u3 = glm::normalize(glm::vec3(u));
+	glm::vec3 v3 = glm::normalize(glm::vec3(v));
+
+	float theta = glm::radians(fov);
+	float h = tan(theta * 0.5f);
+	float viewportHeight = 2.0f * h;
+	float viewportWidth = aspectRatio * viewportHeight;
+
+	glm::vec3 horizontal = viewportWidth * u3;
+	glm::vec3 vertical = viewportHeight * v3;
+	
+	glm::vec3 origin3 = glm::vec3(origin);
+	glm::vec3 lowerLeft = origin3 - 0.5f * horizontal - 0.5f * vertical - w3;
+
+	horizontalViewPlane = glm::vec4(horizontal, 0.0f);
+	verticalViewPlane = glm::vec4(vertical, 0.0f);
+	lowerLeftCornerViewPlane = glm::vec4(lowerLeft, 0.0f);
 }
 
-void Camera::updateProjectionMatrix()
+void Camera::setFov(float newFov)
 {
-	projectionMatrix = glm::perspective(glm::radians(fov), aspectRatio, nearPlane, farPlane);
+	fov = newFov;
+	rebuildViewPlane();
+}
+
+void Camera::setOrigin(const glm::vec3 &newOrigin)
+{
+	origin = glm::vec4(newOrigin, 1.0f);
+	rebuildViewPlane();
 }
