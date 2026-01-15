@@ -14,9 +14,6 @@ static constexpr int MAX_LIGHTS = 64;
  */
 struct GpuCameraParams
 {
-	/** View-projection matrix for the rasterizer preview. */
-	glm::mat4 viewProj;
-
 	/** Camera origin in world space. */
 	glm::vec4 origin;
 

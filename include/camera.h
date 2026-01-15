@@ -87,52 +87,18 @@ struct Camera
 	}
 
 	/**
-     * @brief Returns a const reference to the camera's view matrix.
-     *
-     * The view matrix transforms world coordinates into the camera's view space.
-     *
-     * @return A const reference to the 4x4 view matrix.
-     */
-	const glm::mat4 &getViewMatrix() const
-	{
-		return viewMatrix;
-	}
-
-	/**
-     * @brief Returns a const reference to the camera's projection matrix.
-     *
-     * The projection matrix transforms camera-space coordinates into clip space,
-     * applying perspective projection based on the camera's FOV, aspect ratio,
-     * and near/far planes.
-     *
-     * @return A const reference to the 4x4 projection matrix.
-     */
-	const glm::mat4 &getProjectionMatrix() const
-	{
-		return projectionMatrix;
-	}
-
-	/**
      * @brief Sets the new camera position.
-     * * Updates the internal origin vector and recalculates the view matrix immediately.
+     * * Updates the internal origin vector.
      * * @param[in] newOrigin The new position in 3D space.
      */
-	void setOrigin(const glm::vec3 &newOrigin)
-	{
-		origin = glm::vec4(newOrigin, 1.0f);
-		updateViewMatrix();
-	}
+	void setOrigin(const glm::vec3 &newOrigin);
 
 	/**
      * @brief Sets the vertical field of view.
-     * * Updates the FOV and recalculates the projection matrix immediately.
+     * * Updates the FOV.
      * * @param[in] newFov The new vertical FOV in degrees.
      */
-	void setFov(float newFov)
-	{
-		fov = newFov;
-		updateProjectionMatrix();
-	}
+	void setFov(float newFov);
 
 	/**
      * @brief Gets the current vertical field of view.
@@ -151,7 +117,7 @@ struct Camera
 	void setAspectRatio(float newAspectRatio)
 	{
 		aspectRatio = newAspectRatio;
-		updateProjectionMatrix();
+		rebuildViewPlane();
 	}
 
 	/**
@@ -162,6 +128,8 @@ struct Camera
 	{
 		return aspectRatio;
 	}
+
+	void rebuildViewPlane();
 
 private:
 	/** @brief The position of the camera in world space. */
@@ -188,24 +156,4 @@ private:
 	/** @brief Determines at what proximity and distance a pixel is displayed */
 	float nearPlane;
 	float farPlane;
-
-	/** @brief 4x4 matrix representing the camera's view transformation. */
-	glm::mat4 viewMatrix;
-
-	/** @brief 4x4 matrix representing the camera's perspective projection. */
-	glm::mat4 projectionMatrix;
-
-	/**
-     * @brief Recomputes the camera's view matrix based on its position and orientation.
-     *
-     * This should be called whenever the camera moves or rotates to update the view transformation.
-     */
-	void updateViewMatrix();
-
-	/**
-     * @brief Recomputes the camera's projection matrix based on FOV, aspect ratio, and clipping planes.
-     *
-     * This should be called whenever the camera's FOV, aspect ratio, or near/far planes change.
-     */
-	void updateProjectionMatrix();
 };
