@@ -285,6 +285,8 @@ void RaytracerUI::drawTool()
 
 		for (int i = 0; i < (int)scene.meshMetas.size(); ++i)
 		{
+			ImGui::PushID(i);
+
 			const MeshMeta &meta = scene.meshMetas[i];
 
 			std::string label = meta.name;
@@ -297,6 +299,29 @@ void RaytracerUI::drawTool()
 			{
 				activeMeshIndex = i;
 			}
+
+			if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Right))
+			{
+				scene.deleteMesh(i);
+
+				engine.uploadMeshData();
+				engine.onSceneChanged(*_showRayTraced);
+				syncActiveSceneJsonFromScene();
+
+				if (activeMeshIndex == i)
+				{
+					activeMeshIndex = -1;
+				}
+				else if (activeMeshIndex > i)
+				{
+					activeMeshIndex--;
+				}
+
+				ImGui::PopID();
+				break;
+			}
+
+			ImGui::PopID();
 		}
 
 		ImGui::Unindent();
@@ -308,6 +333,8 @@ void RaytracerUI::drawTool()
 
 		for (int i = 0; i < (int)scene.lights.size(); ++i)
 		{
+			ImGui::PushID(i);
+
 			char label[32];
 			snprintf(label, sizeof(label), "Light %d", i);
 
@@ -315,6 +342,27 @@ void RaytracerUI::drawTool()
 			{
 				activeLightIndex = i;
 			}
+
+			if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Right))
+			{
+				scene.deleteLight(i);
+
+				syncActiveSceneJsonFromScene();
+
+				if (activeLightIndex == i)
+				{
+					activeLightIndex = -1;
+				}
+				else if (activeLightIndex > i)
+				{
+					activeLightIndex--;
+				}
+
+				ImGui::PopID();
+				break;
+			}
+
+			ImGui::PopID();
 		}
 
 		ImGui::Unindent();

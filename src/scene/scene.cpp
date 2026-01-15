@@ -154,6 +154,40 @@ void Scene::addDefaultLight()
 	lights.push_back(defLight);
 }
 
+void Scene::deleteLight(int lightIndex)
+{
+	lights.erase(lights.begin() + lightIndex);
+}
+
+void Scene::deleteMesh(int meshIndex)
+{
+	if (meshIndex < 0 || meshIndex >= static_cast<int>(meshInfos.size()))
+	{
+		return;
+	}
+
+	const MeshInfo info = meshInfos[meshIndex];
+
+	triangles.erase(triangles.begin() + info.firstTriangleIndex,
+	                triangles.begin() + info.firstTriangleIndex + info.numTriangles);
+
+	for (size_t i = meshIndex + 1; i < meshInfos.size(); ++i)
+	{
+		meshInfos[i].firstTriangleIndex -= info.numTriangles;
+	}
+
+	localMeshes.erase(localMeshes.begin() + meshIndex);
+	meshInfos.erase(meshInfos.begin() + meshIndex);
+	meshMetas.erase(meshMetas.begin() + meshIndex);
+
+	for (size_t i = 0; i < meshMetas.size(); ++i)
+	{
+		meshMetas[i].ID = static_cast<unsigned int>(i);
+	}
+
+	numMeshes = static_cast<int>(meshInfos.size());
+}
+
 void Scene::reset()
 {
 	*this = Scene();
