@@ -483,9 +483,16 @@ Scene SceneLoader::loadScene(const std::string &jsonString)
 
 	Scene scene;
 
-	if (root.has("lights") && !root.asObj()->at("lights").asArr()->empty())
+	if (root.has("lights") && root.asObj()->at("lights").asArr())
 	{
-		scene.light = extractLight(root.asObj()->at("lights").asArr()->at(0));
+		const auto &jLights = *root.asObj()->at("lights").asArr();
+		scene.lights.clear();
+		scene.lights.reserve(jLights.size());
+
+		for (size_t i = 0; i < jLights.size(); ++i)
+		{
+			scene.lights.push_back(extractLight(jLights[i]));
+		}
 	}
 
 	if (root.has("camera"))
@@ -493,9 +500,21 @@ Scene SceneLoader::loadScene(const std::string &jsonString)
 		scene.camera = extractCamera(root.asObj()->at("camera"));
 	}
 
-	if (root.has("objects") && !root.asObj()->at("objects").asArr()->empty())
+	if (root.has("objects") && root.asObj()->at("objects").asArr())
 	{
-		scene.addMesh(extractMesh(root.asObj()->at("objects").asArr()->at(0)));
+		const auto &objs = *root.asObj()->at("objects").asArr();
+
+		for (size_t i = 0; i < objs.size(); ++i)
+		{
+			const JsonValue &obj = objs[i];
+
+			std::string path;
+			if (obj.has("path"))
+				path = obj.asObj()->at("path").asString();
+
+			Mesh mesh = extractMesh(obj);
+			scene.addMesh(mesh, path);
+		}
 	}
 
 	scene.fitCameraToMesh(16.0f / 9.0f);

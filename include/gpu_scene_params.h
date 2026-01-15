@@ -3,6 +3,8 @@
 #include "scene.h"
 #include <glm/vec4.hpp>
 
+static constexpr int MAX_LIGHTS = 64;
+
 /**
  * @struct GpuCameraParams
  * @brief GPU-side representation of the camera parameters.
@@ -12,9 +14,6 @@
  */
 struct GpuCameraParams
 {
-	/** View-projection matrix for the rasterizer preview. */
-	glm::mat4 viewProj;
-
 	/** Camera origin in world space. */
 	glm::vec4 origin;
 
@@ -57,8 +56,9 @@ struct GpuSceneParams
 	/** Camera parameters used by preview and raytracer. */
 	GpuCameraParams camera;
 
-	/** Active point light used for shading. */
-	GpuLightParams light;
+	glm::ivec4 lightMeta;
+
+	GpuLightParams lights[MAX_LIGHTS];
 
 	/** 
 	 * Flag indicating wether the texture to be calculated is the preview or the raytraced image. 

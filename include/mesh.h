@@ -2,7 +2,10 @@
 
 #include <vector>
 #include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
+#include <glm/glm.hpp>
+#include <string>
 
 /**
  * @brief Describes the surface material properties of a triangle.
@@ -83,6 +86,19 @@ struct Triangle
 
 	/** @brief Material assigned to this triangle. */
 	Material material;
+};
+
+struct MeshMeta
+{
+	unsigned int ID = 0;
+	std::string name;
+	std::string path;
+
+	glm::vec3 position{ 0.0f, 0.0f, 0.0f };
+	glm::vec3 rotation{ 0.0f, 0.0f, 0.0f };
+	glm::vec3 scale{ 1.0f, 1.0f, 1.0f };
+
+	glm::mat4 buildModelMatrix() const;
 };
 
 /**

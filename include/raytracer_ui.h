@@ -115,6 +115,9 @@ private:
 	bool opened_fm = true;
 	bool opened_camera = true;
 
+	/** @brief Folder that paths in the scene JSON are relative to (disk scenes) */
+	std::filesystem::path m_sceneRootDisk;
+
 	/* @brief Indicates whether the raytracing window is active. **/
 	bool opened_raytrace_window = false;
 
@@ -160,6 +163,10 @@ private:
 
 	/** * @brief Background color (RGB 0–1).*/
 	float bg[3] = { 0.0f, 0.0f, 0.0f };
+
+	int activeLightIndex = 0;
+
+	int activeMeshIndex = 0;
 
 	/** @brief Resets the environment to default state. */
 	void resetEnvironment();

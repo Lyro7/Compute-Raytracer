@@ -1,4 +1,3 @@
-
 #include "raytracer_ui.h"
 #include "compute_program.h"
 #include "imgui.h"
@@ -100,6 +99,38 @@ void RaytracerUI::drawView()
 	ImGui::End();
 }
 
+static std::string copyModelIntoAssets(const std::string &srcPath,
+                                       const std::filesystem::path &sceneRootDisk)
+{
+	namespace fs = std::filesystem;
+
+	fs::path src(srcPath);
+	if (!fs::exists(src))
+	{
+		return srcPath;
+	}
+
+	fs::path dstDir = fs::path("assets") / "models";
+	fs::create_directories(dstDir);
+
+	fs::path dst = dstDir / src.filename();
+
+	if (fs::exists(dst))
+	{
+		fs::path stem = dst.stem();
+		fs::path ext = dst.extension();
+		int i = 2;
+		while (fs::exists(dstDir / fs::path(stem.string() + "_" + std::to_string(i) + ext.string())))
+			++i;
+		dst = dstDir / fs::path(stem.string() + "_" + std::to_string(i) + ext.string());
+	}
+
+	fs::copy_file(src, dst, fs::copy_options::overwrite_existing);
+
+	fs::path rel = fs::relative(dst, sceneRootDisk);
+	return rel.generic_string();
+}
+
 void RaytracerUI::drawTool()
 {
 	ImVec2 screen = ImGui::GetIO().DisplaySize;
@@ -132,6 +163,21 @@ void RaytracerUI::drawTool()
 				ImGui::EndMenu();
 			}
 
+			if (ImGui::BeginMenu("New"))
+			{
+				if (ImGui::MenuItem("New Light"))
+				{
+					scene.addDefaultLight();
+					std::cout << "Size: " << scene.lights.size();
+					activeLightIndex = static_cast<unsigned int>(scene.lights.size() - 1);
+					syncActiveSceneJsonFromScene();
+
+					engine.onSceneChanged(*_showRayTraced);
+				}
+
+				ImGui::EndMenu();
+			}
+
 			if (ImGui::BeginMenu("Import"))
 			{
 				if (ImGui::MenuItem("Open Scene"))
@@ -139,7 +185,7 @@ void RaytracerUI::drawTool()
 					std::string p = OpenZipFileDialog();
 					if (!p.empty())
 					{
-						std::cout << "Selected ZIP scene: " << p << "\n";
+						m_sceneRootDisk = std::filesystem::path(p).parent_path();
 						m_requestedZipPath = p;
 						m_requestLoadZip = true;
 					}
@@ -150,11 +196,20 @@ void RaytracerUI::drawTool()
 					std::string p = OpenObjFileDialog();
 					if (!p.empty())
 					{
+
 						// optional: extension check
 						if (std::filesystem::path(p).extension() == ".obj")
 						{
-							scene.addMesh(ObjectLoader::loadMesh(p));
-							patchActiveSceneJsonModelPath(p);
+							if (m_sceneRootDisk.empty())
+								m_sceneRootDisk = std::filesystem::current_path(); 
+
+							std::string localRelPath = copyModelIntoAssets(p, m_sceneRootDisk);
+
+							// Wichtig: Mesh aus dem kopierten Ziel laden (nicht aus p!)
+							scene.addMesh(ObjectLoader::loadMesh((m_sceneRootDisk / localRelPath).string()),
+							              localRelPath);
+
+							syncActiveSceneJsonFromScene();
 							engine.uploadMeshData();
 							scene.fitCameraToMesh(cameraAspect);
 						}
@@ -221,19 +276,48 @@ void RaytracerUI::drawTool()
 
 		ImGui::Separator();
 		ImGui::Spacing();
-		ImGui::TextDisabled("Active Scene JSON");
+		ImGui::TextDisabled("Active Elements");
 		ImGui::Separator();
 
-		ImGui::BeginChild("##SceneJsonViewer", ImVec2(0, 0), true, ImGuiWindowFlags_HorizontalScrollbar);
+		ImGui::BeginChild("##ActiveElements", ImVec2(0, 0), true, ImGuiWindowFlags_HorizontalScrollbar);
+		ImGui::TextUnformatted("Objects");
+		ImGui::Indent();
 
-		if (m_activeSceneJson.empty())
+		for (int i = 0; i < (int)scene.meshMetas.size(); ++i)
 		{
-			ImGui::TextDisabled("No scene loaded yet.");
+			const MeshMeta &meta = scene.meshMetas[i];
+
+			std::string label = meta.name;
+			if (!label.empty())
+			{
+				label[0] = (char)std::toupper((unsigned char)label[0]);
+			}
+
+			if (ImGui::Selectable(label.c_str(), activeMeshIndex == i))
+			{
+				activeMeshIndex = i;
+			}
 		}
-		else
+
+		ImGui::Unindent();
+
+		ImGui::Spacing();
+		ImGui::TextUnformatted("Lights");
+
+		ImGui::Indent();
+
+		for (int i = 0; i < (int)scene.lights.size(); ++i)
 		{
-			ImGui::TextUnformatted(m_activeSceneJson.c_str());
+			char label[32];
+			snprintf(label, sizeof(label), "Light %d", i);
+
+			if (ImGui::Selectable(label, activeLightIndex == i))
+			{
+				activeLightIndex = i;
+			}
 		}
+
+		ImGui::Unindent();
 
 		ImGui::EndChild();
 
@@ -298,7 +382,7 @@ void RaytracerUI::drawFileExplorerPopup()
 								{
 									std::string fullPath = entry.path().string();
 
-									scene.addMesh(ObjectLoader::loadMesh(fullPath));
+									scene.addMesh(ObjectLoader::loadMesh(fullPath), fullPath);
 
 									patchActiveSceneJsonModelPath(fullPath);
 									;
@@ -348,6 +432,7 @@ void RaytracerUI::drawFileExplorerPopup()
 	}
 	ImGui::End();
 }
+
 static int presetIndexForResolution(int w, int h)
 {
 	if (w == 320 && h == 180)
@@ -391,38 +476,73 @@ void RaytracerUI::drawSettings()
 		}
 		ImGui::SeparatorText("Object");
 
-		// Hardcoded test-data
-		static float testObjectPos[3] = { 1.0f, 2.0f, 3.0f };
-		static float testObjectRot[3] = { 0.0f, 45.0f, 0.0f };
-
-		// Position
-		ImGui::Text("ID 1");
-		ImGui::DragFloat3("##ObjectPos", testObjectPos, 0.1f, -100.0f, 100.0f, "%.2f");
-		ImGui::SameLine();
-		ImGui::Text("Position");
-
-		// Rotation via slider
-
-		ImGui::SliderFloat3("##ObjectRotSlider", testObjectRot, -360.0f, 360.0f, "%.1f°");
-		ImGui::SameLine();
-		ImGui::Text("Rotation");
-
-		ImGui::SeparatorText("Light");
-		ImGui::Text("ID 1");
-
-		if (ImGui::DragFloat3("Position##Light", &scene.light.position.x, 0.1f, -20.0f, 20.0f))
+		// OBJECT-SECTION
+		if (scene.meshMetas.empty() || activeMeshIndex < 0)
 		{
-			somethingChanged = true;
+			ImGui::TextDisabled("No object selected");
+		}
+		else
+		{
+			std::string name = scene.meshMetas.at(activeMeshIndex).name;
+			if (!name.empty())
+			{
+				name[0] = static_cast<char>(std::toupper(static_cast<unsigned char>(name[0])));
+			}
+			ImGui::TextUnformatted(name.c_str());
+
+			MeshMeta &meta = scene.meshMetas[activeMeshIndex];
+
+			if (ImGui::DragFloat3("##ObjectPos", &meta.position.x, 0.1f, -100.0f, 100.0f, "%.2f"))
+			{
+				somethingChanged = true;
+				scene.applyMeshTransform(activeMeshIndex);
+				engine.uploadMeshData();
+			};
+
+			ImGui::SameLine();
+			ImGui::Text("Position");
+
+			if (ImGui::SliderFloat3("##ObjectRotSlider", &meta.rotation.x, -360.0f, 360.0f, "%.1f°"))
+			{
+				somethingChanged = true;
+				scene.applyMeshTransform(activeMeshIndex);
+				engine.uploadMeshData();
+			};
+
+			ImGui::SameLine();
+			ImGui::Text("Rotation");
+
+			if (ImGui::SliderFloat3("##ObjectScaleSlider", &meta.scale.x, -360.0f, 360.0f, "%.1f°"))
+			{
+				somethingChanged = true;
+				scene.applyMeshTransform(activeMeshIndex);
+				engine.uploadMeshData();
+			};
+
+			ImGui::SameLine();
+			ImGui::Text("Scale");
 		}
 
-		if (ImGui::ColorEdit3("Color", &scene.light.color.x))
+		// LIGHT-SECTION
+		if (scene.lights.empty())
 		{
-			somethingChanged = true;
+			ImGui::TextDisabled("No lights in scene.");
 		}
-
-		if (ImGui::SliderFloat("Intensity", &scene.light.intensity.x, 0.0f, 1000.0f))
+		else
 		{
-			somethingChanged = true;
+			activeLightIndex = std::clamp(activeLightIndex, 0, (int)scene.lights.size() - 1);
+
+			ImGui::SeparatorText("Light");
+			ImGui::Text("ID: %d", activeLightIndex);
+
+			if (ImGui::DragFloat3("Position##Light", &scene.lights[activeLightIndex].position.x, 0.1f, -20.0f, 20.0f))
+				somethingChanged = true;
+
+			if (ImGui::ColorEdit3("Color##Light", &scene.lights[activeLightIndex].color.x))
+				somethingChanged = true;
+
+			if (ImGui::SliderFloat("Intensity##Light", &scene.lights[activeLightIndex].intensity.x, 0.0f, 1000.0f))
+				somethingChanged = true;
 		}
 
 		ImGui::Spacing();
@@ -506,6 +626,7 @@ void RaytracerUI::drawSettings()
 	}
 	ImGui::End();
 }
+
 void RaytracerUI::onSceneChanged(const std::string &json)
 {
 	m_activeSceneJson = json;
@@ -539,12 +660,44 @@ void RaytracerUI::onSceneChanged(const std::string &json)
 			scene.backgroundColor = glm::vec4(bg[0], bg[1], bg[2], 1.0f);
 		}
 
-		if (m_activeSceneJsonObj.contains("lights") && m_activeSceneJsonObj["lights"].is_array() &&
-		    !m_activeSceneJsonObj["lights"].empty())
+		if (m_activeSceneJsonObj.contains("lights") && m_activeSceneJsonObj["lights"].is_array())
 		{
-			auto &jl0 = m_activeSceneJsonObj["lights"][0];
-			float lum = jl0.value("luminosity", scene.light.intensity.x);
-			scene.light.intensity.x = lum;
+			auto &jLights = m_activeSceneJsonObj["lights"];
+
+			scene.lights.clear();
+			scene.lights.reserve(jLights.size());
+
+			for (size_t i = 0; i < jLights.size(); ++i)
+			{
+				auto &jl = jLights[i];
+
+				Light L{};
+				L.ID = (unsigned int)i;
+
+				if (jl.contains("position"))
+				{
+					auto &p = jl["position"];
+					L.position = glm::vec4(p.value("x", 0.f), p.value("y", 0.f), p.value("z", 0.f), 1.f);
+				}
+				else
+					L.position = glm::vec4(0, 0, 0, 1);
+
+				if (jl.contains("color"))
+				{
+					auto &c = jl["color"];
+					L.color = glm::vec4(c.value("r", 1.f), c.value("g", 1.f), c.value("b", 1.f), 1.f);
+				}
+				else
+					L.color = glm::vec4(1, 1, 1, 1);
+
+				float lum = jl.value("luminosity", 20.f);
+				L.intensity = glm::vec4(lum, 0.f, 0.f, 0.f);
+
+				scene.lights.push_back(L);
+			}
+
+			if (scene.lights.empty())
+				scene.addDefaultLight();
 		}
 	}
 	catch (const std::exception &e)
@@ -650,16 +803,28 @@ void RaytracerUI::syncActiveSceneJsonFromScene()
 		return;
 
 	// Light block
-	if (m_activeSceneJsonObj.contains("lights") && m_activeSceneJsonObj["lights"].is_array() &&
-	    !m_activeSceneJsonObj["lights"].empty())
+	if (!m_activeSceneJsonObj.contains("lights") || !m_activeSceneJsonObj["lights"].is_array())
+		m_activeSceneJsonObj["lights"] = nlohmann::json::array();
+
+	auto &jLights = m_activeSceneJsonObj["lights"];
+
+	while (jLights.size() < scene.lights.size())
+		jLights.push_back(nlohmann::json::object());
+
+	while (jLights.size() > scene.lights.size())
+		jLights.erase(jLights.end() - 1);
+
+	for (size_t i = 0; i < scene.lights.size(); ++i)
 	{
-		auto &jl0 = m_activeSceneJsonObj["lights"][0];
+		const auto &L = scene.lights[i];
+		auto &jL = jLights[i];
 
-		setVec3(jl0, "position", scene.light.position);
+		jL["name"] = "Light " + std::to_string(i);
+		jL["type"] = "point";
 
-		jl0["color"] = { { "r", scene.light.color.x }, { "g", scene.light.color.y }, { "b", scene.light.color.z } };
-
-		jl0["luminosity"] = scene.light.intensity.x;
+		jL["position"] = { { "x", L.position.x }, { "y", L.position.y }, { "z", L.position.z } };
+		jL["color"] = { { "r", L.color.x }, { "g", L.color.y }, { "b", L.color.z } };
+		jL["luminosity"] = L.intensity.x;
 	}
 
 	// Camera block
@@ -673,17 +838,53 @@ void RaytracerUI::syncActiveSceneJsonFromScene()
 		jc["resolution"] = { { "x", engine.getWidth() }, { "y", engine.getHeight() } };
 	}
 
+	// obj block
+	if (!m_activeSceneJsonObj.contains("objects") || !m_activeSceneJsonObj["objects"].is_array())
+		m_activeSceneJsonObj["objects"] = nlohmann::json::array();
+
+	auto &jObjs = m_activeSceneJsonObj["objects"];
+
+	// resize array to match scene.meshMetas size
+	while (jObjs.size() < scene.meshMetas.size())
+		jObjs.push_back(nlohmann::json::object());
+	while (jObjs.size() > scene.meshMetas.size())
+		jObjs.erase(jObjs.end() - 1);
+
+	for (size_t i = 0; i < scene.meshMetas.size(); ++i)
+	{
+		const auto &M = scene.meshMetas[i];
+		auto &jO = jObjs[i];
+
+		jO["name"] = M.name;
+
+		std::filesystem::path p = std::filesystem::path(M.path).lexically_normal();
+
+		if (p.is_absolute() && !m_sceneRootDisk.empty())
+		{
+			p = std::filesystem::relative(p, m_sceneRootDisk);
+		}
+
+		jO["path"] = p.generic_string();
+
+		// transforms
+		jO["translation"] = { { "x", M.position.x }, { "y", M.position.y }, { "z", M.position.z } };
+		jO["rotation"] = { { "x", M.rotation.x }, { "y", M.rotation.y }, { "z", M.rotation.z } };
+		jO["scale"] = { { "x", M.scale.x }, { "y", M.scale.y }, { "z", M.scale.z } };
+	}
+
 	// background color (always write / create)
 	m_activeSceneJsonObj["background_color"] = { { "r", scene.backgroundColor.x },
 		                                         { "g", scene.backgroundColor.y },
 		                                         { "b", scene.backgroundColor.z } };
 
-	// Update the string shown in UI + used for export
 	m_activeSceneJson = m_activeSceneJsonObj.dump(2);
 }
 
 void RaytracerUI::resetEnvironment()
 {
+	activeLightIndex = 0;
+	activeMeshIndex = -1;
+
 	// mesh & camera & light reset
 	scene.reset();
 	engine.uploadMeshData();
