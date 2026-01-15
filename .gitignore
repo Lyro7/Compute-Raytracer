@@ -45,5 +45,5 @@ Thumbs.db
 compile_commands.json
 
 # Opened scenes
-opened_scenes/*
+opened_scenes/
 !opened_scenes/.gitkeep
