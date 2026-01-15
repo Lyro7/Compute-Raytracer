@@ -136,13 +136,7 @@ bool isInShadow(vec3 hitPos, vec3 lightPos, uint ignoreTri)
     return false; // Not in shadow
 }
 
-bool intersectPlane(
-    vec3 orig,
-    vec3 dir,
-    vec3 planePoint,
-    vec3 planeNormal,
-    out float tHit
-)
+bool intersectPlane(vec3 orig, vec3 dir, vec3 planePoint, vec3 planeNormal, out float tHit)
 {
     float denom = dot(planeNormal, dir);
 
@@ -446,8 +440,6 @@ void main()
                     color += diffuse * lightCol * NdotL * attenuation * intensity;
                 }
             }
-            // imageStore(outputImage, pixel, vec4(N * 0.5 + 0.5, 1.0));
-            // return;
            }
     }
       
