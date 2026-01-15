@@ -4,7 +4,7 @@ layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 layout(binding = 0, rgba32f) uniform image2D outputImage;
 
-#define EPSILON 5e-3
+#define EPSILON 1e-8
 #define FLOOR_Y -20.0
 #define floorPoint vec3(0.0, FLOOR_Y, 0.0)
 #define floorNormal vec3(0.0, 1.0, 0.0)
@@ -42,7 +42,6 @@ struct Triangle {
 };
 
 struct GpuCameraParams{
-	mat4 viewProj;
 	vec4 origin;
 	vec4 lowerLeft;
 	vec4 horizontal;
@@ -88,6 +87,11 @@ layout(std140, binding = 0) uniform SceneParams
     GpuSceneParams gpuSceneParams;
 };
 
+float rayEpsilon(vec3 pos)
+{
+    return max(1e-4, 1e-5 * max(1.0, length(pos)));
+}
+
 // Reimplementation of the algorithm of M�ller and Trumbore
 // M�ller, T., & Trumbore, B. (1997). Fast, minimum storage ray-triangle intersection. Journal of Graphics Tools, 2(1), 21-28.
 bool intersectTriangle(vec3 orig, vec3 dir, vec3 v0, vec3 v1, vec3 v2, out float tHit, out vec2 hit)
@@ -95,25 +99,23 @@ bool intersectTriangle(vec3 orig, vec3 dir, vec3 v0, vec3 v1, vec3 v2, out float
     vec3 e1 = v1 - v0;
     vec3 e2 = v2 - v0;
 
-    vec3 p = cross(e1, e2);
-    float det = -dot(dir, p);
+    vec3 pvec = cross(dir, e2);
+    float det = dot(e1, pvec);
 
-    if (det < EPSILON)
-        return false;
+    if (abs(det) < EPSILON) return false; // parallel / degenerate
 
     float invDet = 1.0 / det;
-    vec3 ao = orig - v0;
-    vec3 dao = cross(ao, dir);
+    vec3 tvec = orig - v0;
+    float u = dot(tvec, pvec) * invDet;
+    if (u < 0.0 || u > 1.0) return false;
 
-    float t = dot(ao, p) * invDet;
-    float u = dot(e2, dao) * invDet;
-    float v = -dot(e1, dao) * invDet;
-    float w = 1.0 - u - v;
+    vec3 qvec = cross(tvec, e1);
+    float v = dot(dir, qvec) * invDet;
+    if (v < 0.0 || u + v > 1.0) return false;
 
-    if (t < 0 || u < 0.0 || v < 0.0 || w < 0.0)
-    {
-        return false;
-    }
+    float t = dot(e2, qvec) * invDet;
+    float eps = rayEpsilon(orig);
+    if (t < eps) return false;
 
     hit = vec2(u, v);
     tHit = t;
@@ -124,6 +126,8 @@ bool isInShadow(vec3 hitPos, vec3 lightPos, uint ignoreTri)
 {
     vec3 shadowDir = normalize(lightPos - hitPos);
     float maxDist = length(lightPos - hitPos);
+
+    float eps = rayEpsilon(hitPos);
 
     // Iterate over all triangles
     for (uint i = 0u; i < triangles.length(); ++i)
@@ -140,7 +144,7 @@ bool isInShadow(vec3 hitPos, vec3 lightPos, uint ignoreTri)
 
         if (intersectTriangle(hitPos, shadowDir, v0, v1, v2, tHitShadow, dummy))
         {
-            if (tHitShadow < maxDist - 1e-4)
+            if (tHitShadow > eps && tHitShadow < maxDist - eps)
             {
                 return true;// In shadow
             }
@@ -157,11 +161,13 @@ bool intersectPlane(vec3 orig, vec3 dir, vec3 planePoint, vec3 planeNormal, out 
         return false; // Ray parallel to plane
 
     tHit = dot(planePoint - orig, planeNormal) / denom;
-    return tHit > EPSILON;
+    return tHit > rayEpsilon(orig);
 }
 
 vec3 traceColor(vec3 ro, vec3 rd)
 {
+    float eps = rayEpsilon(ro);
+
     // find closest hit
     bool isHit = false;
     float tMin = 1e30;
@@ -176,7 +182,7 @@ vec3 traceColor(vec3 ro, vec3 rd)
 
         if (intersectTriangle(ro, rd, tri.v1.xyz, tri.v2.xyz, tri.v3.xyz, tHit, hitUV))
         {
-            if (tHit < tMin)
+            if (tHit > eps && tHit < tMin)
             {
                 tMin = tHit;
                 isHit = true;
@@ -190,7 +196,7 @@ vec3 traceColor(vec3 ro, vec3 rd)
     float floorTHit = 1e30;
     if (intersectPlane(ro, rd, floorPoint, floorNormal, floorTHit))
     {
-        if (floorTHit < tMin)
+        if (floorTHit > eps && floorTHit < tMin)
         {
             hitFloor = true;
             tMin = floorTHit;
@@ -228,7 +234,8 @@ vec3 traceColor(vec3 ro, vec3 rd)
 
             // This helper is used only during raytrace reflections,
             // so always do the shadow test (nice result)
-            if (!isInShadow(hitPos + floorNormal * 1e-3, lightPos, uint(-1)))
+            float epsH = rayEpsilon(hitPos);
+            if (!isInShadow(hitPos + floorNormal * epsH, lightPos, uint(-1)))
                 colorOut += floorDiffuse * lightCol * NdotL * attenuation * intensity;
         }
 
@@ -259,7 +266,8 @@ vec3 traceColor(vec3 ro, vec3 rd)
         float dist = length(lightPos - hitPos);
         float attenuation = 1.0 / (1.0 + 0.02 * dist + 0.01 * dist * dist);
 
-        if (!isInShadow(hitPos + N * 1e-3, lightPos, hitTriIndex))
+        float epsH = rayEpsilon(hitPos);
+        if (!isInShadow(hitPos + N * epsH, lightPos, hitTriIndex))
         {
             float NdotL = max(dot(N, toLight), 0.0);
             colorOut += diffuse * lightCol * NdotL * attenuation * intensity;
@@ -343,8 +351,9 @@ vec3 computeLighting(vec3 hitPos, vec3 normal, vec3 diffuse, uint ignoreTri)
         float d = length(lightPos - hitPos);
         float attenuation = 1.0 / (1.0 + 0.02 * d + 0.01 * d * d);
 
+        float eps = rayEpsilon(hitPos);
         if (gpuSceneParams.isPreview.x == 0 &&
-            isInShadow(hitPos + normal * 1e-3, lightPos, ignoreTri))
+            isInShadow(hitPos + normal * eps, lightPos, ignoreTri))
             continue;
 
         float NdotL = max(dot(normal, toLight), 0.0);
@@ -368,7 +377,9 @@ vec3 shadeFloor(Ray ray, float t)
     if (gpuSceneParams.isPreview.x == 0)
     {
         vec3 R = normalize(reflect(ray.dir, floorNormal));
-        vec3 reflCol = traceColor(hitPos + floorNormal * 1e-3, R);
+        float eps = rayEpsilon(hitPos);
+        vec3 reflOrigin = hitPos + floorNormal * eps;
+        vec3 reflCol = traceColor(reflOrigin, R);
 
         float F0 = 0.45;
         float cosTheta = clamp(dot(-ray.dir, floorNormal), 0.0, 1.0);
