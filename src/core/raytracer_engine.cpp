@@ -26,17 +26,9 @@ RaytracerEngine::RaytracerEngine(const GLsizei width, const GLsizei height, Scen
 
 void RaytracerEngine::renderFrame(bool showRayTraced)
 {
-	if (debugFrameCount % 20 == 0)
-	{
-		std::cout << "[Engine] Render frame " << debugFrameCount << "\n";
-		_gpuParams.updateGpuSceneParams(_scene, showRayTraced);
-		uploadSceneParams();
-
-		std::cout << "Running compute" << std::endl;
-		_compute.startComputeProgram();
-		_compute.dispatchCompute();
-	}
-	debugFrameCount++;
+	std::cout << "Running compute" << std::endl;
+	_compute.startComputeProgram();
+	_compute.dispatchCompute();
 }
 
 void RaytracerEngine::initSceneUbo()
@@ -55,13 +47,20 @@ void RaytracerEngine::uploadSceneParams() const
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
-void RaytracerEngine::onSceneChanged(bool showRayTraced)
+void RaytracerEngine::onSceneChanged(bool showRayTraced, bool uploadMeshData)
 {
 	std::cout << "[Engine] Scene changed -> updating GPU buffers\n";
 
 	// Update uniform params (camera/light etc.)
 	_gpuParams.updateGpuSceneParams(_scene, showRayTraced);
 	uploadSceneParams();
+
+	if (uploadMeshData)
+	{
+		this->uploadMeshData();
+	}
+
+	renderFrame(false);
 }
 
 static void printTexFormat(GLuint tex, const char *name)

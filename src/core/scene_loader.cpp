@@ -10,7 +10,7 @@
 #include "zip_reader.h"
 
 // =============================================================================
-// JSON CORE IMPLEMENTIERUNG
+// JSON CORE IMPLEMENTATION
 // =============================================================================
 
 bool JsonValue::has(const std::string &key) const

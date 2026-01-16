@@ -6,7 +6,7 @@
 #include "raytracer_ui.h"
 #include "scene_loader.h"
 #include "zip_reader.h"
-#include "../include/scene_bootstrap.hpp"
+#include "scene_bootstrap.hpp"
 
 int main()
 {
@@ -28,6 +28,7 @@ int main()
 		ui.init(window);
 
 		ui.onSceneChanged(loaded.json);
+		engine.onSceneChanged(showRayTraced, true);
 
 		while (!window.shouldClose())
 		{
@@ -48,9 +49,7 @@ int main()
 				ui.activeLightIndex = scene.lights.empty() ? -1 : 0;
 
 				ui.onSceneChanged(loadedZip.json);
-
-				engine.uploadMeshData();
-				engine.onSceneChanged(showRayTraced);
+				engine.onSceneChanged(showRayTraced, true);
 			}
 		}
 		ui.shutdown();
@@ -59,5 +58,4 @@ int main()
 	{
 		std::cerr << e.what() << "\n";
 	}
-
 }
