@@ -10,7 +10,7 @@
 #include "zip_reader.h"
 
 // =============================================================================
-// JSON CORE IMPLEMENTIERUNG
+// JSON CORE IMPLEMENTATION
 // =============================================================================
 
 bool JsonValue::has(const std::string &key) const
@@ -210,7 +210,7 @@ glm::vec4 SceneLoader::parseColor(const JsonValue &v)
 }
 
 // -----------------------------------------------------------------------------
-// EXTRACT METHODS (Rein lesend)
+// EXTRACT METHODS
 // -----------------------------------------------------------------------------
 
 Light SceneLoader::extractLight(const JsonValue &json)

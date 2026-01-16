@@ -46,26 +46,24 @@ struct RaytracerEngine
 	void renderFrame(bool showRayTraced);
 
 	/**
-     * @brief Notifies the engine that the referenced scene content has changed.
-     *
-     * The engine stores a reference to a Scene. When the Scene is replaced
-     * (e.g. via assignment in main), GPU buffers and cached parameters must be
-     * re-synchronized.
-    */
-	void onSceneChanged(bool showRayTraced);
+	 * @brief Informs the engine that the content of the currently referenced Scene has changed.
+	 *
+	 * The engine keeps a reference to a Scene instance. When scene data such as
+	 * camera parameters, lighting, or geometry changes, this function must be
+	 * called to re-synchronize GPU-side resources.
+	 *
+	 * - Updates GPU scene parameters (e.g. camera, lights, render mode).
+	 * - Optionally uploads mesh-related data (triangles, mesh info) to SSBOs.
+	 *
+	 * @param showRayTraced   Enables or disables ray-traced rendering in the GPU parameters.
+	 * @param uploadMeshData If true, mesh and triangle buffers are re-uploaded to the GPU.
+	 */
+	void onSceneChanged(bool showRayTraced, bool uploadMeshData);
 
 	/** 
 	 * @brief Clears the output textures to a given color. 
 	 */
 	void clearOutputTextures(float r, float g, float b, float a);
-
-	/**
-	 * @brief Uploads scene mesh data to GPU shader storage buffers.
-	 *
-	 * Transfers triangle and mesh info data to SSBOs for use in compute shaders.
-	 * Requires a valid OpenGL context.
-	 */
-	void uploadMeshData() const;
 
 	/** 
 	 * @brief (Re)allocates the raytrace output texture with current _width/_height. 
@@ -114,9 +112,6 @@ private:
 	/** Output width in pixels. */
 	GLsizei _width = 0;
 
-	/** Frame count for debugging purposes. */
-	int debugFrameCount = 0;
-
 	/**
      * @brief Initializes the uniform buffer object for scene parameters.
      *
@@ -130,4 +125,12 @@ private:
      * Writes the CPU-side scene parameters into the GPU uniform buffer.
      */
 	void uploadSceneParams() const;
+
+	/**
+	 * @brief Uploads scene mesh data to GPU shader storage buffers.
+	 *
+	 * Transfers triangle and mesh info data to SSBOs for use in compute shaders.
+	 * Requires a valid OpenGL context.
+	 */
+	void uploadMeshData() const;
 };

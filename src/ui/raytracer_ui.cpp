@@ -43,8 +43,6 @@ void RaytracerUI::beginFrame()
 
 void RaytracerUI::draw()
 {
-	engine.renderFrame(*_showRayTraced);
-
 	drawView();
 	drawTool();
 	drawSettings();
@@ -55,6 +53,7 @@ void RaytracerUI::draw()
 		drawFileExplorerPopup();
 	}
 }
+
 void RaytracerUI::endFrame()
 {
 	ImGui::Render();
@@ -172,7 +171,7 @@ void RaytracerUI::drawTool()
 					activeLightIndex = static_cast<unsigned int>(scene.lights.size() - 1);
 					syncActiveSceneJsonFromScene();
 
-					engine.onSceneChanged(*_showRayTraced);
+					engine.onSceneChanged(*_showRayTraced, false);
 				}
 
 				ImGui::EndMenu();
@@ -210,8 +209,8 @@ void RaytracerUI::drawTool()
 							              localRelPath);
 
 							syncActiveSceneJsonFromScene();
-							engine.uploadMeshData();
 							scene.fitCameraToMesh(cameraAspect);
+							engine.onSceneChanged(*_showRayTraced, true);
 						}
 						else
 						{
@@ -304,8 +303,7 @@ void RaytracerUI::drawTool()
 			{
 				scene.deleteMesh(i);
 
-				engine.uploadMeshData();
-				engine.onSceneChanged(*_showRayTraced);
+				engine.onSceneChanged(*_showRayTraced, true);
 				syncActiveSceneJsonFromScene();
 
 				if (activeMeshIndex == i)
@@ -544,7 +542,7 @@ void RaytracerUI::drawSettings()
 			{
 				somethingChanged = true;
 				scene.applyMeshTransform(activeMeshIndex);
-				engine.uploadMeshData();
+				engine.onSceneChanged(*_showRayTraced, true);
 			};
 
 			ImGui::SameLine();
@@ -554,7 +552,7 @@ void RaytracerUI::drawSettings()
 			{
 				somethingChanged = true;
 				scene.applyMeshTransform(activeMeshIndex);
-				engine.uploadMeshData();
+				engine.onSceneChanged(*_showRayTraced, true);
 			};
 
 			ImGui::SameLine();
@@ -564,7 +562,7 @@ void RaytracerUI::drawSettings()
 			{
 				somethingChanged = true;
 				scene.applyMeshTransform(activeMeshIndex);
-				engine.uploadMeshData();
+				engine.onSceneChanged(*_showRayTraced, true);
 			};
 
 			ImGui::SameLine();
@@ -789,6 +787,8 @@ void RaytracerUI::drawBar()
 			{
 				*_showRayTraced = true;
 			}
+
+			engine.onSceneChanged(*_showRayTraced, false);
 		}
 
 		if (ImGui::IsItemHovered())
@@ -926,6 +926,7 @@ void RaytracerUI::syncActiveSceneJsonFromScene()
 		                                         { "b", scene.backgroundColor.z } };
 
 	m_activeSceneJson = m_activeSceneJsonObj.dump(2);
+	engine.onSceneChanged(*_showRayTraced, false);
 }
 
 void RaytracerUI::resetEnvironment()
@@ -935,7 +936,6 @@ void RaytracerUI::resetEnvironment()
 
 	// mesh & camera & light reset
 	scene.reset();
-	engine.uploadMeshData();
 
 	// 2) UI state reset
 	bg[0] = 0.0f;
@@ -952,6 +952,6 @@ void RaytracerUI::resetEnvironment()
 	m_requestLoadZip = false;
 	m_requestedZipPath.clear();
 
-	engine.onSceneChanged(*_showRayTraced);
 	engine.clearOutputTextures(0, 0, 0, 1);
+	engine.onSceneChanged(*_showRayTraced, true);
 }
