@@ -210,7 +210,7 @@ glm::vec4 SceneLoader::parseColor(const JsonValue &v)
 }
 
 // -----------------------------------------------------------------------------
-// EXTRACT METHODS (Rein lesend)
+// EXTRACT METHODS
 // -----------------------------------------------------------------------------
 
 Light SceneLoader::extractLight(const JsonValue &json)
@@ -243,6 +243,7 @@ Camera SceneLoader::extractCamera(const JsonValue &json)
 	glm::vec3 lookFrom(0.0f, 0.0f, 5.0f);
 	glm::vec3 lookAt(0.0f, 0.0f, 0.0f);
 	glm::vec3 up(0.0f, 1.0f, 0.0f);
+
 	float fovDeg = 60.0f;
 	float aspectRatio = 16.0f / 9.0f;
 	float nearPlane = 0.1f;
@@ -279,14 +280,44 @@ Camera SceneLoader::extractCamera(const JsonValue &json)
 			aspectRatio = w / h;
 	}
 
-	float dist = getFloatRobust(json, "pane_distance", "paneDistance");
-	float width = getFloatRobust(json, "pane_width", "paneWidth");
+	// --- FOV ---
+	bool hasExplicitFov = json.has("fov");
+	if (hasExplicitFov)
+		fovDeg = json.asObj()->at("fov").asFloat();
 
-	if (dist > 0.0001f && width > 0.0001f)
+	// Only compute FOV from pane params if no explicit fov is given
+	if (!hasExplicitFov)
 	{
-		float height = width / aspectRatio;
-		float fovRad = 2.0f * std::atan((height / 2.0f) / dist);
-		fovDeg = glm::degrees(fovRad);
+		float dist = getFloatRobust(json, "pane_distance", "paneDistance");
+		float width = getFloatRobust(json, "pane_width", "paneWidth");
+
+		if (dist > 0.0001f && width > 0.0001f)
+		{
+			float height = width / aspectRatio;
+			float fovRad = 2.0f * std::atan((height * 0.5f) / dist);
+			fovDeg = glm::degrees(fovRad);
+		}
+	}
+
+	float upLen = glm::length(up);
+	if (upLen < 1e-4f)
+	{
+		up = glm::vec3(0, 1, 0);
+	}
+	else
+	{
+		up /= upLen;
+	}
+
+	if (glm::length(lookAt - lookFrom) < 1e-4f)
+	{
+		lookAt = lookFrom + glm::vec3(0, 0, -1);
+	}
+
+	glm::vec3 viewDir = glm::normalize(lookAt - lookFrom);
+	if (std::abs(glm::dot(up, viewDir)) > 0.99f)
+	{
+		up = glm::vec3(0, 1, 0);
 	}
 
 	return Camera(lookFrom, lookAt, up, fovDeg, aspectRatio, nearPlane, farPlane);
@@ -514,10 +545,36 @@ Scene SceneLoader::loadScene(const std::string &jsonString)
 
 			Mesh mesh = extractMesh(obj);
 			scene.addMesh(mesh, path);
+
+			// --- APPLY TRANSFORMS INTO MeshMeta ---
+			int index = (int)scene.meshMetas.size() - 1;
+			MeshMeta &meta = scene.meshMetas[index];
+
+			if (obj.has("translation"))
+			{
+				meta.position = parseVec3(obj.asObj()->at("translation"));
+			}
+
+			if (obj.has("rotation"))
+			{
+				meta.rotation = parseVec3(obj.asObj()->at("rotation"));
+			}
+
+			if (obj.has("scale"))
+			{
+				meta.scale = parseVec3(obj.asObj()->at("scale"), true);
+			}
+
+			scene.applyMeshTransform(index);
 		}
 	}
 
-	scene.fitCameraToMesh(16.0f / 9.0f);
+	if (!hasFittedCameraOnce)
+	{
+
+		scene.fitCameraToMesh(16.0f / 9.0f); // Only call this by first scene load
+		hasFittedCameraOnce = true;
+	}
 
 	return scene;
 }

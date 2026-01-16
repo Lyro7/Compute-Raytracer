@@ -59,6 +59,16 @@ void Camera::rebuildViewPlane()
 	lowerLeftCornerViewPlane = glm::vec4(lowerLeft, 0.0f);
 }
 
+glm::vec3 Camera::getForward() const
+{
+	return -glm::normalize(glm::vec3(w));
+}
+
+glm::vec3 Camera::getUp() const
+{
+	return glm::normalize(glm::vec3(v));
+}
+
 void Camera::setFov(float newFov)
 {
 	fov = newFov;
