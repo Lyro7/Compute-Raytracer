@@ -16,12 +16,12 @@ int main()
 		SceneLoader loader;
 		SceneBootstrap bootstrap(zr, loader);
 
-		auto loaded = bootstrap.loadInitial("" /* optional zip */, "assets/scenes/example.scene.json");
+		auto loaded = bootstrap.loadInitial("" /* Optional zip */, "assets/scenes/example.scene.json");
 		Scene scene = std::move(loaded.scene);
 
 		Window window(1920, 1080, "Raytracer");
-
-		// width and height are updated when loading a scene from the json. 1 is just a placeholder.
+		
+		// Width and height are updated when loading a scene from the json. 1 is just a placeholder.
 		RaytracerEngine engine(1, 1, scene);
 		bool showRayTraced = true;
 		RaytracerUI ui(engine, scene, &showRayTraced);
@@ -42,11 +42,15 @@ int main()
 			{
 				auto loadedZip = bootstrap.loadFromZipOrFallback(zip, "assets/scenes/example.scene.json");
 
-				scene = std::move(loadedZip.scene); // same scene-container, new data
+				scene = std::move(loadedZip.scene);
+
+				ui.activeMeshIndex = scene.meshMetas.empty() ? -1 : 0;
+				ui.activeLightIndex = scene.lights.empty() ? -1 : 0;
+
+				ui.onSceneChanged(loadedZip.json);
 
 				engine.uploadMeshData();
 				engine.onSceneChanged(showRayTraced);
-				ui.onSceneChanged(loadedZip.json);
 			}
 		}
 		ui.shutdown();
@@ -55,4 +59,5 @@ int main()
 	{
 		std::cerr << e.what() << "\n";
 	}
+
 }

@@ -129,6 +129,10 @@ struct Camera
 		return aspectRatio;
 	}
 
+	glm::vec3 getForward() const;
+
+	glm::vec3 getUp() const;
+
 	void rebuildViewPlane();
 
 private:

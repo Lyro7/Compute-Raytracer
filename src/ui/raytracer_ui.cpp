@@ -55,6 +55,7 @@ void RaytracerUI::draw()
 		drawFileExplorerPopup();
 	}
 }
+
 void RaytracerUI::endFrame()
 {
 	ImGui::Render();
@@ -197,7 +198,7 @@ void RaytracerUI::drawTool()
 					if (!p.empty())
 					{
 
-						// optional: extension check
+						// Optional: extension check
 						if (std::filesystem::path(p).extension() == ".obj")
 						{
 							if (m_sceneRootDisk.empty())
@@ -205,13 +206,11 @@ void RaytracerUI::drawTool()
 
 							std::string localRelPath = copyModelIntoAssets(p, m_sceneRootDisk);
 
-							// Wichtig: Mesh aus dem kopierten Ziel laden (nicht aus p!)
 							scene.addMesh(ObjectLoader::loadMesh((m_sceneRootDisk / localRelPath).string()),
 							              localRelPath);
 
 							syncActiveSceneJsonFromScene();
 							engine.uploadMeshData();
-							scene.fitCameraToMesh(cameraAspect);
 						}
 						else
 						{
@@ -880,19 +879,25 @@ void RaytracerUI::syncActiveSceneJsonFromScene()
 	{
 		auto &jc = m_activeSceneJsonObj["camera"];
 
-		setVec3(jc, "position", glm::vec3(scene.camera.getOrigin()));
-		jc["fov"] = scene.camera.getFov();
+		glm::vec3 pos = glm::vec3(scene.camera.getOrigin());
+		glm::vec3 fwd = scene.camera.getForward();
+		glm::vec3 up = scene.camera.getUp();
 
+		setVec3(jc, "position", pos);
+		setVec3(jc, "look_at", pos + fwd);
+		setVec3(jc, "up", up);
+
+		jc["fov"] = scene.camera.getFov();
 		jc["resolution"] = { { "x", engine.getWidth() }, { "y", engine.getHeight() } };
 	}
 
-	// obj block
+	// Object block
 	if (!m_activeSceneJsonObj.contains("objects") || !m_activeSceneJsonObj["objects"].is_array())
 		m_activeSceneJsonObj["objects"] = nlohmann::json::array();
 
 	auto &jObjs = m_activeSceneJsonObj["objects"];
 
-	// resize array to match scene.meshMetas size
+	// Resize array to match scene.meshMetas size
 	while (jObjs.size() < scene.meshMetas.size())
 		jObjs.push_back(nlohmann::json::object());
 	while (jObjs.size() > scene.meshMetas.size())
@@ -914,13 +919,13 @@ void RaytracerUI::syncActiveSceneJsonFromScene()
 
 		jO["path"] = p.generic_string();
 
-		// transforms
+		// Transforms
 		jO["translation"] = { { "x", M.position.x }, { "y", M.position.y }, { "z", M.position.z } };
 		jO["rotation"] = { { "x", M.rotation.x }, { "y", M.rotation.y }, { "z", M.rotation.z } };
 		jO["scale"] = { { "x", M.scale.x }, { "y", M.scale.y }, { "z", M.scale.z } };
 	}
 
-	// background color (always write / create)
+	// Background color (always write / create)
 	m_activeSceneJsonObj["background_color"] = { { "r", scene.backgroundColor.x },
 		                                         { "g", scene.backgroundColor.y },
 		                                         { "b", scene.backgroundColor.z } };
