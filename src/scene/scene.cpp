@@ -48,10 +48,6 @@ void Scene::fitCameraToMesh(float aspectRatio)
 	glm::vec3 up = glm::vec3(0, 1, 0);
 
 	camera = Camera(lookFrom, lookAt, up, fov, aspectRatio, 0.1f, dist * 10.0f);
-
-	lights[0].position = glm::vec4(center + glm::vec3(0, radius, radius * 2.0f), 1.0f);
-	lights[0].intensity = glm::vec4(20.0f, 0.0, 0.0, 0.0);
-	lights[0].color = glm::vec4(1, 1, 1, 1);
 }
 
 std::string Scene::makeUniqueName(const std::vector<std::string> &existingNames, const std::string &base)

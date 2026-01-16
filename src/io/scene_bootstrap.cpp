@@ -106,7 +106,6 @@ fs::path SceneBootstrap::importZipToOpenedScenes(const std::string &zipPath)
 	if (sceneInnerPath.empty())
 		throw std::runtime_error("No scene file found in zip: " + zipPath);
 
-	// DEBUG: einmal alle Dateien ausgeben
 	std::cout << "[ZIP] Files in archive:\n";
 	for (const auto &f : m_zr.listFiles())
 		std::cout << "  - " << f << "\n";
