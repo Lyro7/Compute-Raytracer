@@ -592,6 +592,7 @@ void RaytracerUI::drawSettings()
 
 		ImGui::Spacing();
 
+		// CAMERA-SECTION
 		ImGui::SeparatorText("Camera");
 
 		glm::vec3 tempCamPos = glm::vec3(scene.camera.getOrigin());
@@ -600,6 +601,21 @@ void RaytracerUI::drawSettings()
 		if (ImGui::DragFloat3("Position##Cam", &tempCamPos.x, 0.1f))
 		{
 			scene.camera.setOrigin(tempCamPos);
+			somethingChanged = true;
+		}
+
+		float yaw = scene.camera.getYaw();
+
+		if (ImGui::SliderFloat("Yaw (Right/Left)", &yaw, -360.0f, 360.0f, "%.1f°"))
+		{
+			scene.camera.setYawPitch(yaw, scene.camera.getPitch());
+			somethingChanged = true;
+		}
+
+		float pitchVal = scene.camera.getPitch();
+		if (ImGui::SliderFloat("Pitch (Up/Down)", &pitchVal, -89.0f, 89.0f, "%.1f°"))
+		{
+			scene.camera.setYawPitch(scene.camera.getYaw(), pitchVal);
 			somethingChanged = true;
 		}
 
