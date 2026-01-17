@@ -49,6 +49,7 @@ static inline float clampPitch(float p)
 	return glm::clamp(p, -89.0f, 89.0f);
 }
 
+// Formula for Forward vector computation using yaw/pitch (based on LearnOpenGL.com)
 void Camera::updateFromAngles()
 {
 	float yawRad = glm::radians(yaw);
@@ -104,7 +105,7 @@ void Camera::rebuildViewPlane()
 	glm::vec3 vertical = viewportHeight * v3;
 	
 	glm::vec3 origin3 = glm::vec3(origin);
-	glm::vec3 lowerLeft = origin3 - 0.5f * horizontal - 0.5f * vertical - w3 * nearPlane;
+	glm::vec3 lowerLeft = origin3 - 0.5f * horizontal - 0.5f * vertical - w3;
 
 	horizontalViewPlane = glm::vec4(horizontal, 0.0f);
 	verticalViewPlane = glm::vec4(vertical, 0.0f);
