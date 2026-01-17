@@ -134,10 +134,9 @@ struct Camera
 		return yaw;
 	}
 
-	float getPitch() const
-	{
-		return pitch;
-	}
+	glm::vec3 getForward() const;
+
+	glm::vec3 getUp() const;
 
 	void setYawPitch(float newYaw, float newPitch);
 

@@ -97,6 +97,7 @@ public:
 	/**
 	 * @brief Main entry point to load a scene from a JSON string.
 	 * @param jsonString The raw JSON content of the .rscn file.
+	 * @param fitCamera If to fit camera to mesh or not.
 	 * @return A fully initialized Scene object.
 	 */
 	Scene loadScene(const std::string &jsonString);
@@ -111,6 +112,9 @@ public:
 	void setSceneZipRoot(const std::string &root);
 
 private:
+
+	bool hasFittedCameraOnce = false;
+
 	// --- Extraction / Mapping Methods ---
 	ZipReader *m_zip = nullptr;
 
