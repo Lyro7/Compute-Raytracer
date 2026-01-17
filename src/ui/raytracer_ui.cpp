@@ -537,7 +537,7 @@ void RaytracerUI::drawSettings()
 
 			MeshMeta &meta = scene.meshMetas[activeMeshIndex];
 
-			if (ImGui::DragFloat3("##ObjectPos", &meta.position.x, 0.1f, -100.0f, 100.0f, "%.2f"))
+			if (ImGui::DragFloat3("##ObjectPos", &meta.position.x, 1.25f, -500.0f, 500.0f, "%.2f"))
 			{
 				somethingChanged = true;
 				scene.applyMeshTransform(activeMeshIndex);
@@ -557,7 +557,7 @@ void RaytracerUI::drawSettings()
 			ImGui::SameLine();
 			ImGui::Text("Rotation");
 
-			if (ImGui::SliderFloat3("##ObjectScaleSlider", &meta.scale.x, -360.0f, 360.0f, "%.1f°"))
+			if (ImGui::DragFloat3("##ObjectScaleSlider", &meta.scale.x, 0.02f , 0.01f, 20.0f, "%.2f"))
 			{
 				somethingChanged = true;
 				scene.applyMeshTransform(activeMeshIndex);
@@ -580,7 +580,7 @@ void RaytracerUI::drawSettings()
 			ImGui::SeparatorText("Light");
 			ImGui::Text("ID: %d", activeLightIndex);
 
-			if (ImGui::DragFloat3("Position##Light", &scene.lights[activeLightIndex].position.x, 0.1f, -20.0f, 20.0f))
+			if (ImGui::DragFloat3("Position##Light", &scene.lights[activeLightIndex].position.x, 1.25f, -500.0f, 500.0f))
 				somethingChanged = true;
 
 			if (ImGui::ColorEdit3("Color##Light", &scene.lights[activeLightIndex].color.x))
@@ -598,7 +598,7 @@ void RaytracerUI::drawSettings()
 		glm::vec3 tempCamPos = glm::vec3(scene.camera.getOrigin());
 		float tempFov = scene.camera.getFov();
 
-		if (ImGui::DragFloat3("Position##Cam", &tempCamPos.x, 0.1f))
+		if (ImGui::DragFloat3("Position##Cam", &tempCamPos.x, 0.75f, -500.0f, 500.0f))
 		{
 			scene.camera.setOrigin(tempCamPos);
 			somethingChanged = true;
@@ -619,7 +619,7 @@ void RaytracerUI::drawSettings()
 			somethingChanged = true;
 		}
 
-		if (ImGui::SliderFloat("FOV", &tempFov, 1.0f, 179.0f))
+		if (ImGui::SliderFloat("FOV", &tempFov, 1.0f, 250.0f))
 		{
 			scene.camera.setFov(tempFov);
 			somethingChanged = true;
