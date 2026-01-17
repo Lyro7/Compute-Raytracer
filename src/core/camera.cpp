@@ -35,6 +35,58 @@ Camera::Camera(const glm::vec3 &lookFrom, const glm::vec3 &lookAt, const glm::ve
 	verticalViewPlane = glm::vec4(vertical, 0.0f);
 	lowerLeftCornerViewPlane = glm::vec4(lowerLeft, 0.0f);
 
+	pos = lookFrom;
+	fwd = glm::normalize(lookAt - lookFrom);
+
+	pitch = glm::degrees(std::asin(glm::clamp(fwd.y, -1.0f, 1.0f)));
+	yaw = glm::degrees(std::atan2(fwd.z, fwd.x));
+
+	updateFromAngles();
+}
+
+static inline float clampPitch(float p)
+{
+	return glm::clamp(p, -89.0f, 89.0f);
+}
+
+void Camera::updateFromAngles()
+{
+	float yawRad = glm::radians(yaw);
+	float pitchRad = glm::radians(pitch);
+
+	glm::vec3 newFwd;
+	newFwd.x = std::cos(yawRad) * std::cos(pitchRad);
+	newFwd.y = std::sin(pitchRad);
+	newFwd.z = std::sin(yawRad) * std::cos(pitchRad);
+	fwd = glm::normalize(newFwd);
+
+	glm::vec3 worldUp(0, 1, 0);
+	right = glm::normalize(glm::cross(fwd, worldUp));
+	up = glm::normalize(glm::cross(right, fwd));
+
+	glm::vec3 w3 = -fwd;
+	u = glm::vec4(right, 0.0f);
+	v = glm::vec4(up, 0.0f);
+	w = glm::vec4(w3, 0.0f);
+
+	origin = glm::vec4(pos, 1.0f);
+
+	rebuildViewPlane();
+}
+
+void Camera::rotate(float deltaYaw, float deltaPitch)
+{
+	yaw += deltaYaw;
+	pitch += deltaPitch;
+	pitch = clampPitch(pitch);
+	updateFromAngles();
+}
+
+void Camera::setYawPitch(float newYaw, float newPitch)
+{
+	yaw = newYaw;
+	pitch = clampPitch(newPitch);
+	updateFromAngles();
 }
 
 void Camera::rebuildViewPlane()
@@ -52,7 +104,7 @@ void Camera::rebuildViewPlane()
 	glm::vec3 vertical = viewportHeight * v3;
 	
 	glm::vec3 origin3 = glm::vec3(origin);
-	glm::vec3 lowerLeft = origin3 - 0.5f * horizontal - 0.5f * vertical - w3;
+	glm::vec3 lowerLeft = origin3 - 0.5f * horizontal - 0.5f * vertical - w3 * nearPlane;
 
 	horizontalViewPlane = glm::vec4(horizontal, 0.0f);
 	verticalViewPlane = glm::vec4(vertical, 0.0f);
@@ -67,6 +119,28 @@ void Camera::setFov(float newFov)
 
 void Camera::setOrigin(const glm::vec3 &newOrigin)
 {
+	pos = newOrigin;
 	origin = glm::vec4(newOrigin, 1.0f);
+	rebuildViewPlane();
+}
+
+void Camera::moveForward(float amount)
+{
+	pos += fwd * amount;
+	origin = glm::vec4(pos, 1.0f);
+	rebuildViewPlane();
+}
+
+void Camera::moveRight(float amount)
+{
+	pos += right * amount;
+	origin = glm::vec4(pos, 1.0f);
+	rebuildViewPlane();
+}
+
+void Camera::moveUp(float amount)
+{
+	pos += up * amount;
+	origin = glm::vec4(pos, 1.0f);
 	rebuildViewPlane();
 }

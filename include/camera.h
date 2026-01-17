@@ -129,7 +129,29 @@ struct Camera
 		return aspectRatio;
 	}
 
+	float getYaw() const
+	{
+		return yaw;
+	}
+
+	float getPitch() const
+	{
+		return pitch;
+	}
+
+	void setYawPitch(float newYaw, float newPitch);
+
+	void updateFromAngles();
+
+	void rotate(float deltaYaw, float deltaPitch);
+
 	void rebuildViewPlane();
+
+	void moveForward(float amount);
+
+	void moveRight(float amount);
+
+	void moveUp(float amount);
 
 private:
 	/** @brief The position of the camera in world space. */
@@ -156,4 +178,12 @@ private:
 	/** @brief Determines at what proximity and distance a pixel is displayed */
 	float nearPlane;
 	float farPlane;
+
+	float yaw = 0.0f;
+	float pitch = 0.0f;
+
+	glm::vec3 pos;
+	glm::vec3 fwd;
+	glm::vec3 right;
+	glm::vec3 up;
 };
