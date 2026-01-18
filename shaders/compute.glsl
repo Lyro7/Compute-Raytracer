@@ -4,7 +4,7 @@ layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 layout(binding = 0, rgba32f) uniform image2D outputImage;
 
-#define EPSILON 1e-8
+#define EPSILON 1e-10
 #define FLOOR_Y -20.0
 #define floorPoint vec3(0.0, FLOOR_Y, 0.0)
 #define floorNormal vec3(0.0, 1.0, 0.0)
@@ -20,8 +20,9 @@ struct HitInfo {
     bool hit;
     bool hitFloor;
     float t;
-    uint triIndex;
+    uint triIndex; // 0...N if triangle, uint(-1) if empty, uint(-2) if sphere
     vec2 baryUV;
+    int sphereIndex;
 };
 
 struct Material
@@ -89,7 +90,7 @@ layout(std140, binding = 0) uniform SceneParams
 
 float rayEpsilon(vec3 pos)
 {
-    return max(1e-4, 1e-5 * max(1.0, length(pos)));
+    return max(1e-6, 1e-7 * max(1.0, length(pos)));
 }
 
 // Reimplementation of the algorithm of M�ller and Trumbore
@@ -333,6 +334,33 @@ HitInfo traceScene(Ray ray)
         }
     }
 
+    if (gpuSceneParams.isPreview.x == 1)
+    {
+        int lightCount = clamp(gpuSceneParams.lightMeta.x, 0, MAX_LIGHTS);
+        float sphereRadius = 5.0;
+
+        for (int li = 0; li < lightCount; ++li)
+        {
+            vec3 lightPos = gpuSceneParams.lights[li].position.xyz;
+            vec3 oc = ray.origin - lightPos;
+
+            float tSphere = dot(-oc, ray.dir);
+            if (tSphere < 0.0) continue; // Licht hinter Strahlursprung
+
+            vec3 closest = oc + tSphere * ray.dir;
+            float dist2 = dot(closest, closest);
+
+            if (dist2 < sphereRadius * sphereRadius && tSphere < hit.t)
+            {
+                hit.hit = true;
+                hit.hitFloor = false;
+                hit.t = tSphere;
+                hit.triIndex = uint(-2); // spezieller Wert für Sphere
+                hit.sphereIndex = li;
+            }
+        }
+    }
+
     return hit;
 }
 
@@ -381,6 +409,11 @@ vec3 shadeFloor(Ray ray, float t)
         vec3 reflOrigin = hitPos + floorNormal * eps;
         vec3 reflCol = traceColor(reflOrigin, R);
 
+        if (reflCol == gpuSceneParams.backgroundColor.rgb)
+        {
+            reflCol *= 0.2;
+        }
+
         float F0 = 0.45;
         float cosTheta = clamp(dot(-ray.dir, floorNormal), 0.0, 1.0);
         float F = F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
@@ -411,7 +444,9 @@ vec3 shadeTriangle(Ray ray, HitInfo hit)
     vec3 diffuse = mat.diffuseColor.rgb;
 
     if (gpuSceneParams.isPreview.x == 1)
-        return diffuse;
+    {
+            return diffuse;
+    } 
 
     vec3 ambient = diffuse * vec3(0.3, 0.3, 0.4);
     return ambient + computeLighting(hitPos, N, diffuse, hit.triIndex);
@@ -432,10 +467,18 @@ void main()
 
     if (hit.hit)
     {
-        if (hit.hitFloor)
+        if (hit.triIndex == uint(-2)) // Sphere if preview
+        {
+            color = gpuSceneParams.lights[hit.sphereIndex].color.rgb;
+        }
+        else if (hit.hitFloor)
+        {
             color = shadeFloor(ray, hit.t);
+        }
         else
+        {
             color = shadeTriangle(ray, hit);
+        }
     }
 
     imageStore(outputImage, pixel, vec4(color, 1.0));
