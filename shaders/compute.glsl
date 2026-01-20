@@ -165,7 +165,7 @@ bool intersectPlane(vec3 orig, vec3 dir, vec3 planePoint, vec3 planeNormal, out 
     return tHit > rayEpsilon(orig);
 }
 
-vec3 traceColor(vec3 ro, vec3 rd)
+vec3 traceColor(vec3 ro, vec3 rd, uint ignoreTri)
 {
     float eps = rayEpsilon(ro);
 
@@ -177,6 +177,7 @@ vec3 traceColor(vec3 ro, vec3 rd)
 
     for (uint i = 0u; i < triangles.length(); ++i)
     {
+        if (i == ignoreTri) continue;
         Triangle tri = triangles[i];
         float tHit;
         vec2 hitUV;
@@ -407,7 +408,7 @@ vec3 shadeFloor(Ray ray, float t)
         vec3 R = normalize(reflect(ray.dir, floorNormal));
         float eps = rayEpsilon(hitPos);
         vec3 reflOrigin = hitPos + floorNormal * eps;
-        vec3 reflCol = traceColor(reflOrigin, R);
+        vec3 reflCol = traceColor(reflOrigin, R, uint(-1));
 
         if (reflCol == gpuSceneParams.backgroundColor.rgb)
         {
@@ -440,6 +441,11 @@ vec3 shadeTriangle(Ray ray, HitInfo hit)
         u * tri.NB.xyz +
         v * tri.NC.xyz
     );
+    if (dot(N, ray.dir) > 0.0)
+    {
+        N = -N;
+    }
+    
 
     vec3 diffuse = mat.diffuseColor.rgb;
 
@@ -449,7 +455,30 @@ vec3 shadeTriangle(Ray ray, HitInfo hit)
     } 
 
     vec3 ambient = diffuse * vec3(0.3, 0.3, 0.4);
-    return ambient + computeLighting(hitPos, N, diffuse, hit.triIndex);
+    //return ambient + computeLighting(hitPos, N, diffuse, hit.triIndex);
+    vec3 baseColor = ambient + computeLighting(hitPos, N, diffuse, hit.triIndex);
+    if (gpuSceneParams.isPreview.x == 0)
+    {
+        vec3 R = normalize(reflect(ray.dir, N));
+        float eps = rayEpsilon(hitPos) * 50.0;
+        vec3 reflOrigin = hitPos + N * eps;
+
+        vec3 reflCol = traceColor(reflOrigin, R, hit.triIndex);
+
+        // (optional) Hintergrund-check stabiler als == bei floats
+        if (length(reflCol - gpuSceneParams.backgroundColor.rgb) < 1e-4)
+            reflCol *= 0.2;
+
+        // Fresnel wie beim Floor (erstmal simpel mit festem F0)
+        float F0 = 0.08; // Triangle weniger spiegelnd als Boden
+        float cosTheta = clamp(dot(-ray.dir, N), 0.0, 1.0);
+        float F = F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+
+        baseColor = mix(baseColor, reflCol, F);
+    }
+
+    return baseColor;
+
 }
 
 void main()
