@@ -212,6 +212,7 @@ vec3 traceColor(vec3 ro, vec3 rd, uint ignoreTri)
     int lightCount = clamp(gpuSceneParams.lightMeta.x, 0, MAX_LIGHTS);
 
     // floor hit
+    /*
     if (hitFloor)
     {
         int cx = int(floor(hitPos.x / TILE_SIZE));
@@ -242,7 +243,7 @@ vec3 traceColor(vec3 ro, vec3 rd, uint ignoreTri)
         }
 
         return colorOut;
-    }
+    }*/
 
     //triangle hit
     Triangle tri = triangles[hitTriIndex];
@@ -338,7 +339,7 @@ HitInfo traceScene(Ray ray)
     if (gpuSceneParams.isPreview.x == 1)
     {
         int lightCount = clamp(gpuSceneParams.lightMeta.x, 0, MAX_LIGHTS);
-        float sphereRadius = 5.0;
+        float sphereRadius = 0.3;
 
         for (int li = 0; li < lightCount; ++li)
         {
@@ -346,7 +347,7 @@ HitInfo traceScene(Ray ray)
             vec3 oc = ray.origin - lightPos;
 
             float tSphere = dot(-oc, ray.dir);
-            if (tSphere < 0.0) continue; // Licht hinter Strahlursprung
+            if (tSphere < 0.0) continue; // light behind ray origin
 
             vec3 closest = oc + tSphere * ray.dir;
             float dist2 = dot(closest, closest);
@@ -356,7 +357,7 @@ HitInfo traceScene(Ray ray)
                 hit.hit = true;
                 hit.hitFloor = false;
                 hit.t = tSphere;
-                hit.triIndex = uint(-2); // spezieller Wert für Sphere
+                hit.triIndex = uint(-2); // value indicates ray hit a sphere
                 hit.sphereIndex = li;
             }
         }
@@ -465,12 +466,10 @@ vec3 shadeTriangle(Ray ray, HitInfo hit)
 
         vec3 reflCol = traceColor(reflOrigin, R, hit.triIndex);
 
-        // (optional) Hintergrund-check stabiler als == bei floats
         if (length(reflCol - gpuSceneParams.backgroundColor.rgb) < 1e-4)
             reflCol *= 0.2;
 
-        // Fresnel wie beim Floor (erstmal simpel mit festem F0)
-        float F0 = 0.08; // Triangle weniger spiegelnd als Boden
+        float F0 = 0.08; // Triangles less reflective than floor
         float cosTheta = clamp(dot(-ray.dir, N), 0.0, 1.0);
         float F = F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
 
@@ -502,7 +501,7 @@ void main()
         }
         else if (hit.hitFloor)
         {
-            color = shadeFloor(ray, hit.t);
+            //color = shadeFloor(ray, hit.t);
         }
         else
         {
