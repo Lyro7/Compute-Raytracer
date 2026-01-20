@@ -94,32 +94,16 @@ make
 
 ---
 
-## 🎮 Controls
-
-Once the application is running, you can navigate the scene using the following controls:
-
-| Key | Action |
-| --- | --- |
-| **W, A, S, D** | Move Camera (Forward, Left, Backward, Right) |
-| **Space** | Move Up |
-| **Shift** | Move Down |
-| **Mouse Drag** | Rotate View (Yaw/Pitch) |
-| **UI Panel** | Toggle "Raytrace" button to start rendering 
-
- |
-
----
-
 ## 👥 The Team: JK FlipFlop
 
 This project was realized by a team of 8 students:
 
 * **Niklas Kümmel** (Product Owner, Backend)
 * **Serhat Gürel** (Scrum Master, UI)
-* **Jeremy Diem** (UI, Concepts)
+* **Jeremy Diem** (UI, File Explorer, Concepts)
 * **Gabriel Penkert** (UI, Logging, Documentation)
 * **Lovro Lupis** (Architecture, Engine Core)
-* **Alton Bekolli** (Shader, Import/Export)
+* **Alton Bekolli** (Shader, JASON Parser, Import/Export)
 * **Felix Kussmann** (Camera System)
 * **Valentin Talmon-l'Armée** (JSON Parser, Data Logic)
 
