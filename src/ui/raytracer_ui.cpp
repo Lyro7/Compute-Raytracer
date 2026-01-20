@@ -84,8 +84,10 @@ void RaytracerUI::drawView()
 	if (ImGui::Begin("View", &opened_view, flags))
 	{
 		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 0.9f));
-		ImGui::SetCursorPosX(width * 0.5f - 40.0f);
-		ImGui::Text("Preview");
+		const char *title = (*_showRayTraced) ? "Preview" : "Raytraced";
+		float textW = ImGui::CalcTextSize(title).x;
+		ImGui::SetCursorPosX((width - textW) * 0.5f);
+		ImGui::TextUnformatted(title);
 		ImGui::PopStyleColor();
 		ImGui::Spacing();
 
@@ -98,8 +100,7 @@ void RaytracerUI::drawView()
 	ImGui::End();
 }
 
-static std::string copyModelIntoAssets(const std::string &srcPath,
-                                       const std::filesystem::path &sceneRootDisk)
+static std::string copyModelIntoAssets(const std::string &srcPath, const std::filesystem::path &sceneRootDisk)
 {
 	namespace fs = std::filesystem;
 
@@ -200,7 +201,7 @@ void RaytracerUI::drawTool()
 						if (std::filesystem::path(p).extension() == ".obj")
 						{
 							if (m_sceneRootDisk.empty())
-								m_sceneRootDisk = std::filesystem::current_path(); 
+								m_sceneRootDisk = std::filesystem::current_path();
 
 							std::string localRelPath = copyModelIntoAssets(p, m_sceneRootDisk);
 
@@ -557,7 +558,7 @@ void RaytracerUI::drawSettings()
 			ImGui::SameLine();
 			ImGui::Text("Rotation");
 
-			if (ImGui::DragFloat3("##ObjectScaleSlider", &meta.scale.x, 0.02f , 0.01f, 20.0f, "%.2f"))
+			if (ImGui::DragFloat3("##ObjectScaleSlider", &meta.scale.x, 0.02f, 0.01f, 20.0f, "%.2f"))
 			{
 				somethingChanged = true;
 				scene.applyMeshTransform(activeMeshIndex);
@@ -580,7 +581,8 @@ void RaytracerUI::drawSettings()
 			ImGui::SeparatorText("Light");
 			ImGui::Text("ID: %d", activeLightIndex);
 
-			if (ImGui::DragFloat3("Position##Light", &scene.lights[activeLightIndex].position.x, 1.25f, -500.0f, 500.0f))
+			if (ImGui::DragFloat3("Position##Light", &scene.lights[activeLightIndex].position.x, 1.25f, -500.0f,
+			                      500.0f))
 				somethingChanged = true;
 
 			if (ImGui::ColorEdit3("Color##Light", &scene.lights[activeLightIndex].color.x))
