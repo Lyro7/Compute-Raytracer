@@ -1,8 +1,4 @@
-<p align="center">
-<img width="250" height="250" alt="drtonipeperoni_Computer_circuit_board_wired_abstract_tech_software_label_JK_62c55c69-cdb9-4d4e-b8ac-37f78764dcc0" src="https://github.com/user-attachments/assets/d14d7a4f-f9aa-440b-b07d-8facb976ba34" />
-</p>
-
-# 🚀 GPU-Accelerated Raytracer
+# 🚀 GPU-Accelerated Raytracer (OpenGL Compute Shader)
 
 ### THU Software Project · Team JK FlipFlop
 
@@ -11,7 +7,7 @@ Welcome to the official repository for **JK FlipFlop's Raytracer**, a high-perfo
 This project tackles the mathematical and technical challenge of simulating physical light transport. It implements a hybrid rendering pipeline using **OpenGL Compute Shaders** to achieve realistic lighting effects like shadows, reflections, and refractions.
 
 ---
-<img width="2143" height="1368" alt="image" src="https://github.com/user-attachments/assets/48ef3764-e137-4fa3-8c95-6f1a1a8cc54a" />
+<img width="1720" height="1276" alt="Raytrace_Output" src="https://github.com/user-attachments/assets/20b9dbf4-0fd9-4460-a7ad-dec33eb5c9b8" />
 
 ## 🎯 Project Overview
 
@@ -19,7 +15,8 @@ The goal of this project was to design and implement a powerful, GPU-based raytr
 
 **Key Capabilities:**
 
-* **Hybrid Rendering:** Switch seamlessly between a real-time Rasterization Preview and the high-fidelity Raytracing mode.
+* **Hybrid Rendering:** A unified compute-shader pipeline providing both an interactive preview mode and high-fidelity GPU raytracing.
+  The preview mode uses a reduced ray budget and simplified shading to ensure interactive performance.
 
 * **Physical Light Simulation:** Calculates interactions of light with virtual objects, including shadows and reflections.
 
@@ -59,7 +56,7 @@ The application features a modern, intuitive **Graphical User Interface (GUI)** 
 ## 🏗️ Architecture & Tech Stack
 
 This project is built on a robust C++ architecture designed for high-performance computing.
-
+The architecture emphasizes a clear separation between scene management, GPU data representation, and compute-based rendering.
 
 ### System Flow
 
@@ -112,7 +109,7 @@ This project was realized by a team of 8 students:
 * **Jeremy Diem** (UI, File Explorer, Concepts)
 * **Gabriel Penkert** (UI, Logging, Documentation)
 * **Lovro Lupis** (Architecture, Engine Core)
-* **Alton Bekolli** (Shader, JASON Parser, Import/Export)
+* **Alton Bekolli** (Shader, JSON Parser, Import/Export)
 * **Felix Kussmann** (Camera System)
 * **Valentin Talmon-l'Armée** (JSON Parser, Data Logic)
 
