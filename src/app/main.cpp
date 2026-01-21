@@ -16,7 +16,7 @@ int main()
 		SceneLoader loader;
 		SceneBootstrap bootstrap(zr, loader);
 
-		auto loaded = bootstrap.loadInitial("" /* Optional zip */, "assets/scenes/endscene.json");
+		auto loaded = bootstrap.loadInitial("" /* Optional zip */, "assets/scenes/example.scene.json");
 		Scene scene = std::move(loaded.scene);
 
 		Window window(1920, 1080, "Raytracer");

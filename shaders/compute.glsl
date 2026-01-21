@@ -212,7 +212,6 @@ vec3 traceColor(vec3 ro, vec3 rd, uint ignoreTri)
     int lightCount = clamp(gpuSceneParams.lightMeta.x, 0, MAX_LIGHTS);
 
     // floor hit
-    /*
     if (hitFloor)
     {
         int cx = int(floor(hitPos.x / TILE_SIZE));
@@ -243,7 +242,7 @@ vec3 traceColor(vec3 ro, vec3 rd, uint ignoreTri)
         }
 
         return colorOut;
-    }*/
+    }
 
     //triangle hit
     Triangle tri = triangles[hitTriIndex];
@@ -339,7 +338,7 @@ HitInfo traceScene(Ray ray)
     if (gpuSceneParams.isPreview.x == 1)
     {
         int lightCount = clamp(gpuSceneParams.lightMeta.x, 0, MAX_LIGHTS);
-        float sphereRadius = 0.3;
+        float sphereRadius = 5;
 
         for (int li = 0; li < lightCount; ++li)
         {
@@ -456,28 +455,7 @@ vec3 shadeTriangle(Ray ray, HitInfo hit)
     } 
 
     vec3 ambient = diffuse * vec3(0.3, 0.3, 0.4);
-    //return ambient + computeLighting(hitPos, N, diffuse, hit.triIndex);
-    vec3 baseColor = ambient + computeLighting(hitPos, N, diffuse, hit.triIndex);
-    if (gpuSceneParams.isPreview.x == 0)
-    {
-        vec3 R = normalize(reflect(ray.dir, N));
-        float eps = rayEpsilon(hitPos) * 50.0;
-        vec3 reflOrigin = hitPos + N * eps;
-
-        vec3 reflCol = traceColor(reflOrigin, R, hit.triIndex);
-
-        if (length(reflCol - gpuSceneParams.backgroundColor.rgb) < 1e-4)
-            reflCol *= 0.2;
-
-        float F0 = 0.08; // Triangles less reflective than floor
-        float cosTheta = clamp(dot(-ray.dir, N), 0.0, 1.0);
-        float F = F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
-
-        baseColor = mix(baseColor, reflCol, F);
-    }
-
-    return baseColor;
-
+    return ambient + computeLighting(hitPos, N, diffuse, hit.triIndex);
 }
 
 void main()
@@ -501,7 +479,7 @@ void main()
         }
         else if (hit.hitFloor)
         {
-            //color = shadeFloor(ray, hit.t);
+            color = shadeFloor(ray, hit.t);
         }
         else
         {

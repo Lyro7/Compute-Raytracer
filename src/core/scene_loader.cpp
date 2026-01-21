@@ -572,7 +572,7 @@ Scene SceneLoader::loadScene(const std::string &jsonString)
 	if (!hasFittedCameraOnce)
 	{
 
-		//scene.fitCameraToMesh(16.0f / 9.0f); // Only call this by first scene load
+		scene.fitCameraToMesh(16.0f / 9.0f); // Only call this by first scene load
 		hasFittedCameraOnce = true;
 	}
 
