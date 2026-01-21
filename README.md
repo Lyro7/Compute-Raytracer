@@ -7,7 +7,7 @@ Welcome to the official repository for **JK FlipFlop's Raytracer**, a high-perfo
 This project tackles the mathematical and technical challenge of simulating physical light transport. It implements a hybrid rendering pipeline using **OpenGL Compute Shaders** to achieve realistic lighting effects like shadows, reflections, and refractions.
 
 ---
-<img width="1200" height="1000" alt="Raytrace_Output" src="https://github.com/user-attachments/assets/20b9dbf4-0fd9-4460-a7ad-dec33eb5c9b8" />
+<img width="1130" height="1100" alt="Raytracer_Texture" src="https://github.com/user-attachments/assets/2217359b-55c1-4c26-8ebe-acac1ee3bad6" />
 
 ## 🎯 Project Overview
 
