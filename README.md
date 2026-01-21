@@ -118,4 +118,4 @@ This project was realized by a team of 8 students:
 
 ---
 
-*Developed at Ulm University of Applied Sciences (THU), 2024.*
+*Developed at Ulm University of Applied Sciences (THU), 2025/2026.*
