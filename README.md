@@ -49,6 +49,11 @@ The application features a modern, intuitive **Graphical User Interface (GUI)** 
 
 * **Export Tools:** Save your scene configuration as a JSON file or export the rendered result as high-res PNG/JPG images.
 
+> [!TIP]
+> **🚀 Performance Hint:**
+> For smooth interaction while moving objects or lights, keep the resolution **low** (e.g., Preview Mode).
+> Only switch to a **High Resolution** preset right before clicking the **Raytrace** button for your final image!
+
 ---
 
 ## 🏗️ Architecture & Tech Stack
