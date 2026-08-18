@@ -1,10 +1,13 @@
 ﻿cmake_minimum_required (VERSION 3.11)
-project ("Raytracer")
+project ("Compute-Raytracer")
 
 # Enable Hot Reload for MSVC compilers if supported.
 if (POLICY CMP0141)
   cmake_policy(SET CMP0141 NEW)
-  set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
+  set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT 
+  "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,
+  $<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,
+  $<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
 endif()
 
 # C++ standard
@@ -21,10 +24,20 @@ set(EXTERNAL_DIR "${CMAKE_SOURCE_DIR}/external")
 
 # Sources
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/*.cpp")
-add_executable(Raytracer ${SOURCES})
+add_executable(ComputeRaytracer ${SOURCES})
 
-target_compile_definitions(Raytracer PRIVATE ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets")
+target_sources(ComputeRaytracer PRIVATE
+    "${CMAKE_SOURCE_DIR}/resources/app.rc"
+)
 
+if (MSVC)
+    target_link_options(ComputeRaytracer PRIVATE
+        "/SUBSYSTEM:WINDOWS"
+        "/ENTRY:mainCRTStartup"
+    )
+endif()
+
+target_compile_definitions(ComputeRaytracer PRIVATE ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets")
 
 add_library(miniz STATIC
     "${CMAKE_SOURCE_DIR}/external/miniz/miniz.c"
@@ -37,15 +50,15 @@ target_include_directories(miniz PUBLIC
     "${CMAKE_SOURCE_DIR}/external/miniz"
 )
 
-# Nlohmann_json
+# Nlohmann
 add_subdirectory(external/nlohmann_json)
-target_link_libraries(Raytracer PRIVATE nlohmann_json::nlohmann_json)
+target_link_libraries(ComputeRaytracer PRIVATE nlohmann_json::nlohmann_json)
 
 # GLM
 add_subdirectory(${EXTERNAL_DIR}/glm)
 
 # STB
-target_include_directories(Raytracer PRIVATE ${CMAKE_SOURCE_DIR}/external/stb)
+target_include_directories(ComputeRaytracer PRIVATE ${CMAKE_SOURCE_DIR}/external/stb)
 
 # OpenGL
 find_package(OpenGL REQUIRED)
@@ -78,29 +91,28 @@ target_include_directories(imgui PUBLIC
     "${IMGUI_DIR}/backends"
 )
 
-# we use GLAD as OpenGL-Loader
 target_compile_definitions(imgui PUBLIC IMGUI_IMPL_OPENGL_LOADER_GLAD)
 
-# ImGui needs GLFW + OpenGL
 target_link_libraries(imgui PUBLIC glfw OpenGL::GL)
 
 # Link executable
-target_link_libraries(Raytracer PRIVATE glad glfw OpenGL::GL imgui miniz)
+target_link_libraries(ComputeRaytracer PRIVATE glad glfw OpenGL::GL imgui miniz)
 
 # Include directories
-target_include_directories(Raytracer PRIVATE "${CMAKE_SOURCE_DIR}/src" "${GLAD_DIR}/include" "${PROJ_INCL_DIR}" "${EXTERNAL_DIR}" "${CMAKE_SOURCE_DIR}/external/miniz")
+target_include_directories(ComputeRaytracer PRIVATE "${CMAKE_SOURCE_DIR}/src" 
+    "${GLAD_DIR}/include" "${PROJ_INCL_DIR}" "${EXTERNAL_DIR}" "${CMAKE_SOURCE_DIR}/external/miniz")
 
 # Copy assets to output folder
 add_custom_target(sync_assets
 	COMMAND ${CMAKE_COMMAND} -E copy_directory
 		${CMAKE_SOURCE_DIR}/assets
 		${CMAKE_BINARY_DIR}/assets)
-add_dependencies(Raytracer sync_assets)
+add_dependencies(ComputeRaytracer sync_assets)
 
 # Copy shaders to output folder
 add_custom_target(sync_shaders
 	COMMAND ${CMAKE_COMMAND} -E copy_directory
 		${CMAKE_SOURCE_DIR}/shaders
 		${CMAKE_BINARY_DIR}/shaders)
-add_dependencies(Raytracer sync_shaders)
+add_dependencies(ComputeRaytracer sync_shaders)
 

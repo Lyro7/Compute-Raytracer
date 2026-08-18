@@ -1,21 +1,27 @@
-#include "raytracer_ui.h"
-#include "compute_program.h"
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
+#include <algorithm>
+#include <cctype>
+#include <cstddef>
+#include <cstdint>
+#include <cstdio>
+#include <filesystem>
+#include <fstream>
+#include <glad/glad.h>
+#include <nlohmann/json.hpp>
+#include <stdexcept>
+
+#include "export/texture_export.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
-#include <glad/glad.h>
-#include <filesystem>
-#include <iostream>
-#include "object_loader.h"
-#include "scene.h"
-#include "file_dialog.h"
-#include <fstream>
-#include <nlohmann/json.hpp>
-#include <vector>
-#include <algorithm>
-#include <cstdint>
-#include <cstring>
-#include "texture_export.h"
+#include "loading/object_loader.h"
+#include "platform/file_dialog.h"
+#include "scene/scene.h"
+#include "ui/raytracer_ui.h"
+#include "utils/log.h"
 
 RaytracerUI::RaytracerUI(RaytracerEngine &engine, Scene &scene, bool *showRayTraced)
     : engine(engine)
@@ -27,9 +33,15 @@ RaytracerUI::RaytracerUI(RaytracerEngine &engine, Scene &scene, bool *showRayTra
 void RaytracerUI::init(Window &window)
 {
 	m_window = &window;
+
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGui::StyleColorsDark();
+
+	ImGuiStyle &style = ImGui::GetStyle();
+	style.ScaleAllSizes(1.5f);
+	style.FontScaleDpi = 1.5f;
+
 	ImGui_ImplGlfw_InitForOpenGL(m_window->get(), true);
 	ImGui_ImplOpenGL3_Init("#version 330");
 }
@@ -48,7 +60,7 @@ void RaytracerUI::draw()
 	drawSettings();
 	drawBar();
 
-	if (m_showModelBrowser)
+	if (showModelBrowser)
 	{
 		drawFileExplorerPopup();
 	}
@@ -76,15 +88,16 @@ void RaytracerUI::drawView()
 	float width = screen.x * 0.75f;
 	float height = screen.y - barHeight;
 	ImGuiWindowFlags flags =
-	    ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove;
+	    ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse 
+		| ImGuiWindowFlags_NoMove;
 
 	ImGui::SetNextWindowPos(ImVec2(screen.x * 0.25f, 0), ImGuiCond_Always);
 	ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
 
-	if (ImGui::Begin("View", &opened_view, flags))
+	if (ImGui::Begin("View", &openedView, flags))
 	{
 		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 0.9f));
-		const char *title = (*_showRayTraced) ? "Preview" : "Raytraced";
+		const char *title = *_showRayTraced ? "Raytraced" : "Preview";
 		float textW = ImGui::CalcTextSize(title).x;
 		ImGui::SetCursorPosX((width - textW) * 0.5f);
 		ImGui::TextUnformatted(title);
@@ -100,35 +113,67 @@ void RaytracerUI::drawView()
 	ImGui::End();
 }
 
-static std::string copyModelIntoAssets(const std::string &srcPath, const std::filesystem::path &sceneRootDisk)
+namespace
 {
-	namespace fs = std::filesystem;
-
-	fs::path src(srcPath);
-	if (!fs::exists(src))
+	std::string copyModelIntoAssets(const std::string &srcPath, const std::filesystem::path &sceneRootDisk)
 	{
-		return srcPath;
+		namespace fs = std::filesystem;
+
+		fs::path src(srcPath);
+		if (!fs::exists(src))
+		{
+			return srcPath;
+		}
+
+		fs::path dstDir = sceneRootDisk / "assets" / "models";
+		fs::create_directories(dstDir);
+
+		fs::path dst = dstDir / src.filename();
+
+		if (fs::exists(dst))
+		{
+			fs::path stem = dst.stem();
+			fs::path ext = dst.extension();
+			int i = 2;
+			while (fs::exists(dstDir / fs::path(stem.string() + "_" + std::to_string(i) + ext.string())))
+				++i;
+			dst = dstDir / fs::path(stem.string() + "_" + std::to_string(i) + ext.string());
+		}
+
+		fs::copy_file(src, dst, fs::copy_options::overwrite_existing);
+
+	    fs::path srcMtl = src;
+	    srcMtl.replace_extension(".mtl");
+
+	    if (fs::exists(srcMtl))
+	    {
+		    fs::path dstMtl = dstDir / srcMtl.filename();
+
+		    fs::copy_file(srcMtl, dstMtl, fs::copy_options::overwrite_existing);
+	    }
+
+		fs::path rel = fs::relative(dst, sceneRootDisk);
+
+		return rel.generic_string();
 	}
 
-	fs::path dstDir = fs::path("assets") / "models";
-	fs::create_directories(dstDir);
+	int presetIndexForResolution(int w, int h)
+    {
+	    if (w == 320 && h == 180)
+		    return 0;
+	    if (w == 640 && h == 360)
+		    return 1;
+	    if (w == 1280 && h == 720)
+		    return 2;
+	    if (w == 1920 && h == 1080)
+		    return 3;
+	    if (w == 2560 && h == 1440)
+		    return 4;
+	    if (w == 3840 && h == 2160)
+		    return 5;
+	    return 6;
+    }
 
-	fs::path dst = dstDir / src.filename();
-
-	if (fs::exists(dst))
-	{
-		fs::path stem = dst.stem();
-		fs::path ext = dst.extension();
-		int i = 2;
-		while (fs::exists(dstDir / fs::path(stem.string() + "_" + std::to_string(i) + ext.string())))
-			++i;
-		dst = dstDir / fs::path(stem.string() + "_" + std::to_string(i) + ext.string());
-	}
-
-	fs::copy_file(src, dst, fs::copy_options::overwrite_existing);
-
-	fs::path rel = fs::relative(dst, sceneRootDisk);
-	return rel.generic_string();
 }
 
 void RaytracerUI::drawTool()
@@ -140,11 +185,12 @@ void RaytracerUI::drawTool()
 
 	ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
 	ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
-
+		
 	ImGuiWindowFlags flags =
-	    ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_MenuBar;
+	    ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove 
+		| ImGuiWindowFlags_MenuBar;
 
-	if (ImGui::Begin("File", &opened_fm, flags))
+	if (ImGui::Begin("File", &openedFileManager, flags))
 	{
 		if (ImGui::BeginMenuBar())
 		{
@@ -168,8 +214,8 @@ void RaytracerUI::drawTool()
 				if (ImGui::MenuItem("New Light"))
 				{
 					scene.addDefaultLight();
-					std::cout << "Size: " << scene.lights.size();
-					activeLightIndex = static_cast<unsigned int>(scene.lights.size() - 1);
+					logMessage("INFO", "Light count: " + std::to_string(scene.lights.size()));
+					activeLightIndex = static_cast<int>(scene.lights.size()) - 1;
 					syncActiveSceneJsonFromScene();
 
 					engine.onSceneChanged(*_showRayTraced, false);
@@ -185,9 +231,9 @@ void RaytracerUI::drawTool()
 					std::string p = OpenZipFileDialog();
 					if (!p.empty())
 					{
-						m_sceneRootDisk = std::filesystem::path(p).parent_path();
-						m_requestedZipPath = p;
-						m_requestLoadZip = true;
+						sceneRootDisk = std::filesystem::path(p).parent_path();
+						requestedZipPath = p;
+						requestLoadZip = true;
 					}
 				}
 
@@ -196,16 +242,14 @@ void RaytracerUI::drawTool()
 					std::string p = OpenObjFileDialog();
 					if (!p.empty())
 					{
-
-						// Optional: extension check
 						if (std::filesystem::path(p).extension() == ".obj")
 						{
-							if (m_sceneRootDisk.empty())
-								m_sceneRootDisk = std::filesystem::current_path();
+							if (sceneRootDisk.empty())
+								sceneRootDisk = std::filesystem::current_path();
 
-							std::string localRelPath = copyModelIntoAssets(p, m_sceneRootDisk);
+							std::string localRelPath = copyModelIntoAssets(p, sceneRootDisk);
 
-							scene.addMesh(ObjectLoader::loadMesh((m_sceneRootDisk / localRelPath).string()),
+							scene.addMesh(ObjectLoader::loadMesh((sceneRootDisk / localRelPath).string()),
 							              localRelPath);
 
 							syncActiveSceneJsonFromScene();
@@ -214,7 +258,7 @@ void RaytracerUI::drawTool()
 						}
 						else
 						{
-							std::cout << "WARNING: File is not Allowed! (need .obj)\n";
+							logMessage("WARNING", "File is not allowed. Expected .obj");
 						}
 					}
 				}
@@ -226,9 +270,9 @@ void RaytracerUI::drawTool()
 			{
 				if (ImGui::MenuItem("Save Scene"))
 				{
-					if (m_activeSceneJson.empty())
+					if (activeSceneJson.empty())
 					{
-						std::cout << "WARNING: No active scene JSON to save.\n";
+						logMessage("WARNING", "No active scene JSON to save.");
 					}
 					else
 					{
@@ -238,18 +282,24 @@ void RaytracerUI::drawTool()
 							try
 							{
 								syncActiveSceneJsonFromScene();
+
+								activeSceneJsonObj["scene_name"] = 
+									std::filesystem::path(outPath).stem().string();
+
+								activeSceneJson = activeSceneJsonObj.dump(2);
+
 								std::ofstream out(outPath, std::ios::binary);
 								if (!out)
 									throw std::runtime_error("Cannot open output file: " + outPath);
 
-								out << m_activeSceneJson;
+								out << activeSceneJson;
 								out.close();
 
-								std::cout << "SUCCESS: Scene JSON saved to: " << outPath << "\n";
+								logMessage("INFO", "Scene JSON saved to: " + outPath);
 							}
 							catch (const std::exception &e)
 							{
-								std::cout << "ERROR: Failed to save scene JSON: " << e.what() << "\n";
+								logMessage("ERROR", "Failed to save scene JSON: " + std::string(e.what()));
 							}
 						}
 					}
@@ -261,10 +311,10 @@ void RaytracerUI::drawTool()
 					std::string outPath = SaveImageFileDialog();
 					if (!outPath.empty())
 					{
-						if (SaveTextureToImageFile(texToSave, outPath))
-							std::cout << "SUCCESS: Image saved to: " << outPath << "\n";
+						if (saveTextureToImageFile(texToSave, outPath))
+							logMessage("INFO", "Image saved to: " + outPath);
 						else
-							std::cout << "ERROR: Failed to save image.\n";
+							logMessage("ERROR", "Failed to save image.");
 					}
 				}
 
@@ -272,6 +322,10 @@ void RaytracerUI::drawTool()
 			}
 			ImGui::EndMenuBar();
 		}
+
+		std::string sceneName = activeSceneJsonObj.value("scene_name", "Unnamed Scene");
+		ImGui::TextDisabled("Scene: %s", sceneName.c_str());
+		ImGui::Spacing();
 
 		ImGui::Separator();
 		ImGui::Spacing();
@@ -282,7 +336,7 @@ void RaytracerUI::drawTool()
 		ImGui::TextUnformatted("Objects");
 		ImGui::Indent();
 
-		for (int i = 0; i < (int)scene.meshMetas.size(); ++i)
+		for (int i = 0; i < static_cast<int>(scene.meshMetas.size()); ++i)
 		{
 			ImGui::PushID(i);
 
@@ -291,7 +345,7 @@ void RaytracerUI::drawTool()
 			std::string label = meta.name;
 			if (!label.empty())
 			{
-				label[0] = (char)std::toupper((unsigned char)label[0]);
+				label[0] = static_cast<char>(std::toupper(static_cast<unsigned char>(label[0])));
 			}
 
 			if (ImGui::Selectable(label.c_str(), activeMeshIndex == i))
@@ -329,12 +383,12 @@ void RaytracerUI::drawTool()
 
 		ImGui::Indent();
 
-		for (int i = 0; i < (int)scene.lights.size(); ++i)
+		for (int i = 0; i < static_cast<int>(scene.lights.size()); ++i)
 		{
 			ImGui::PushID(i);
 
 			char label[32];
-			snprintf(label, sizeof(label), "Light %d", i);
+			std::snprintf(label, sizeof(label), "Light %d", i);
 
 			if (ImGui::Selectable(label, activeLightIndex == i))
 			{
@@ -384,23 +438,23 @@ void RaytracerUI::drawFileExplorerPopup()
 
 	ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar;
 
-	if (ImGui::Begin("Open Model", &m_showModelBrowser, flags))
+	if (ImGui::Begin("Open Model", &showModelBrowser, flags))
 	{
-		ImGui::Text("Current Path: %s", m_currentDir.string().c_str());
+		ImGui::Text("Current Path: %s", currentDir.string().c_str());
 		ImGui::Separator();
 
-		if (m_currentDir.has_parent_path())
+		if (currentDir.has_parent_path())
 		{
 			if (ImGui::Button(".."))
 			{
-				m_currentDir = m_currentDir.parent_path();
+				currentDir = currentDir.parent_path();
 			}
 		}
 		if (ImGui::BeginChild("BrowserContent", ImVec2(0, 250), true))
 		{
 			try
 			{
-				for (const auto &entry : std::filesystem::directory_iterator(m_currentDir))
+				for (const auto &entry : std::filesystem::directory_iterator(currentDir))
 				{
 					std::string entryName = entry.path().filename().string();
 
@@ -412,7 +466,7 @@ void RaytracerUI::drawFileExplorerPopup()
 						ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.2f, 0.7f, 1.0f, 1.0f));
 						if (ImGui::Selectable((entryName + "/").c_str()))
 						{
-							m_currentDir /= entry.path().filename();
+							currentDir /= entry.path().filename();
 						}
 						ImGui::PopStyleColor();
 					}
@@ -422,7 +476,7 @@ void RaytracerUI::drawFileExplorerPopup()
 						{
 							auto ext = entry.path().extension().string();
 
-							if (m_browserMode == BrowserMode::Model)
+							if (browserMode == BrowserMode::Model)
 							{
 								if (ext == ".obj")
 								{
@@ -431,32 +485,31 @@ void RaytracerUI::drawFileExplorerPopup()
 									scene.addMesh(ObjectLoader::loadMesh(fullPath), fullPath);
 
 									patchActiveSceneJsonModelPath(fullPath);
-									;
 
-									m_showModelBrowser = false;
+									showModelBrowser = false;
 
-									std::cout << "SUCCESS: Loaded mesh from: " << fullPath << std::endl;
+									logMessage("INFO", "Loaded mesh from: " + fullPath);
 								}
 								else
 								{
-									std::cout << "WARNING: File is not Allowed! (need .obj)\n";
+									logMessage("WARNING", "File is not allowed. Expected .obj");
 								}
 							}
-							else if (m_browserMode == BrowserMode::SceneZip)
+							else if (browserMode == BrowserMode::SceneZip)
 							{
 								if (ext == ".zip")
 								{
 									std::string zipPath = entry.path().string();
-									std::cout << "Selected ZIP scene: " << zipPath << "\n";
+									logMessage("INFO", "Selected scene ZIP: " + zipPath);
 
-									m_requestedZipPath = zipPath;
-									m_requestLoadZip = true;
+									requestedZipPath = zipPath;
+									requestLoadZip = true;
 
-									m_showModelBrowser = false;
+									showModelBrowser = false;
 								}
 								else
 								{
-									std::cout << "WARNING: File is not Allowed! (need .zip)\n";
+									logMessage("WARNING", "File is not allowed. Expected .zip");
 								}
 							}
 						}
@@ -466,34 +519,17 @@ void RaytracerUI::drawFileExplorerPopup()
 			catch (const std::filesystem::filesystem_error &)
 			{
 				ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "ERROR: Cannot access path.");
-				m_currentDir = "C:\\";
+				currentDir = "C:\\";
 			}
 			ImGui::EndChild();
 		}
 
 		if (ImGui::Button("Close"))
 		{
-			m_showModelBrowser = false;
+			showModelBrowser = false;
 		}
 	}
 	ImGui::End();
-}
-
-static int presetIndexForResolution(int w, int h)
-{
-	if (w == 320 && h == 180)
-		return 0;
-	if (w == 640 && h == 360)
-		return 1;
-	if (w == 1280 && h == 720)
-		return 2;
-	if (w == 1920 && h == 1080)
-		return 3;
-	if (w == 2560 && h == 1440)
-		return 4;
-	if (w == 3840 && h == 2160)
-		return 5;
-	return 6;
 }
 
 void RaytracerUI::drawSettings()
@@ -509,9 +545,7 @@ void RaytracerUI::drawSettings()
 
 	ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove;
 
-	ImGui::SeparatorText("Environment");
-
-	if (ImGui::Begin("Attributes", &opened_settings, flags))
+	if (ImGui::Begin("Attributes", &openedSettings, flags))
 	{
 
 		if (ImGui::ColorEdit3("Background", bg))
@@ -548,7 +582,7 @@ void RaytracerUI::drawSettings()
 			ImGui::SameLine();
 			ImGui::Text("Position");
 
-			if (ImGui::SliderFloat3("##ObjectRotSlider", &meta.rotation.x, -360.0f, 360.0f, "%.1f°"))
+			if (ImGui::DragFloat3("##ObjectRotSlider", &meta.rotation.x, 1.0f, -360.0f, 360.0f, "%.1f°"))
 			{
 				somethingChanged = true;
 				scene.applyMeshTransform(activeMeshIndex);
@@ -576,19 +610,21 @@ void RaytracerUI::drawSettings()
 		}
 		else
 		{
-			activeLightIndex = std::clamp(activeLightIndex, 0, (int)scene.lights.size() - 1);
+			activeLightIndex = std::clamp(activeLightIndex, 0, static_cast<int>(scene.lights.size()) - 1);
 
 			ImGui::SeparatorText("Light");
 			ImGui::Text("ID: %d", activeLightIndex);
 
-			if (ImGui::DragFloat3("Position##Light", &scene.lights[activeLightIndex].position.x, 1.25f, -500.0f,
-			                      500.0f))
+			if (ImGui::DragFloat3("Position##Light", 
+				&scene.lights[activeLightIndex].position.x, 1.25f, -500.0f, 500.0f))
 				somethingChanged = true;
 
-			if (ImGui::ColorEdit3("Color##Light", &scene.lights[activeLightIndex].color.x))
+			if (ImGui::ColorEdit3("Color##Light", 
+				&scene.lights[activeLightIndex].color.x))
 				somethingChanged = true;
 
-			if (ImGui::SliderFloat("Intensity##Light", &scene.lights[activeLightIndex].intensity.x, 0.0f, 1000.0f))
+			if (ImGui::DragFloat("Intensity##Light", 
+				&scene.lights[activeLightIndex].intensity.x, 1.0f, 0.0f, 1000.0f))
 				somethingChanged = true;
 		}
 
@@ -608,14 +644,14 @@ void RaytracerUI::drawSettings()
 
 		float yaw = scene.camera.getYaw();
 
-		if (ImGui::SliderFloat("Yaw (Right/Left)", &yaw, -360.0f, 360.0f, "%.1f°"))
+		if (ImGui::SliderFloat("Yaw", &yaw, -360.0f, 360.0f, "%.1f°"))
 		{
 			scene.camera.setYawPitch(yaw, scene.camera.getPitch());
 			somethingChanged = true;
 		}
 
 		float pitchVal = scene.camera.getPitch();
-		if (ImGui::SliderFloat("Pitch (Up/Down)", &pitchVal, -89.0f, 89.0f, "%.1f°"))
+		if (ImGui::SliderFloat("Pitch", &pitchVal, -89.0f, 89.0f, "%.1f°"))
 		{
 			scene.camera.setYawPitch(scene.camera.getYaw(), pitchVal);
 			somethingChanged = true;
@@ -639,7 +675,7 @@ void RaytracerUI::drawSettings()
 		const char *resolutions[] = { "320 x 180",   "640 x 360 (FAST)", "1280 x 720", "1920 x 1080",
 			                          "2560 x 1440", "3840 x 2160",      "Custom" };
 
-		if (ImGui::Combo("Resolution Preset", &currentPreset, resolutions, IM_ARRAYSIZE(resolutions)))
+		if (ImGui::Combo("Preset", &currentPreset, resolutions, IM_ARRAYSIZE(resolutions)))
 		{
 			switch (currentPreset)
 			{
@@ -674,7 +710,7 @@ void RaytracerUI::drawSettings()
 
 		if (currentPreset == 6)
 		{
-			ImGui::InputInt2("Custom Resolution", renderResolution);
+			ImGui::InputInt2("Custom", renderResolution);
 
 			if (renderResolution[0] < 1)
 				renderResolution[0] = 1;
@@ -683,7 +719,8 @@ void RaytracerUI::drawSettings()
 		}
 		if (ImGui::Button("Apply Resolution"))
 		{
-			engine.resize((GLsizei)renderResolution[0], (GLsizei)renderResolution[1]);
+			engine.resize(static_cast<GLsizei>(renderResolution[0]), 
+				static_cast<GLsizei>(renderResolution[1]));
 			syncActiveSceneJsonFromScene();
 		}
 	}
@@ -692,30 +729,30 @@ void RaytracerUI::drawSettings()
 
 void RaytracerUI::onSceneChanged(const std::string &json)
 {
-	m_activeSceneJson = json;
+	activeSceneJson = json;
 
 	try
 	{
-		m_activeSceneJsonObj = nlohmann::json::parse(json);
-		if (m_activeSceneJsonObj.contains("camera") && m_activeSceneJsonObj["camera"].contains("resolution"))
+		activeSceneJsonObj = nlohmann::json::parse(json);
+		if (activeSceneJsonObj.contains("camera") && activeSceneJsonObj["camera"].contains("resolution"))
 		{
-			auto &res = m_activeSceneJsonObj["camera"]["resolution"];
-			int w = res.value("x", (int)engine.getWidth());
-			int h = res.value("y", (int)engine.getHeight());
+			auto &res = activeSceneJsonObj["camera"]["resolution"];
+			int w = res.value("x", static_cast<int>(engine.getWidth()));
+			int h = res.value("y", static_cast<int>(engine.getHeight()));
 
 			w = std::max(1, w);
 			h = std::max(1, h);
-			engine.resize((GLsizei)w, (GLsizei)h);
+			engine.resize(static_cast<GLsizei>(w), static_cast<GLsizei>(h));
 			renderResolution[0] = w;
 			renderResolution[1] = h;
 			currentPreset = presetIndexForResolution(w, h);
 
-			std::cout << "[UI] Applied resolution from JSON: " << w << "x" << h << "\n";
+			logMessage("INFO", "Applied resolution from JSON: " + std::to_string(w) + "x" + std::to_string(h));
 		}
 
-		if (m_activeSceneJsonObj.contains("background_color"))
+		if (activeSceneJsonObj.contains("background_color"))
 		{
-			auto &bc = m_activeSceneJsonObj["background_color"];
+			auto &bc = activeSceneJsonObj["background_color"];
 			bg[0] = bc.value("r", 0.0f);
 			bg[1] = bc.value("g", 0.0f);
 			bg[2] = bc.value("b", 0.0f);
@@ -723,19 +760,19 @@ void RaytracerUI::onSceneChanged(const std::string &json)
 			scene.backgroundColor = glm::vec4(bg[0], bg[1], bg[2], 1.0f);
 		}
 
-		if (m_activeSceneJsonObj.contains("lights") && m_activeSceneJsonObj["lights"].is_array())
+		if (activeSceneJsonObj.contains("lights") && activeSceneJsonObj["lights"].is_array())
 		{
-			auto &jLights = m_activeSceneJsonObj["lights"];
+			auto &jLights = activeSceneJsonObj["lights"];
 
 			scene.lights.clear();
 			scene.lights.reserve(jLights.size());
 
-			for (size_t i = 0; i < jLights.size(); ++i)
+			for (std::size_t i = 0; i < jLights.size(); ++i)
 			{
 				auto &jl = jLights[i];
 
 				Light L{};
-				L.ID = (unsigned int)i;
+				L.ID = static_cast<unsigned int>(i);
 
 				if (jl.contains("position"))
 				{
@@ -765,8 +802,8 @@ void RaytracerUI::onSceneChanged(const std::string &json)
 	}
 	catch (const std::exception &e)
 	{
-		std::cout << "ERROR: Failed to parse active scene JSON: " << e.what() << "\n";
-		m_activeSceneJsonObj = nlohmann::json{};
+		logMessage("ERROR", "Failed to parse active scene JSON: " + std::string(e.what()));
+		activeSceneJsonObj = nlohmann::json{};
 	}
 }
 
@@ -782,9 +819,11 @@ void RaytracerUI::drawBar()
 	ImGui::SetNextWindowPos(ImVec2(screen.x * 0.25f, posY), ImGuiCond_Always);
 	ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
 
-	ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar;
+	ImGuiWindowFlags flags = 
+		ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar 
+		| ImGuiWindowFlags_NoScrollbar;
 
-	if (ImGui::Begin("Raytracer", &raytracer_active, flags))
+	if (ImGui::Begin("Compute Raytracer", &raytracerActive, flags))
 	{
 		ImVec2 avail = ImGui::GetContentRegionAvail();
 
@@ -792,7 +831,7 @@ void RaytracerUI::drawBar()
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.30f, 0.30f, 0.30f, 1.0f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.35f, 0.35f, 0.35f, 1.0f));
 
-		const char *label = !*_showRayTraced ? "Back to Preview" : "Raytrace";
+		const char *label = *_showRayTraced ? "Back to Preview" : "Raytrace";
 
 		if (ImGui::Button(label, avail))
 		{
@@ -820,33 +859,33 @@ void RaytracerUI::drawBar()
 
 void RaytracerUI::patchActiveSceneJsonModelPath(const std::string &fullPath)
 {
-	if (m_activeSceneJson.empty())
+	if (activeSceneJson.empty())
 		return;
 
-	std::string json = m_activeSceneJson;
+	std::string json = activeSceneJson;
 
-	size_t pathKey = json.find("\"path\"");
+	std::size_t pathKey = json.find("\"path\"");
 	if (pathKey == std::string::npos)
 	{
-		std::cout << "WARNING: No 'path' key found in active JSON\n";
+		logMessage("WARNING", "No 'path' key found in active JSON");
 		return;
 	}
 
-	size_t firstQuote = json.find("\"", pathKey + 6);
+	std::size_t firstQuote = json.find("\"", pathKey + 6);
 	if (firstQuote == std::string::npos)
 		return;
 
-	size_t secondQuote = json.find("\"", firstQuote + 1);
+	std::size_t secondQuote = json.find("\"", firstQuote + 1);
 	if (secondQuote == std::string::npos)
 		return;
 
 	json.replace(firstQuote + 1, secondQuote - firstQuote - 1, fullPath);
 
-	size_t nameKey = json.find("\"name\"");
+	std::size_t nameKey = json.find("\"name\"");
 	if (nameKey != std::string::npos)
 	{
-		size_t n1 = json.find("\"", nameKey + 6);
-		size_t n2 = json.find("\"", n1 + 1);
+		std::size_t n1 = json.find("\"", nameKey + 6);
+		std::size_t n2 = json.find("\"", n1 + 1);
 		if (n1 != std::string::npos && n2 != std::string::npos)
 		{
 			std::string newName = std::filesystem::path(fullPath).stem().string();
@@ -864,14 +903,14 @@ void RaytracerUI::setVec3(nlohmann::json &j, const char *key, const glm::vec3 &v
 
 void RaytracerUI::syncActiveSceneJsonFromScene()
 {
-	if (m_activeSceneJsonObj.is_null() || m_activeSceneJsonObj.empty())
+	if (activeSceneJsonObj.is_null() || activeSceneJsonObj.empty())
 		return;
 
 	// Light block
-	if (!m_activeSceneJsonObj.contains("lights") || !m_activeSceneJsonObj["lights"].is_array())
-		m_activeSceneJsonObj["lights"] = nlohmann::json::array();
+	if (!activeSceneJsonObj.contains("lights") || !activeSceneJsonObj["lights"].is_array())
+		activeSceneJsonObj["lights"] = nlohmann::json::array();
 
-	auto &jLights = m_activeSceneJsonObj["lights"];
+	auto &jLights = activeSceneJsonObj["lights"];
 
 	while (jLights.size() < scene.lights.size())
 		jLights.push_back(nlohmann::json::object());
@@ -879,7 +918,7 @@ void RaytracerUI::syncActiveSceneJsonFromScene()
 	while (jLights.size() > scene.lights.size())
 		jLights.erase(jLights.end() - 1);
 
-	for (size_t i = 0; i < scene.lights.size(); ++i)
+	for (std::size_t i = 0; i < scene.lights.size(); ++i)
 	{
 		const auto &L = scene.lights[i];
 		auto &jL = jLights[i];
@@ -893,9 +932,9 @@ void RaytracerUI::syncActiveSceneJsonFromScene()
 	}
 
 	// Camera block
-	if (m_activeSceneJsonObj.contains("camera"))
+	if (activeSceneJsonObj.contains("camera"))
 	{
-		auto &jc = m_activeSceneJsonObj["camera"];
+		auto &jc = activeSceneJsonObj["camera"];
 
 		glm::vec3 pos = glm::vec3(scene.camera.getOrigin());
 		glm::vec3 fwd = scene.camera.getForward();
@@ -910,18 +949,17 @@ void RaytracerUI::syncActiveSceneJsonFromScene()
 	}
 
 	// Object block
-	if (!m_activeSceneJsonObj.contains("objects") || !m_activeSceneJsonObj["objects"].is_array())
-		m_activeSceneJsonObj["objects"] = nlohmann::json::array();
+	if (!activeSceneJsonObj.contains("objects") || !activeSceneJsonObj["objects"].is_array())
+		activeSceneJsonObj["objects"] = nlohmann::json::array();
 
-	auto &jObjs = m_activeSceneJsonObj["objects"];
+	auto &jObjs = activeSceneJsonObj["objects"];
 
-	// Resize array to match scene.meshMetas size
 	while (jObjs.size() < scene.meshMetas.size())
 		jObjs.push_back(nlohmann::json::object());
 	while (jObjs.size() > scene.meshMetas.size())
 		jObjs.erase(jObjs.end() - 1);
 
-	for (size_t i = 0; i < scene.meshMetas.size(); ++i)
+	for (std::size_t i = 0; i < scene.meshMetas.size(); ++i)
 	{
 		const auto &M = scene.meshMetas[i];
 		auto &jO = jObjs[i];
@@ -930,9 +968,9 @@ void RaytracerUI::syncActiveSceneJsonFromScene()
 
 		std::filesystem::path p = std::filesystem::path(M.path).lexically_normal();
 
-		if (p.is_absolute() && !m_sceneRootDisk.empty())
+		if (p.is_absolute() && !sceneRootDisk.empty())
 		{
-			p = std::filesystem::relative(p, m_sceneRootDisk);
+			p = std::filesystem::relative(p, sceneRootDisk);
 		}
 
 		jO["path"] = p.generic_string();
@@ -943,38 +981,24 @@ void RaytracerUI::syncActiveSceneJsonFromScene()
 		jO["scale"] = { { "x", M.scale.x }, { "y", M.scale.y }, { "z", M.scale.z } };
 	}
 
-	// Background color (always write / create)
-	m_activeSceneJsonObj["background_color"] = { { "r", scene.backgroundColor.x },
+	// Background color
+	activeSceneJsonObj["background_color"] = {   { "r", scene.backgroundColor.x },
 		                                         { "g", scene.backgroundColor.y },
-		                                         { "b", scene.backgroundColor.z } };
+		                                         { "b", scene.backgroundColor.z } 
+											 };
 
-	m_activeSceneJson = m_activeSceneJsonObj.dump(2);
+	activeSceneJson = activeSceneJsonObj.dump(2);
 	engine.onSceneChanged(*_showRayTraced, false);
 }
 
 void RaytracerUI::resetEnvironment()
 {
 	activeLightIndex = 0;
-	activeMeshIndex = -1;
+	activeMeshIndex = 0;
 
-	// mesh & camera & light reset
-	scene.reset();
+	const std::filesystem::path defaultScene = "assets/scenes/example.zip";
 
-	// 2) UI state reset
-	bg[0] = 0.0f;
-	bg[1] = 0.0f;
-	bg[2] = 0.0f;
-
-	*_showRayTraced = false;
-
-	// 3) Active JSON reset
-	m_activeSceneJson.clear();
-	m_activeSceneJsonObj = nlohmann::json{};
-
-	// 4) Zip-Request cleanup
-	m_requestLoadZip = false;
-	m_requestedZipPath.clear();
-
-	engine.clearOutputTextures(0, 0, 0, 1);
-	engine.onSceneChanged(*_showRayTraced, true);
+	sceneRootDisk = defaultScene.parent_path();
+	requestedZipPath = defaultScene.string();
+	requestLoadZip = true;
 }

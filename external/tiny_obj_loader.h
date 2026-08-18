@@ -1,4 +1,5 @@
 /*
+
 The MIT License (MIT)
 
 Copyright (c) 2012-Present, Syoyo Fujita and many contributors.
@@ -1903,7 +1904,7 @@ static bool exportGroupsToShape(shape_t *shape, const PrimGroup &prim_group,
                 break;
               }
             }
-
+            
             if (overlap) {
               // std::cout << "overlap2\n";
               guess_vert += 1;

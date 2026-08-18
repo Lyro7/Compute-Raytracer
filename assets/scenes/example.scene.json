@@ -1,30 +1,68 @@
 {
-  "scene_name": "example",
+  "scene_name": "Example",
   "objects": [
     {
-      "name": "cube",
+      "name": "porsche",
       "path": "assets/models/porsche.obj",
-      "scale": { "x": 1.0, "y": 1.0, "z": 1.0 },
-      "rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
-      "translation": { "x": 0.0, "y": 0.0, "z": 0.0 }
+      "scale": {
+        "x": 1.0,
+        "y": 1.0,
+        "z": 1.0
+      },
+      "rotation": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "translation": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+      }
     }
   ],
-  "background_color": { "r": 0.0, "g": 0.0, "b": 0.0 },
+  "background_color": {
+    "r": 0.0,
+    "g": 0.0,
+    "b": 0.0
+  },
   "camera": {
-    "position": { "x": -0.80, "y": -0.200, "z": 89.0 },
-    "look_at": { "x": 64.0, "y": 0.0, "z": 46.0 },
-    "up": { "x": 5.0, "y": -10.0, "z": 0.0 },
-    "pane_distance": 50.0,
-    "pane_width": 100.0,
-    "resolution": { "x": 600, "y": 300 }
+    "position": {
+      "x": -0.8,
+      "y": -0.2,
+      "z": 224.0
+    },
+    "look_at": {
+      "x": -0.6643,
+      "y": -0.1983,
+      "z": 223.0093
+    },
+    "up": {
+      "x": -0.00024,
+      "y": 0.999998,
+      "z": 0.00173
+    },
+    "fov": 53.13,
+    "resolution": {
+      "x": 600,
+      "y": 300
+    }
   },
   "lights": [
     {
       "name": "light 1",
       "type": "point",
       "luminosity": 300.0,
-      "position": { "x": 0.0, "y": 64.0, "z": -20.0 },
-      "color": { "r": 1.0, "g": 1.0, "b": 0 }
+      "position": {
+        "x": 0.0,
+        "y": 64.0,
+        "z": -20.0
+      },
+      "color": {
+        "r": 1.0,
+        "g": 1.0,
+        "b": 0
+      }
     }
   ]
 }
