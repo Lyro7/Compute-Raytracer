@@ -20,16 +20,16 @@ struct HitInfo {
     bool hit;
     bool hitFloor;
     float t;
-    uint triIndex; // 0...N if triangle, uint(-1) if empty, uint(-2) if sphere
+    uint triIndex;
     vec2 baryUV;
     int sphereIndex;
 };
 
 struct Material
 {
-    vec4 diffuseColor;	// rgb = diffuseColor.xyz, w unused
-	vec4 specularColor; // rgb = specularColor.xyz, shininess(Ns) = w
-	vec4 emission;      // emissionColor = emission.xyz, emissionStrength = w
+    vec4 diffuseColor;
+	vec4 specularColor;
+	vec4 emission;
 };
 
 struct Triangle {
@@ -62,7 +62,7 @@ struct GpuSceneParams
     ivec4 lightMeta;
 
     GpuLightParams lights[MAX_LIGHTS];
-	vec4 isPreview; // Only .x is used 1=true 0=false 
+	vec4 isPreview;
     vec4 backgroundColor;
 };
 
@@ -82,7 +82,6 @@ layout(std430, binding = 1) buffer meshInfoBuffer
     MeshInfo meshInfos[];
 };
 
-// Camera data UBO
 layout(std140, binding = 0) uniform SceneParams
 {
     GpuSceneParams gpuSceneParams;
@@ -93,8 +92,9 @@ float rayEpsilon(vec3 pos)
     return max(1e-6, 1e-7 * max(1.0, length(pos)));
 }
 
-// Reimplementation of the algorithm of M�ller and Trumbore
-// M�ller, T., & Trumbore, B. (1997). Fast, minimum storage ray-triangle intersection. Journal of Graphics Tools, 2(1), 21-28.
+// Reimplementation of the algorithm of Mueller and Trumbore.
+// Mueller, T., & Trumbore, B. (1997). Fast, minimum storage ray-triangle intersection. 
+// Journal of Graphics Tools, 2(1), 21-28.
 bool intersectTriangle(vec3 orig, vec3 dir, vec3 v0, vec3 v1, vec3 v2, out float tHit, out vec2 hit)
 {
     vec3 e1 = v1 - v0;
@@ -103,7 +103,7 @@ bool intersectTriangle(vec3 orig, vec3 dir, vec3 v0, vec3 v1, vec3 v2, out float
     vec3 pvec = cross(dir, e2);
     float det = dot(e1, pvec);
 
-    if (abs(det) < EPSILON) return false; // parallel / degenerate
+    if (abs(det) < EPSILON) return false;
 
     float invDet = 1.0 / det;
     vec3 tvec = orig - v0;
@@ -130,7 +130,6 @@ bool isInShadow(vec3 hitPos, vec3 lightPos, uint ignoreTri)
 
     float eps = rayEpsilon(hitPos);
 
-    // Iterate over all triangles
     for (uint i = 0u; i < triangles.length(); ++i)
     {
         if (i == ignoreTri) continue; 
@@ -147,11 +146,13 @@ bool isInShadow(vec3 hitPos, vec3 lightPos, uint ignoreTri)
         {
             if (tHitShadow > eps && tHitShadow < maxDist - eps)
             {
-                return true;// In shadow
+                // In shadow
+                return true;
             }
         }
     }
-    return false; // Not in shadow
+    // Not in shadow
+    return false;
 }
 
 bool intersectPlane(vec3 orig, vec3 dir, vec3 planePoint, vec3 planeNormal, out float tHit)
@@ -159,7 +160,8 @@ bool intersectPlane(vec3 orig, vec3 dir, vec3 planePoint, vec3 planeNormal, out 
     float denom = dot(planeNormal, dir);
 
     if (abs(denom) < EPSILON)
-        return false; // Ray parallel to plane
+        // Ray parallel to plane
+        return false;
 
     tHit = dot(planePoint - orig, planeNormal) / denom;
     return tHit > rayEpsilon(orig);
@@ -169,7 +171,7 @@ vec3 traceColor(vec3 ro, vec3 rd, uint ignoreTri)
 {
     float eps = rayEpsilon(ro);
 
-    // find closest hit
+    // Find closest hit
     bool isHit = false;
     float tMin = 1e30;
     uint hitTriIndex = 0u;
@@ -211,7 +213,7 @@ vec3 traceColor(vec3 ro, vec3 rd, uint ignoreTri)
     vec3 hitPos = ro + rd * tMin;
     int lightCount = clamp(gpuSceneParams.lightMeta.x, 0, MAX_LIGHTS);
 
-    // floor hit
+    // Floor hit
     if (hitFloor)
     {
         int cx = int(floor(hitPos.x / TILE_SIZE));
@@ -234,8 +236,7 @@ vec3 traceColor(vec3 ro, vec3 rd, uint ignoreTri)
 
             float NdotL = max(dot(floorNormal, toLight), 0.0);
 
-            // This helper is used only during raytrace reflections,
-            // so always do the shadow test (nice result)
+            // This helper is used only during raytrace reflections, so do shadow test
             float epsH = rayEpsilon(hitPos);
             if (!isInShadow(hitPos + floorNormal * epsH, lightPos, uint(-1)))
                 colorOut += floorDiffuse * lightCol * NdotL * attenuation * intensity;
@@ -244,7 +245,7 @@ vec3 traceColor(vec3 ro, vec3 rd, uint ignoreTri)
         return colorOut;
     }
 
-    //triangle hit
+    // Triangle hit
     Triangle tri = triangles[hitTriIndex];
     Material mat = tri.material;
 
@@ -346,7 +347,8 @@ HitInfo traceScene(Ray ray)
             vec3 oc = ray.origin - lightPos;
 
             float tSphere = dot(-oc, ray.dir);
-            if (tSphere < 0.0) continue; // light behind ray origin
+            // Light behind ray origin
+            if (tSphere < 0.0) continue;
 
             vec3 closest = oc + tSphere * ray.dir;
             float dist2 = dot(closest, closest);
@@ -356,7 +358,8 @@ HitInfo traceScene(Ray ray)
                 hit.hit = true;
                 hit.hitFloor = false;
                 hit.t = tSphere;
-                hit.triIndex = uint(-2); // value indicates ray hit a sphere
+                // Value indicates ray hit a sphere
+                hit.triIndex = uint(-2);
                 hit.sphereIndex = li;
             }
         }
@@ -439,14 +442,13 @@ vec3 shadeTriangle(Ray ray, HitInfo hit)
     vec3 N = normalize(
         w * tri.NA.xyz +
         u * tri.NB.xyz +
-        v * tri.NC.xyz
-    );
+        v * tri.NC.xyz);
+
     if (dot(N, ray.dir) > 0.0)
     {
         N = -N;
     }
     
-
     vec3 diffuse = mat.diffuseColor.rgb;
 
     if (gpuSceneParams.isPreview.x == 1)
@@ -473,7 +475,8 @@ void main()
 
     if (hit.hit)
     {
-        if (hit.triIndex == uint(-2)) // Sphere if preview
+        // Sphere if preview
+        if (hit.triIndex == uint(-2))
         {
             color = gpuSceneParams.lights[hit.sphereIndex].color.rgb;
         }

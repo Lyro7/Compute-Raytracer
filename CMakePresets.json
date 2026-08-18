@@ -18,22 +18,6 @@
             }
         },
         {
-            "name": "macos-make",
-            "displayName": "macOS (Clang, Makefiles)",
-            "generator": "Unix Makefiles",
-            "binaryDir": "${sourceDir}/out/build/${presetName}",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug",
-                "CMAKE_C_COMPILER": "clang",
-                "CMAKE_CXX_COMPILER": "clang++"
-            },
-            "condition": {
-                "type": "equals",
-                "lhs": "${hostSystemName}",
-                "rhs": "Darwin"
-            }
-        },
-        {
             "name": "x64-debug",
             "displayName": "x64 Debug",
             "inherits": "windows-base",

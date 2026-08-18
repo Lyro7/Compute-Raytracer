@@ -11,8 +11,10 @@ Diagnostics:
     - clang-diagnostic-unused-variable
 
 ---
-
 If:
-  PathMatch: external/.*
+  PathMatch: 
+  - external/.*
+  - dependencies/.*
 Diagnostics:
   Suppress: "*"
+

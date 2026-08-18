@@ -1,15 +1,26 @@
-#include "scene.h"
+#include <algorithm>
 #include <cfloat>
-#include <glm/glm.hpp>
-#include <iostream>
+#include <cmath>
 #include <filesystem>
+#include <glm/glm.hpp>
+#include <utility>
+
+#include "scene/scene.h"
+#include "utils/log.h"
 
 Scene::Scene()
-    : camera(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 60.0f, 16.0f / 9.0f,
-             0.1f, 100.0f)
-    , lights{ Light{0, glm::vec4(0.0f, 1.0f, 5.0f, 1.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),
-	                 glm::vec4(1.0, 1.0, 1.0, 1.0) } }
-    , backgroundColor(0, 0, 0, 1)
+    : camera(
+		glm::vec3(0.0f, 0.0f, 5.0f), 
+		glm::vec3(0.0f, 0.0f, 0.0f), 
+		glm::vec3(0.0f, 1.0f, 0.0f), 
+		60.0f, 16.0f / 9.0f)
+    , lights{ Light{
+		0, 
+		glm::vec4(0.0f, 1.0f, 5.0f, 1.0f), 
+		glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 
+		glm::vec4(1.0f, 1.0f, 1.0f, 1.0f) 
+	} }
+    , backgroundColor(0.0f, 0.0f, 0.0f, 1.0f)
 {
 }
 
@@ -41,18 +52,20 @@ void Scene::fitCameraToMesh(float aspectRatio)
 		radius = 1.0f;
 
 	float fov = 60.0f;
-	float dist = radius / tan(glm::radians(fov * 0.5f));
+	float dist = radius / std::tan(glm::radians(fov * 0.5f));
 
-	glm::vec3 lookFrom = center + glm::vec3(0, 0, dist * 2.0f);
+	glm::vec3 lookFrom = center + glm::vec3(0.0f, 0.0f, dist * 2.0f);
 	glm::vec3 lookAt = center;
-	glm::vec3 up = glm::vec3(0, 1, 0);
+	glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
 
-	camera = Camera(lookFrom, lookAt, up, fov, aspectRatio, 0.1f, dist * 10.0f);
+	camera = Camera(lookFrom, lookAt, up, fov, aspectRatio);
 }
 
-std::string Scene::makeUniqueName(const std::vector<std::string> &existingNames, const std::string &base)
+std::string Scene::makeUniqueName(const std::vector<std::string> &existingNames, 
+	const std::string &base)
 {
-	if (std::find(existingNames.begin(), existingNames.end(), base) == existingNames.end())
+	if (std::find(existingNames.begin(), existingNames.end(), base) 
+		== existingNames.end())
 	{
 		return base;
 	}
@@ -61,7 +74,8 @@ std::string Scene::makeUniqueName(const std::vector<std::string> &existingNames,
 	while (true)
 	{
 		std::string candidate = base + (" (" + std::to_string(i) + ")");
-		if (std::find(existingNames.begin(), existingNames.end(), candidate) == existingNames.end())
+		if (std::find(existingNames.begin(), existingNames.end(), candidate) 
+			== existingNames.end())
 		{
 			return candidate;
 		}
@@ -73,7 +87,7 @@ void Scene::addMesh(const Mesh &mesh, const std::string &path)
 {
 	const unsigned int id = static_cast<unsigned int>(meshInfos.size());
 
-	MeshInfo info;
+	MeshInfo info{};
 
 	info.firstTriangleIndex = triangles.size();
 	info.numTriangles = mesh.getTriangles().size();
@@ -87,12 +101,12 @@ void Scene::addMesh(const Mesh &mesh, const std::string &path)
 
 	meshInfos.push_back(info);
 
-	// Collect metadatas
-	MeshMeta meta;
+	// Collect mesh metadata
+	MeshMeta meta{};
 	meta.ID = id;
 	meta.path = path;
 
-	// Extract names from meta datas
+	// Collect existing mesh names
 	std::vector<std::string> existingNames;
 	existingNames.reserve(meshMetas.size());
 	for (const auto &m : meshMetas)
@@ -106,7 +120,7 @@ void Scene::addMesh(const Mesh &mesh, const std::string &path)
 	meta.name = makeUniqueName(existingNames, name);
 	meshMetas.push_back(std::move(meta));
 
-	numMeshes = (int)meshInfos.size();
+	numMeshes = static_cast<int>(meshInfos.size());
 }
 
 void Scene::applyMeshTransform(int meshIndex)
@@ -140,18 +154,22 @@ void Scene::addLight(const Light &light)
 
 void Scene::addDefaultLight()
 {
-	/* Default light */
-	Light defLight;
+	Light defLight{};
 	defLight.ID = static_cast<unsigned int>(lights.size());
 	defLight.position = glm::vec4(10.0f, 10.0f, 0.0f, 1.0f);
-	defLight.intensity = glm::vec4(20.0f, 0.0, 0.0, 0.0);
-	defLight.color = glm::vec4(1, 1, 1, 1);
+	defLight.intensity = glm::vec4(20.0f, 0.0f, 0.0f, 0.0f);
+	defLight.color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 
 	lights.push_back(defLight);
 }
 
 void Scene::deleteLight(int lightIndex)
 {
+	if (lightIndex < 0 || lightIndex >= static_cast<int>(lights.size()))
+	{
+		return;
+	}
+
 	lights.erase(lights.begin() + lightIndex);
 }
 
@@ -188,5 +206,5 @@ void Scene::reset()
 {
 	*this = Scene();
 
-	std::cout << "[Scene] reset\n";
+	logMessage("INFO", "Scene reset");
 }

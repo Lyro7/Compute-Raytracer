@@ -1,12 +1,12 @@
 #include <glad/glad.h>
-#include <iostream>
 #include <string>
 
-#include "window.h"
-#include "raytracer_ui.h"
-#include "scene_loader.h"
-#include "zip_reader.h"
-#include "scene_bootstrap.hpp"
+#include "loading/scene_bootstrap.h"
+#include "loading/scene_loader.h"
+#include "loading/zip_reader.h"
+#include "platform/window.h"
+#include "ui/raytracer_ui.h"
+#include "utils/log.h"
 
 int main()
 {
@@ -16,14 +16,16 @@ int main()
 		SceneLoader loader;
 		SceneBootstrap bootstrap(zr, loader);
 
-		auto loaded = bootstrap.loadInitial("" /* Optional zip */, "assets/scenes/example.scene.json");
+		auto loaded = bootstrap.loadInitial("", "assets/scenes/example.scene.json");
 		Scene scene = std::move(loaded.scene);
 
-		Window window(1920, 1080, "Raytracer");
+		Window window(1920, 1080, "Compute Raytracer");
 		
-		// Width and height are updated when loading a scene from the json. 1 is just a placeholder.
+		// Width and height are updated when loading a scene from the json file
 		RaytracerEngine engine(1, 1, scene);
-		bool showRayTraced = true;
+		
+		bool showRayTraced = false;
+
 		RaytracerUI ui(engine, scene, &showRayTraced);
 		ui.init(window);
 
@@ -56,6 +58,6 @@ int main()
 	}
 	catch (const std::exception &e)
 	{
-		std::cerr << e.what() << "\n";
+		logMessage("ERROR", e.what());
 	}
 }

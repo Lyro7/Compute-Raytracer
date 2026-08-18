@@ -1,7 +1,6 @@
 # Editor junk
 .vs/
 .idea/
-.vscode/
 .history/
 .vscode/
 
@@ -10,7 +9,6 @@ out/
 bin/
 build/
 obj/
-externa
 
 # ImGui config
 imgui.ini

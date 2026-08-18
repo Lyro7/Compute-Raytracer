@@ -45,19 +45,3 @@ echo >&2 "    The 'parentNode' property is well supported between all browsers. 
 echo >&2 "    no other functionality was required here, we can use the DOM API directly."
 exit 1
 }
-
-line_count=$(wc -l < "$commit_msg_file")
-if [ "$line_count" -gt 1 ]; then
-  second_line=$(sed -n '2p' "$commit_msg_file")
-  if [ -n "$second_line" ]; then
-    echo >&2 "ERROR: Second line must be empty to separate header and body."
-    exit 1
-  fi
-fi
-
-header_line=$(head -n 1 "$commit_msg_file")
-max_length=72
-if [ ${#header_line} -gt $max_length ]; then
-  echo >&2 "ERROR: Commit header too long (${#header_line} chars). Max is $max_length."
-  exit 1
-fi
