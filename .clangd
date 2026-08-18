@@ -12,6 +12,9 @@ Diagnostics:
 
 ---
 If:
-  PathMatch: external/.*
+  PathMatch: 
+  - external/.*
+  - dependencies/.*
 Diagnostics:
   Suppress: "*"
+
