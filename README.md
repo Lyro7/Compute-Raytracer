@@ -280,14 +280,14 @@ The raytracer separates CPU-side scene management from the data representation u
 
 The original university project was developed by eight students:
 
-* **Niklas Kümmel** — Product Owner, Backend
+* **Niklas Kümmel** — Product Owner, Backend, Shader
 * **Serhat Gürel** — Scrum Master, UI
 * **Jeremy Diem** — UI, File Explorer, Concepts
 * **Gabriel Penkert** — UI, Logging, Documentation
-* **Lovro Lupis** — Architecture, Engine Core
-* **Alton Bekolli** — Shader, JSON Parser, Import/Export
-* **Felix Kussmann** — Camera System
-* **Valentin Talmon-l'Armée** — JSON Parser, Data Logic
+* **Lovro Lupis** — Architecture, Engine Core, CPU–GPU Data Synchronization
+* **Alton Bekolli** — JSON Parser, Import/Export, Shader Contributions
+* **Felix Kussmann** — Camera
+* **Valentin Talmon-l'Armée** — JSON Parser
 
 ---
 
