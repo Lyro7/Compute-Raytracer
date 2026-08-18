@@ -283,7 +283,7 @@ The original university project was developed by eight students:
 * **Niklas Kümmel** — Product Owner, Backend, Shader
 * **Serhat Gürel** — Scrum Master, UI
 * **Jeremy Diem** — UI, File Explorer, Concepts
-* **Gabriel Penkert** — UI, Logging, Documentation
+* **Gabriel Penkert** — UI, Logging
 * **Lovro Lupis** — Architecture, Engine Core, CPU–GPU Data Synchronization
 * **Alton Bekolli** — JSON Parser, Import/Export, Shader Contributions
 * **Felix Kussmann** — Camera
